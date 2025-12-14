@@ -1,7 +1,7 @@
 # DirectSponsor.net - Main Charity Platform
 
 ## 🎯 Purpose
-The primary DirectSponsor platform - a charity website built with DS-CMS that showcases peer-to-peer sponsorship of verified projects.
+The primary DirectSponsor platform - a charity website built with DS-CMS that showcases peer-to-peer sponsorship of verified projects. Acts as a bridge between a normal website log-in and the nostr network enabling existing nostr users to join as well as those who have never heard of nostr.
 
 ## 🏗️ Structure
 ```
@@ -103,11 +103,6 @@ cd /home/andy/Documents/websites/Warp/projects/directsponsor/net-site/core
 - Project cards with verification badges
 - Hero sections on each page
 - Footer with links and branding
-
-## 🔗 Related Projects
-- **DirectSponsor.org** (`../org-site/`) - OAuth landing page
-- **DS-CMS** (`../../ds-cms/`) - Template system
-- **Warp Docs** (`../../docs/`) - Documentation system
 
 ---
 

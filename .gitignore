@@ -22,7 +22,7 @@ includes/
 
 # Deployment scripts (don't deploy)
 build.sh
-deploy.sh
+
 deploy-*.sh
 
 # Logs
