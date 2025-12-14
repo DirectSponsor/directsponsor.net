@@ -21,7 +21,6 @@ includes/
 *-content/
 
 # Deployment scripts (don't deploy)
-build.sh
 
 deploy-*.sh
 

@@ -235,7 +235,7 @@ main() {
     # Step 1: Build the site
     echo -e "${BLUE}🔨 Building site with DS-CMS...${NC}"
     if [ -f "./build.sh" ]; then
-        ./build.sh
+        ./build.sh site
         echo -e "${GREEN}✅ Build completed${NC}"
     else
         echo -e "${YELLOW}⚠️  build.sh not found, skipping build step${NC}"
@@ -270,7 +270,7 @@ main() {
         --exclude='Namibia-content/' \
         --exclude='evans-content/' \
         --exclude='.*' \
-        ./ "$TEMP_DIR/"
+        site/ "$TEMP_DIR/"
     
     echo -e "${GREEN}✅ Production files prepared${NC}"
     
