@@ -19,14 +19,17 @@ fi
 
 # Domain-specific configuration
 TARGET_DOMAIN="directsponsor.net"
-REMOTE_HOST="directadmin-de.kxe.io"  # Your DirectAdmin server hostname
-REMOTE_USER="directsponsor"  # Your DirectAdmin username
-REMOTE_PORT="10500"  # SSH port
-REMOTE_PATH="domains/${TARGET_DOMAIN}/public_html/"  # Relative to home directory
+# REMOTE_HOST="directadmin-de.kxe.io"  # OLD
+# REMOTE_USER="directsponsor"  # OLD
+# REMOTE_PORT="10500"  # OLD
+REMOTE_HOST="RN1" # Alias for 104.168.38.197
+REMOTE_USER="root"
+REMOTE_PORT="22"
+REMOTE_PATH="/var/www/directsponsor.net/html/"
 
 # SSH Configuration (optional - use if you have SSH config aliases)
-SSH_CONFIG_ALIAS="directsponsor-net"  # SSH config alias for .NET domain
-SSH_KEY_PATH="~/.ssh/directsponsor_net_key"  # Path to the SSH private key (NET-specific)
+SSH_CONFIG_ALIAS="RN1"
+SSH_KEY_PATH="~/.ssh/id_rsa"  # Default key or update if specific
 
 # Deploy method
 DEPLOY_METHOD="scp"  # Options: "rsync", "scp", or "manual"
