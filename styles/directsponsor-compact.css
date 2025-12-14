@@ -1,0 +1,738 @@
+/* DirectSponsor.net - Compact Social Media Layout */
+/* Designed for content density and standard ad formats */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    font-size: 1em;
+    line-height: 1.4;
+    color: #333;
+    background: #f8f9fa;
+}
+
+/* Hide list markers when using emoji bullets */
+ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+ul li {
+    padding-left: 0;
+    margin-bottom: 0.25em;
+}
+
+/* === 3-COLUMN LAYOUT (Progressive Enhancement) === */
+.layout-container {
+    max-width: 90em;    /* Use more screen space - lots of content to show */
+    margin: 0 auto;
+    padding: 0.5em;     /* Reduced padding for more content width */
+}
+
+/* FALLBACK: Float-based columns for old browsers (IE6+) */
+.left-sidebar {
+    float: left;
+    width: 24%;                /* Flexible percentage */
+    min-width: 18.75em;        /* Never smaller than 300px for ads */
+    margin-right: 1%;
+}
+
+.center-feed {
+    float: left;
+    width: 48%;                /* Gets most space */
+    min-width: 25em;           /* Readable minimum */
+    margin-right: 1%;
+}
+
+.right-sidebar {
+    float: left;
+    width: 24%;                /* Flexible percentage */
+    min-width: 18.75em;        /* Never smaller than 300px for ads */
+}
+
+/* Clear floats (fallback) */
+.layout-container:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+/* MODERN: Flexbox enhancement for IE10+ (2012+) */
+@supports (display: flex) {
+    .layout-container {
+        display: flex;
+        gap: 0.75em;           /* Clean spacing between columns */
+    }
+    
+    .left-sidebar {
+        flex: 0 1 18.75em;     /* Can shrink from 300px, but not below min-width */
+        min-width: 18.75em;    /* Protect ad space */
+        float: none;           /* Override float */
+        margin-right: 0;       /* Gap handles spacing */
+    }
+    
+    .center-feed {
+        flex: 1;               /* Takes remaining space */
+        min-width: 25em;       /* Stay readable */
+        float: none;
+        margin-right: 0;
+    }
+    
+    .right-sidebar {
+        flex: 0 1 18.75em;     /* Can shrink from 300px, but not below min-width */
+        min-width: 18.75em;    /* Protect ad space */
+        float: none;
+        margin-right: 0;
+    }
+}
+
+/* === HEADER (Compact & Sticky) === */
+.site-header {
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    padding: 0.5em 0;
+    margin-bottom: 0.5em;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Condensed header when scrolling */
+.site-header.condensed {
+    padding: 0.25em 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.header-content {
+    max-width: 75em;
+    margin: 0 auto;
+    padding: 0 0.5em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.logo h1 {
+    font-size: 1.5em;
+    color: #0066cc;
+    margin: 0;
+    transition: font-size 0.3s ease;
+}
+
+/* Condensed logo */
+.site-header.condensed .logo h1 {
+    font-size: 1.2em;
+}
+
+.logo .tagline {
+    font-size: 0.8em;
+    color: #666;
+    transition: opacity 0.3s ease, height 0.3s ease;
+    overflow: hidden;
+}
+
+/* Hide tagline when condensed */
+.site-header.condensed .logo .tagline {
+    opacity: 0;
+    height: 0;
+    margin: 0;
+}
+
+/* Main navigation (compact) */
+.main-nav a {
+    color: #0066cc;
+    text-decoration: none;
+    padding: 0.25em 0.5em;
+    margin-left: 0.5em;
+    border-radius: 0.25em;
+}
+
+.main-nav a:hover {
+    background: #f0f8ff;
+}
+
+/* Dropdown Menu */
+.nav-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-toggle {
+    cursor: pointer;
+    display: inline-block;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid #e1e8ed;
+    border-radius: 0.5em;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    min-width: 200px;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.nav-dropdown:hover .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: block;
+    padding: 0.5em 0.75em;
+    color: #0066cc;
+    text-decoration: none;
+    font-size: 0.9em;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f7f9fa;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover {
+    background: #f0f8ff;
+    color: #004499;
+}
+
+/* === PROJECT CARDS (Twitter-style, compact) === */
+.project-card {
+    background: #fff;
+    border: 1px solid #e1e8ed;
+    border-radius: 0.5em;
+    padding: 0.75em;
+    margin-bottom: 0.5em;
+}
+
+.project-card h2 {
+    font-size: 1.2em;
+    color: #0066cc;
+    margin-bottom: 0.25em;
+}
+
+.project-location {
+    color: #657786;
+    font-size: 0.9em;
+    margin-bottom: 0.5em;
+}
+
+.project-verification {
+    color: #1da1f2;
+    font-size: 0.85em;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+
+/* === EVANS-STYLE TABLES (Compact) === */
+.staff-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.5em 0;
+    font-size: 0.85em;
+}
+
+.staff-table th,
+.staff-table td {
+    padding: 0.25em 0.125em;
+    border-bottom: 1px solid #e1e8ed;
+    text-align: left;
+}
+
+.staff-table th {
+    background: #f7f9fa;
+    font-weight: bold;
+    font-size: 0.8em;
+}
+
+/* Sponsorship status */
+.status-available {
+    color: #1da1f2;
+    font-weight: bold;
+}
+
+.status-sponsored {
+    color: #17bf63;
+    font-weight: bold;
+}
+
+/* Progress bar (compact) */
+.funding-progress {
+    margin: 0.5em 0;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 0.5em;
+    background: #e1e8ed;
+    border-radius: 0.25em;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #17bf63;
+}
+
+.progress-text {
+    font-size: 0.8em;
+    color: #657786;
+    margin-top: 0.25em;
+}
+
+/* Project images (data-efficient) */
+.project-image {
+    width: 100%;
+    max-width: 32em;
+    height: auto;
+    border-radius: 0.5em;
+    margin: 0.5em 0;
+}
+
+/* === SIDEBAR COMPONENTS === */
+
+/* Navigation sidebar */
+.sidebar-nav {
+    background: #fff;
+    border: 1px solid #e1e8ed;
+    border-radius: 0.5em;
+    padding: 0.75em;
+    margin-bottom: 0.5em;
+}
+
+.sidebar-nav h3 {
+    font-size: 1em;
+    margin-bottom: 0.5em;
+    color: #0066cc;
+}
+
+.nav-list {
+    list-style: none;
+}
+
+.nav-list li {
+    margin-bottom: 0.25em;
+}
+
+.nav-list a {
+    display: block;
+    padding: 0.4em;
+    color: #0066cc;
+    text-decoration: none;
+    border-radius: 0.25em;
+    font-size: 0.9em;
+}
+
+.nav-list a:hover,
+.nav-list a.current {
+    background: #f0f8ff;
+}
+
+/* Action boxes */
+.action-box {
+    background: #fff;
+    border: 1px solid #e1e8ed;
+    border-radius: 0.5em;
+    padding: 0.75em;
+    margin-bottom: 0.5em;
+    text-align: center;
+}
+
+.action-box h3 {
+    font-size: 1em;
+    color: #0066cc;
+    margin-bottom: 0.5em;
+}
+
+.action-btn {
+    display: inline-block;
+    background: #1da1f2;
+    color: white;
+    padding: 0.5em 1em;
+    border-radius: 1.5em;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.action-btn:hover {
+    background: #0d8bd9;
+}
+
+.action-btn.sponsor {
+    background: #17bf63;
+}
+
+.action-btn.sponsor:hover {
+    background: #0fa954;
+}
+
+/* === AD SLOTS (Standard banner sizes) === */
+.ad-slot {
+    background: #fff;
+    border: 1px solid #e1e8ed;
+    border-radius: 0.5em;
+    padding: 0.5em;
+    margin-bottom: 0.5em;
+    text-align: center;
+    min-height: 3em;
+}
+
+.ad-slot.banner-300x250 {
+    width: 18.75em;    /* 300px */
+    height: 15.625em;  /* 250px */
+}
+
+.ad-slot.skyscraper-160x600 {
+    width: 10em;       /* 160px */
+    height: 37.5em;    /* 600px */
+}
+
+.ad-placeholder {
+    background: #f7f9fa;
+    border: 2px dashed #e1e8ed;
+    padding: 1em;
+    text-align: center;
+    color: #657786;
+    font-size: 0.8em;
+}
+
+/* === ROTATING CONTENT (ROFLFaucet-style) === */
+.rotating-slot {
+    background: #fff;
+    border: 1px solid #e1e8ed;
+    border-radius: 0.5em;
+    padding: 0.75em;
+    margin-bottom: 0.5em;
+    min-height: 8em;
+}
+
+.rotating-slot h4 {
+    font-size: 0.9em;
+    color: #0066cc;
+    margin-bottom: 0.5em;
+}
+
+.social-post {
+    border-left: 3px solid #1da1f2;
+    padding-left: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.social-post .author {
+    font-weight: bold;
+    font-size: 0.85em;
+    color: #333;
+}
+
+.social-post .time {
+    font-size: 0.75em;
+    color: #657786;
+    margin-left: 0.5em;
+}
+
+.social-post .content {
+    font-size: 0.85em;
+    margin-top: 0.25em;
+    line-height: 1.3;
+}
+
+/* Trust indicators */
+.trust-box {
+    background: #fff;
+    border: 1px solid #e1e8ed;
+    border-radius: 0.5em;
+    padding: 0.75em;
+    margin-bottom: 0.5em;
+}
+
+.trust-box h4 {
+    font-size: 0.9em;
+    color: #17bf63;
+    margin-bottom: 0.5em;
+}
+
+.trust-stats {
+    font-size: 0.8em;
+    line-height: 1.3;
+}
+
+.trust-stats .stat {
+    display: block;
+    margin-bottom: 0.25em;
+}
+
+.stat-number {
+    font-weight: bold;
+    color: #0066cc;
+}
+
+/* === TABLET/MOBILE OPTIMIZATIONS === */
+/* Target actual small screens, not browser zoom */
+@media (max-width: 60em) {
+    .left-sidebar,
+    .center-feed,
+    .right-sidebar {
+        float: none;
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 0.5em;
+    }
+    
+    /* Hide sidebars on mobile to save data */
+    .left-sidebar,
+    .right-sidebar {
+        display: none;
+    }
+    
+    .project-image {
+        max-width: 100%;
+    }
+    
+    .staff-table {
+        font-size: 0.8em;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5em;
+    }
+    
+    .main-nav {
+        text-align: center;
+    }
+}
+
+/* Small mobile adjustments */
+@media (max-width: 30em) {
+    .layout-container {
+        padding: 0.25em;
+    }
+    
+    .project-card {
+        padding: 0.5em;
+    }
+    
+    .staff-table th,
+    .staff-table td {
+        padding: 0.2em 0.1em;
+        font-size: 0.75em;
+    }
+}
+
+/* === STEPS GRID (Float-based for compatibility) === */
+.steps-grid {
+    margin: 1em 0;
+    overflow: hidden; /* Clear floats */
+}
+
+.steps-grid:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.step {
+    float: left;
+    width: 22%; /* 4 columns with some margin */
+    margin-right: 4%;
+    background: #f8f9fa;
+    border: 1px solid #e1e8ed;
+    border-radius: 0.5em;
+    padding: 0.75em;
+    text-align: center;
+    margin-bottom: 0.5em;
+}
+
+.step:last-child {
+    margin-right: 0;
+}
+
+.step h3 {
+    color: #0066cc;
+    font-size: 1em;
+    margin-bottom: 0.5em;
+}
+
+.step p {
+    font-size: 0.85em;
+    line-height: 1.4;
+    color: #333;
+    margin: 0;
+}
+
+/* Mobile: Stack steps vertically */
+@media (max-width: 50em) {
+    .step {
+        float: none;
+        width: 100%;
+        margin-right: 0;
+    }
+}
+
+/* Tablet: 2 columns */
+@media (min-width: 50em) and (max-width: 60em) {
+    .step {
+        width: 48%;
+        margin-right: 4%;
+    }
+    
+    .step:nth-child(2n) {
+        margin-right: 0;
+    }
+}
+
+/* === UTILITY CLASSES === */
+.text-center { text-align: center; }
+.text-small { font-size: 0.8em; }
+.mb-small { margin-bottom: 0.25em; }
+.mb-medium { margin-bottom: 0.5em; }
+.color-primary { color: #0066cc; }
+.color-success { color: #17bf63; }
+.color-muted { color: #657786; }
+
+/* === FOOTER STYLES === */
+.footer {
+    background: #2c3e50;
+    color: #ecf0f1;
+    margin-top: 2em;
+    padding: 1.5em 0 1em;
+    clear: both;
+}
+
+.footer .container {
+    max-width: 75em;
+    margin: 0 auto;
+    padding: 0 0.5em;
+}
+
+.footer-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2em;
+    margin-bottom: 1em;
+}
+
+.footer-section {
+    flex: 1;
+    min-width: 15em;
+}
+
+.footer-section h4 {
+    color: #3498db;
+    font-size: 1.1em;
+    margin-bottom: 0.5em;
+}
+
+.footer-section p {
+    font-size: 0.9em;
+    line-height: 1.5;
+    color: #bdc3c7;
+    margin-bottom: 0.75em;
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-links li {
+    margin-bottom: 0.25em;
+}
+
+.footer-links a {
+    color: #ecf0f1;
+    text-decoration: none;
+    font-size: 0.9em;
+    transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+    color: #3498db;
+}
+
+.social-links {
+    margin-top: 0.5em;
+}
+
+.social-link {
+    color: #ecf0f1;
+    text-decoration: none;
+    margin-right: 1em;
+    font-size: 0.9em;
+    transition: color 0.3s ease;
+}
+
+.social-link:hover {
+    color: #3498db;
+}
+
+.footer-bottom {
+    border-top: 1px solid #34495e;
+    padding-top: 1em;
+    text-align: center;
+}
+
+.footer-bottom p {
+    font-size: 0.8em;
+    color: #95a5a6;
+    margin: 0;
+}
+
+/* Footer mobile responsiveness */
+@media (max-width: 50em) {
+    .footer-content {
+        flex-direction: column;
+        gap: 1em;
+    }
+    
+    .footer-section {
+        min-width: auto;
+    }
+    
+    .social-links {
+        text-align: center;
+    }
+}
+
+/* High contrast accessibility */
+@media (prefers-contrast: high) {
+    body {
+        background: #fff;
+        color: #000;
+    }
+    
+    .project-card,
+    .sidebar-nav,
+    .action-box,
+    .rotating-slot,
+    .trust-box {
+        border-color: #000;
+    }
+    
+    .footer {
+        background: #000;
+        color: #fff;
+    }
+    
+    .footer-section h4,
+    .footer-links a:hover,
+    .social-link:hover {
+        color: #0066cc;
+    }
+}
