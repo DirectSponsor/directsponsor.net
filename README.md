@@ -24,6 +24,10 @@ net-site/
 - **Hosting**: DirectAdmin shared hosting
 - **SSL**: Active and properly configured
 
+## 📸 Image Optimization
+- **Smart optimization**: Automatic resizing and compression for uploads
+- **See**: [IMAGE_OPTIMIZATION.md](IMAGE_OPTIMIZATION.md) for details
+
 ## 🛠️ Development Workflow
 
 ### Making Changes

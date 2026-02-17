@@ -1,0 +1,11 @@
+I've identified the issue. The "difference" is that Debian 13 includes a very new version of curl (v8.14.1), which allows stricter syntax checking, causing your version of acme.sh (v3.1.3) to fail with a "blank argument" error.
+
+To fix this, we need to upgrade acme.sh to the latest version. This is just a script update (no "snaps" or system packages).
+
+However, ZeroSSL has significantly blocked the domain (24h retry-after) due to the failed attempts. Once we upgrade acme.sh, we have two options:
+
+Wait ~24 hours for the ZeroSSL block to expire.
+Switch CA temporarily to something like Google Trust Services or BuyPass (ECDSA only, which we use).
+Can I proceed to upgrade acme.sh first? Then we can decide on the CA.
+
+yes please do, and we can wait for 24 hours, it's not urgent

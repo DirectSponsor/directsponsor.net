@@ -304,6 +304,10 @@ main() {
         echo -e "${BLUE}📡 Transferring files via SCP...${NC}"
         scp -i "$SSH_KEY_PATH" -P "$REMOTE_PORT" -r "$TEMP_DIR"/* "$SSH_TARGET:$REMOTE_PATH"
         
+        # Fix remote permissions
+        echo -e "${BLUE}🔧 Fixing remote permissions...${NC}"
+        ssh -i "$SSH_KEY_PATH" -p "$REMOTE_PORT" "$SSH_TARGET" "chown -R www-data:www-data $REMOTE_PATH && chmod -R 755 $REMOTE_PATH"
+        
         echo -e "${GREEN}✅ Deployment completed successfully!${NC}"
         
     elif [ "$DEPLOY_METHOD" = "rsync" ]; then
