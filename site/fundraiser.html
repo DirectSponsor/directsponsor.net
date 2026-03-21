@@ -532,6 +532,27 @@ function showInvoice(payreq, invoiceId, qrUrl) {
     pollPayment(invoiceId);
 }
 
+function copyInvoice() {
+    var text = document.getElementById('payment-request-text').textContent;
+    var btn = document.getElementById('copy-btn');
+    navigator.clipboard.writeText(text).then(function() {
+        btn.textContent = '✅ Copied!';
+        setTimeout(function() { btn.textContent = '📋 Copy Invoice'; }, 2000);
+    }).catch(function() {
+        // Fallback for older browsers
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        btn.textContent = '✅ Copied!';
+        setTimeout(function() { btn.textContent = '📋 Copy Invoice'; }, 2000);
+    });
+}
+
 function pollPayment(invoiceId) {
     let attempts = 0;
     const max = 60;
@@ -585,7 +606,8 @@ function pollPayment(invoiceId) {
         <div id="invoice-section">
             <p>Scan with your Lightning wallet or copy the invoice below:</p>
             <div id="qr-code-container"></div>
-            <div id="payment-request-text"></div>
+            <div id="payment-request-text" style="word-break:break-all;font-size:0.7em;color:#555;margin:0.5em 0;"></div>
+            <button onclick="copyInvoice()" id="copy-btn" style="background:#eee;color:#333;border:none;padding:0.4em 1em;border-radius:0.3em;cursor:pointer;font-size:0.9em;margin-bottom:0.5em;">📋 Copy Invoice</button>
             <div id="payment-status"></div>
             <button class="donate-btn" onclick="closeDonateModal()" style="margin-top:1em;background:#eee;color:#333;">Close</button>
         </div>
