@@ -58,7 +58,7 @@ function createProjectInvoice($project_id, $amount, $donor_name = '', $message =
     
     foreach ($userDirs as $userDir) {
         $testConfig = $userDir . '/' . $project_id . '-config.json';
-        $testHtml = $userDir . '/' . $project_id . '.html';
+        $testHtml = $userDir . '/active/' . $project_id . '.html';
         
         logProjectPayment("DEBUG: Testing config: $testConfig", 'DEBUG');
         
