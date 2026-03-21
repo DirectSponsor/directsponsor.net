@@ -547,8 +547,8 @@ function pollPayment(invoiceId) {
             .then(data => {
                 if (data.success && data.data && data.data.status === 'paid') {
                     clearInterval(interval);
-                    document.getElementById('payment-status').textContent = '✅ Payment received! Thank you! Updating project...';
-                    setTimeout(function() { location.reload(); }, 6000);
+                    var statusEl = document.getElementById('payment-status');
+                    statusEl.innerHTML = '✅ Payment received! Thank you! <button onclick="location.reload()" style="margin-left:0.5em;background:#f7b731;border:none;padding:0.3em 0.8em;border-radius:0.3em;cursor:pointer;font-weight:bold;">Close & refresh</button>';
                 }
             })
             .catch(() => {});
