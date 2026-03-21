@@ -157,11 +157,12 @@
 
 <script>
 (function() {
-    fetch('/api/fundraiser-api.php?action=list_active')
+    fetch('/api/fundraiser-api.php?action=list')
         .then(function(r) { return r.json(); })
         .then(function(data) {
             document.getElementById('projects-loading').style.display = 'none';
-            if (!data || !data.projects || data.projects.length === 0) {
+            var projects = data.fundraisers || data.projects || data;
+            if (!projects || !Array.isArray(projects) || projects.length === 0) {
                 document.getElementById('projects-empty').style.display = 'block';
                 document.getElementById('projects-empty').innerHTML =
                     '<div class="project-card"><p>No active projects found via API yet — see featured projects below.</p></div>';
@@ -169,7 +170,7 @@
             }
             var grid = document.getElementById('projects-grid');
             var html = '<div class="project-card"><h2>Active Projects</h2></div><div class="project-grid">';
-            data.projects.forEach(function(p) {
+            projects.forEach(function(p) {
                 var raised = parseInt(p.current_amount) || 0;
                 var goal   = parseInt(p.target_amount) || 0;
                 var pct    = goal > 0 ? Math.min(100, Math.round(raised / goal * 100)) : 0;
