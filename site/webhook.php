@@ -164,7 +164,7 @@ function findProjectHtmlFile($projectId) {
             continue;
         }
         
-        $htmlFile = $userDir . '/' . $projectId . '.html';
+        $htmlFile = $userDir . '/active/' . $projectId . '.html';
         if (file_exists($htmlFile)) {
             return ['file' => $htmlFile, 'completed' => false];
         }
@@ -196,7 +196,7 @@ function findNextActiveProject() {
             continue;
         }
         
-        $htmlFiles = glob($userDir . '/*.html');
+        $htmlFiles = glob($userDir . '/active/*.html');
         foreach ($htmlFiles as $htmlFile) {
             $filename = basename($htmlFile, '.html');
             if (preg_match('/^(\d+)$/', $filename, $matches)) {
