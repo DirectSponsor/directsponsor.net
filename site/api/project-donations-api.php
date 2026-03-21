@@ -108,6 +108,9 @@ function createProjectInvoice($project_id, $amount, $donor_name = '', $message =
             'memo' => "Donation to: " . $projectTitle . ($message ? " - " . $message : ""),
             'webhook' => 'https://directsponsor.net/webhook.php',
             'secret' => 'directsponsor_webhook_secret_2025'
+        ],
+        'user' => [
+            'username' => $config['recipient_wallet']['coinos_username'] ?? basename($userDir)
         ]
     ];
     
