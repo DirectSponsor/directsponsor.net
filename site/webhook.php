@@ -231,8 +231,10 @@ function updateProjectHtml($htmlFile, $donation, $amountSats) {
     try {
         $html = file_get_contents($htmlFile);
         if ($html === false) {
+            logWebhook("Failed to read HTML file: $htmlFile", 'ERROR');
             return false;
         }
+        logWebhook("Read HTML file OK, length: " . strlen($html));
         
         // Update current amount (match HTML template format with hyphens)
         if (preg_match('/<!-- current-amount -->([^<]+)<!-- end current-amount -->/', $html, $matches)) {
@@ -276,14 +278,19 @@ function updateProjectHtml($htmlFile, $donation, $amountSats) {
         
         // Write atomically
         $tempFile = $htmlFile . '.tmp';
-        if (file_put_contents($tempFile, $html) === false) {
+        $written = file_put_contents($tempFile, $html);
+        if ($written === false) {
+            logWebhook("Failed to write temp file: $tempFile", 'ERROR');
             return false;
         }
+        logWebhook("Wrote temp file OK ($written bytes)");
         
         if (!rename($tempFile, $htmlFile)) {
+            logWebhook("Failed to rename $tempFile to $htmlFile", 'ERROR');
             @unlink($tempFile);
             return false;
         }
+        logWebhook("Renamed temp file to $htmlFile OK");
         
         return true;
     } finally {
