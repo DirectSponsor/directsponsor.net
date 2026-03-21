@@ -26,67 +26,109 @@ ul li {
     margin-bottom: 0.25em;
 }
 
-/* === 3-COLUMN LAYOUT (Progressive Enhancement) === */
+/* === 2-COLUMN LAYOUT (main content + right sidebar) === */
 .layout-container {
-    max-width: 90em;    /* Use more screen space - lots of content to show */
+    max-width: 72em;
     margin: 0 auto;
-    padding: 0.5em;     /* Reduced padding for more content width */
+    padding: 0.75em 0.5em;
+    /* Fallback: block stacking on old browsers */
 }
 
-/* FALLBACK: Float-based columns for old browsers (IE6+) */
-.left-sidebar {
+/* Float fallback for old browsers */
+.main-content {
     float: left;
-    width: 24%;                /* Flexible percentage */
-    min-width: 18.75em;        /* Never smaller than 300px for ads */
-    margin-right: 1%;
+    width: 72%;
+    margin-right: 2%;
 }
 
-.center-feed {
+.sidebar {
     float: left;
-    width: 48%;                /* Gets most space */
-    min-width: 25em;           /* Readable minimum */
-    margin-right: 1%;
+    width: 26%;
+    min-width: 14em;
 }
 
-.right-sidebar {
-    float: left;
-    width: 24%;                /* Flexible percentage */
-    min-width: 18.75em;        /* Never smaller than 300px for ads */
-}
-
-/* Clear floats (fallback) */
 .layout-container:after {
     content: "";
     display: table;
     clear: both;
 }
 
-/* MODERN: Flexbox enhancement for IE10+ (2012+) */
+/* Modern flexbox */
 @supports (display: flex) {
     .layout-container {
         display: flex;
-        gap: 0.75em;           /* Clean spacing between columns */
+        gap: 1em;
+        align-items: flex-start;
     }
-    
-    .left-sidebar {
-        flex: 0 1 18.75em;     /* Can shrink from 300px, but not below min-width */
-        min-width: 18.75em;    /* Protect ad space */
-        float: none;           /* Override float */
-        margin-right: 0;       /* Gap handles spacing */
-    }
-    
-    .center-feed {
-        flex: 1;               /* Takes remaining space */
-        min-width: 25em;       /* Stay readable */
+
+    .main-content {
+        flex: 1;
+        min-width: 0;   /* prevent overflow */
         float: none;
         margin-right: 0;
+        width: auto;
     }
-    
-    .right-sidebar {
-        flex: 0 1 18.75em;     /* Can shrink from 300px, but not below min-width */
-        min-width: 18.75em;    /* Protect ad space */
+
+    .sidebar {
+        flex: 0 0 16em;
+        min-width: 14em;
         float: none;
+        width: auto;
+    }
+}
+
+/* Sidebar boxes */
+.sidebar-box {
+    background: #fff;
+    border: 1px solid #e1e8ed;
+    border-radius: 0.4em;
+    padding: 0.75em;
+    margin-bottom: 0.75em;
+    font-size: 0.9em;
+}
+
+.sidebar-box h4 {
+    margin-bottom: 0.4em;
+    font-size: 1em;
+    color: #333;
+}
+
+.sidebar-box p {
+    margin-bottom: 0.4em;
+    color: #555;
+    line-height: 1.4;
+}
+
+.sidebar-box.ad-slot {
+    background: #f7f9fa;
+    min-height: 6em;
+    text-align: center;
+    color: #aaa;
+    font-size: 0.8em;
+}
+
+.ad-label {
+    color: #bbb;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Narrow screens: stack to single column */
+@media (max-width: 40em) {
+    .main-content, .sidebar {
+        float: none;
+        width: 100%;
         margin-right: 0;
+    }
+    @supports (display: flex) {
+        .layout-container {
+            flex-direction: column;
+        }
+        .sidebar {
+            flex: none;
+            width: 100%;
+        }
     }
 }
 

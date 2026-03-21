@@ -36,72 +36,25 @@
 <!-- include end doctype-head.incl -->
 
 <!-- include start social-layout-start.incl -->
-<!-- Compact Header for Social Media Layout -->
 <header class="site-header">
     <div class="header-content">
         <div class="logo">
-            <h1>💎 DirectSponsor</h1>
-            <div class="tagline">Peer-to-Peer Charity</div>
+            <a href="index.html">💎 DirectSponsor</a>
+            <span class="tagline">Peer-to-Peer Charity</span>
         </div>
         <nav class="main-nav">
             <a href="index.html">Home</a>
-            <div class="nav-dropdown">
-                <a href="projects.html" class="dropdown-toggle">Projects</a>
-                <div class="dropdown-menu">
-                    <a href="projects.html" class="dropdown-item">All Projects</a>
-                    <a href="evans-project.html" class="dropdown-item">Evans - Food Forest</a>
-                    <a href="grant-annegret-project.html" class="dropdown-item">Grant & Annegret - Desert Farm</a>
-                </div>
-            </div>
+            <a href="projects.html">Projects</a>
             <a href="about.html">About</a>
             <a href="contact.html">Contact</a>
         </nav>
     </div>
 </header>
 
-<!-- 3-Column Layout Container -->
+<!-- 2-Column Layout: main content + right sidebar -->
 <div class="layout-container">
-    
-    <!-- LEFT SIDEBAR (Navigation + Ads) -->
-    <aside class="left-sidebar">
-        
-        
-        <div class="trust-box">
-            <h4>✅ Trust Stats</h4>
-            <div class="trust-stats">
-                <span class="stat">🌳 <span class="stat-number">200,000</span> trees planted</span>
-                <span class="stat">✅ <span class="stat-number">2</span> verified projects</span>
-                <span class="stat">👥 <span class="stat-number">1</span> active sponsors</span>
-                <span class="stat">🔒 <span class="stat-number">100%</span> direct funding</span>
-            </div>
-        </div>
 
-        <!-- Ad Slot (Standard 300x250) -->
-        <div class="ad-slot banner-300x250">
-            <div class="ad-placeholder">
-                <strong>Advertisement</strong><br>
-                300x250 Banner<br>
-                Support DirectSponsor
-            </div>
-        </div>
-
-        <!-- Rotating Social Content -->
-        <div class="rotating-slot">
-            <h4>📱 Social Updates</h4>
-            <div class="social-post">
-                <div class="author">Evans <span class="time">2h</span></div>
-                <div class="content">Just planted 500 more seedlings! 🌱</div>
-            </div>
-            <div class="social-post">
-                <div class="author">System <span class="time">4h</span></div>
-                <div class="content">New verification complete ✅</div>
-            </div>
-        </div>
-        
-    </aside>
-
-    <!-- CENTER FEED (Main Content) -->
-    <main class="center-feed">
+    <main class="main-content">
 
 <!-- UNIQUE PAGE CONTENT GOES HERE -->
 <!-- include end social-layout-start.incl -->
@@ -292,52 +245,29 @@
 
     </main>
 
-    <!-- RIGHT SIDEBAR (Actions + Ads) -->
-    <aside class="right-sidebar">
-        
-        <!-- Quick Sponsor Actions -->
-        <div class="action-box">
-            <h3>🚀 Quick Sponsor</h3>
-            <a href="#sponsor-evans" class="action-btn sponsor">Sponsor Evans ($80/month)</a>
-            <div class="mb-small"></div>
-            <a href="#sponsor-nursery" class="action-btn sponsor">Nursery Worker ($70/month)</a>
-            <p class="text-small">Give in $10 increments—several sponsors team up to meet each monthly goal.</p>
+    <!-- RIGHT SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="sidebar-box">
+            <h4>About DirectSponsor</h4>
+            <p>100% direct peer-to-peer donations. Every satoshi goes straight to the recipient.</p>
+            <a href="about.html">Learn more</a>
         </div>
 
-        <!-- Live Activity -->
-        <div class="rotating-slot">
-            <h4>⚡ Live Activity</h4>
-            <div class="text-small">
-                <div class="mb-small">🌱 <strong>New trees:</strong> 500 seedlings planted today</div>
-                <div class="mb-small">💰 <strong>Funding:</strong> $50/month secured</div>
-                <div class="mb-small">✅ <strong>Verification:</strong> Esther sponsorship confirmed</div>
-                <div class="mb-small">📊 <strong>Progress:</strong> 15% monthly funding goal</div>
-            </div>
+        <div class="sidebar-box">
+            <h4>Active Projects</h4>
+            <p><a href="projects.html">Browse all projects →</a></p>
         </div>
 
-        <!-- Ad Slot -->
-        <div class="ad-slot banner-300x250">
-            <div class="ad-placeholder">
-                <strong>Your Ad Here</strong><br>
-                Support charity projects<br>
-                300x250 space available
-            </div>
-        </div>
-
-        <!-- How It Works (Compact) -->
-        <div class="action-box">
-            <h3>❓ How It Works</h3>
-            <p class="text-small">1. Choose a person to sponsor<br>
-            2. Pay directly via Bitcoin<br>
-            3. Get direct updates<br>
-            4. See real impact</p>
-            <a href="about.html#how-it-works" class="action-btn">Learn More</a>
+        <!-- Ad slot -->
+        <div class="sidebar-box ad-slot">
+            <p class="ad-label">Advertisement</p>
         </div>
 
     </aside>
-    
+
 </div>
-<!-- End 3-Column Layout Container -->
+<!-- End layout container -->
 
 <!-- Sticky Header Script (Inline for performance) -->
 <script>
