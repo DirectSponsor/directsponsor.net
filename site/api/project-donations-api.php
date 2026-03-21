@@ -160,14 +160,14 @@ function createProjectInvoice($project_id, $amount, $donor_name = '', $message =
     // Only confirmed payments are logged via webhook processing
     
     // Store pending donation for payment tracking (project system only)
-    storePendingProjectDonation($project_id, $donation_id, $amount, $donor_name, $message, $invoice["text"], $invoice["hash"] ?? "");
+    storePendingProjectDonation($project_id, $donation_id, $amount, $donor_name, $message, $invoice["text"], $invoice["paymentHash"] ?? $invoice["hash"] ?? "");
     
     return [
         'success' => true,
         'data' => [
             'donation_id' => $donation_id,
             'invoice' => $invoice['text'], // Lightning invoice
-            'payment_hash' => $invoice['hash'] ?? '',
+            'payment_hash' => $invoice['paymentHash'] ?? $invoice['hash'] ?? '',
             'amount_sats' => $amount,
             'qr_code' => "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($invoice['text'])
         ]
