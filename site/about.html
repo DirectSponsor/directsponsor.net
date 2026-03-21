@@ -47,6 +47,7 @@
             <a href="projects.html">Projects</a>
             <a href="about.html">About</a>
             <a href="contact.html">Contact</a>
+            <a href="profile.html" id="nav-profile-link" style="display:none;">Profile</a>
         </nav>
     </div>
 </header>
@@ -368,6 +369,15 @@
             ticking = true;
         }
     });
+})();
+
+// Show Profile nav link if logged in
+(function() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (jwt) {
+        var el = document.getElementById('nav-profile-link');
+        if (el) el.style.display = '';
+    }
 })();
 </script>
 <!-- include end social-layout-end.incl -->

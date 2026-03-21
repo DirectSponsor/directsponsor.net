@@ -1,0 +1,467 @@
+<!-- DS-CMS Built File - Edit source files in includes/ folder -->
+
+<!-- #TITLE#="My Profile - DirectSponsor" -->
+<!-- #DESC#="Manage your DirectSponsor profile and recipient settings." -->
+<!-- #KEYWORDS#="profile, settings, recipient, coinos, directsponsor" -->
+
+<!-- include start doctype-head.incl -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - DirectSponsor</title>
+    <meta name="description" content="Manage your DirectSponsor profile and recipient settings.">
+    <meta name="keywords" content="profile, settings, recipient, coinos, directsponsor">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://directsponsor.net">
+    <meta property="og:title" content="DirectSponsor - Revolutionary Peer-to-Peer Charity">
+    <meta property="og:description" content="Eliminate charity middlemen. Send money directly to verified recipients with complete transparency.">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐫</text></svg>">
+    
+    <!-- Main Styles (New Compact Social Layout) -->
+    <link rel="stylesheet" href="styles/directsponsor-compact.css">
+    
+    <!-- Optional: Add analytics, fonts, or other scripts here -->
+</head>
+<body>
+
+<!-- BETa RIBBON -->
+<div class="corner-ribbon top-left sticky red shadow">BETA</div>
+<!-- include end doctype-head.incl -->
+
+<style>
+.profile-section {
+    margin-bottom: 1.5em;
+}
+
+.profile-section h2 {
+    font-size: 1.1em;
+    border-bottom: 1px solid #e1e8ed;
+    padding-bottom: 0.4em;
+    margin-bottom: 0.8em;
+    color: #333;
+}
+
+.form-row {
+    margin-bottom: 0.75em;
+}
+
+.form-row label {
+    display: block;
+    font-size: 0.9em;
+    color: #555;
+    margin-bottom: 0.25em;
+    font-weight: bold;
+}
+
+.form-row input[type="text"],
+.form-row input[type="url"],
+.form-row textarea {
+    width: 100%;
+    padding: 0.5em;
+    border: 1px solid #ccc;
+    border-radius: 0.3em;
+    font-size: 0.95em;
+    box-sizing: border-box;
+}
+
+.form-row textarea {
+    height: 5em;
+    resize: vertical;
+}
+
+.form-row .field-hint {
+    font-size: 0.8em;
+    color: #888;
+    margin-top: 0.2em;
+}
+
+.save-btn {
+    background: #f7b731;
+    color: #000;
+    border: none;
+    padding: 0.6em 1.5em;
+    border-radius: 0.3em;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.save-btn:hover { background: #e0a520; }
+.save-btn:disabled { background: #ccc; cursor: default; }
+
+.status-msg {
+    display: inline-block;
+    margin-left: 0.75em;
+    font-size: 0.9em;
+    color: #2a9d2a;
+}
+
+.status-msg.error { color: #c00; }
+
+.roles-list {
+    display: flex;
+    gap: 0.4em;
+    flex-wrap: wrap;
+}
+
+.role-badge {
+    background: #e8f4e8;
+    border: 1px solid #aad4aa;
+    color: #2a6a2a;
+    font-size: 0.8em;
+    padding: 0.2em 0.6em;
+    border-radius: 1em;
+}
+
+.role-badge.recipient {
+    background: #fff3cd;
+    border-color: #f7b731;
+    color: #7a5a00;
+}
+
+#profile-loading {
+    text-align: center;
+    padding: 2em;
+    color: #666;
+}
+
+#profile-not-logged-in {
+    display: none;
+    text-align: center;
+    padding: 2em;
+}
+</style>
+
+<!-- include start social-layout-start.incl -->
+<header class="site-header">
+    <div class="header-content">
+        <div class="logo">
+            <a href="index.html">💎 DirectSponsor</a>
+            <span class="tagline">Peer-to-Peer Charity</span>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html">Home</a>
+            <a href="projects.html">Projects</a>
+            <a href="about.html">About</a>
+            <a href="contact.html">Contact</a>
+            <a href="profile.html" id="nav-profile-link" style="display:none;">Profile</a>
+        </nav>
+    </div>
+</header>
+
+<!-- 2-Column Layout: main content + right sidebar -->
+<div class="layout-container">
+
+    <main class="main-content">
+
+<!-- UNIQUE PAGE CONTENT GOES HERE -->
+<!-- include end social-layout-start.incl -->
+
+<div id="profile-loading" class="project-card">
+    <p>Loading profile...</p>
+</div>
+
+<div id="profile-not-logged-in" class="project-card">
+    <h2>Login required</h2>
+    <p>Please log in to view your profile.</p>
+    <a href="#" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href); return false;" class="save-btn" style="text-decoration:none;display:inline-block;">Log in</a>
+</div>
+
+<div id="profile-content" style="display:none;">
+
+    <div class="project-card profile-section">
+        <h2>👤 Your Profile</h2>
+        <p id="profile-username-display" style="color:#666;font-size:0.95em;margin-bottom:0.75em;"></p>
+        <div class="roles-list" id="roles-list"></div>
+    </div>
+
+    <div class="project-card profile-section">
+        <h2>📝 Public Info</h2>
+        <div class="form-row">
+            <label for="display-name">Display Name</label>
+            <input type="text" id="display-name" placeholder="How you appear to sponsors">
+        </div>
+        <div class="form-row">
+            <label for="bio">Bio</label>
+            <textarea id="bio" placeholder="A short description of yourself or your work"></textarea>
+        </div>
+        <div class="form-row">
+            <label for="location">Location</label>
+            <input type="text" id="location" placeholder="e.g. Nairobi, Kenya">
+        </div>
+        <div class="form-row">
+            <label for="website">Website</label>
+            <input type="url" id="website" placeholder="https://...">
+        </div>
+    </div>
+
+    <div class="project-card profile-section" id="recipient-section" style="display:none;">
+        <h2>⚡ Recipient Payment Settings</h2>
+        <p style="font-size:0.85em;color:#666;margin-bottom:0.75em;">These settings are used when donors send Lightning payments to your projects.</p>
+        <div class="form-row">
+            <label for="coinos-username">Coinos Username</label>
+            <input type="text" id="coinos-username" placeholder="your-coinos-username">
+            <p class="field-hint">Your username on <a href="https://coinos.io" target="_blank" rel="noopener">coinos.io</a>. Used to receive Lightning donations into your wallet.</p>
+        </div>
+        <div class="form-row">
+            <label for="lightning-address">Lightning Address (optional)</label>
+            <input type="text" id="lightning-address" placeholder="you@coinos.io or any lightning address">
+            <p class="field-hint">Alternative Lightning address if not using Coinos directly.</p>
+        </div>
+    </div>
+
+    <div class="project-card">
+        <button class="save-btn" id="save-btn" onclick="saveProfile()">Save Changes</button>
+        <span class="status-msg" id="save-status"></span>
+    </div>
+
+</div>
+
+<script>
+var _profile = null;
+var _userId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Check login via JWT in sessionStorage (DS auth system)
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (!jwt) {
+        document.getElementById('profile-loading').style.display = 'none';
+        document.getElementById('profile-not-logged-in').style.display = 'block';
+        return;
+    }
+
+    // Decode JWT payload (no verification needed client-side)
+    try {
+        var payload = JSON.parse(atob(jwt.split('.')[1]));
+        _userId = payload.user_id || payload.sub || payload.id;
+    } catch(e) {
+        document.getElementById('profile-loading').style.display = 'none';
+        document.getElementById('profile-not-logged-in').style.display = 'block';
+        return;
+    }
+
+    if (!_userId) {
+        document.getElementById('profile-loading').style.display = 'none';
+        document.getElementById('profile-not-logged-in').style.display = 'block';
+        return;
+    }
+
+    loadProfile(_userId);
+});
+
+function loadProfile(userId) {
+    fetch('/api/simple-profile.php?action=profile&user_id=' + encodeURIComponent(userId))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            document.getElementById('profile-loading').style.display = 'none';
+            if (data.error) {
+                document.getElementById('profile-not-logged-in').style.display = 'block';
+                return;
+            }
+            _profile = data.profile || data;
+            populateForm(_profile);
+            document.getElementById('profile-content').style.display = 'block';
+        })
+        .catch(function() {
+            document.getElementById('profile-loading').innerHTML = '<p class="error-msg">Could not load profile. Please try again.</p>';
+        });
+}
+
+function populateForm(p) {
+    document.getElementById('profile-username-display').textContent =
+        'Logged in as: ' + (p.username || p.user_id || '—');
+
+    // Roles badges
+    var roles = p.roles || ['member'];
+    var badgesHtml = roles.map(function(r) {
+        return '<span class="role-badge ' + (r === 'recipient' ? 'recipient' : '') + '">' + r + '</span>';
+    }).join('');
+    document.getElementById('roles-list').innerHTML = badgesHtml;
+
+    // Public info fields
+    document.getElementById('display-name').value = p.display_name || '';
+    document.getElementById('bio').value           = p.bio || '';
+    document.getElementById('location').value      = p.location || '';
+    document.getElementById('website').value       = p.website || '';
+
+    // Recipient-only section
+    if (roles.indexOf('recipient') !== -1 || roles.indexOf('admin') !== -1) {
+        document.getElementById('recipient-section').style.display = 'block';
+        document.getElementById('coinos-username').value    = p.coinos_username || '';
+        document.getElementById('lightning-address').value  = p.lightning_address || '';
+    }
+}
+
+function saveProfile() {
+    var btn = document.getElementById('save-btn');
+    var status = document.getElementById('save-status');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    status.textContent = '';
+    status.className = 'status-msg';
+
+    var update = {
+        user_id:          _userId,
+        display_name:     document.getElementById('display-name').value.trim(),
+        bio:              document.getElementById('bio').value.trim(),
+        location:         document.getElementById('location').value.trim(),
+        website:          document.getElementById('website').value.trim(),
+        coinos_username:  document.getElementById('coinos-username').value.trim(),
+        lightning_address: document.getElementById('lightning-address').value.trim()
+    };
+
+    fetch('/api/simple-profile.php?action=update_profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(update)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+        if (data.success || data.profile) {
+            status.textContent = '✅ Saved!';
+            if (data.profile) { _profile = data.profile; }
+        } else {
+            status.textContent = data.error || 'Save failed.';
+            status.className = 'status-msg error';
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+        status.textContent = 'Network error.';
+        status.className = 'status-msg error';
+    });
+}
+</script>
+
+<!-- include start social-layout-end.incl -->
+<!-- END UNIQUE PAGE CONTENT -->
+
+    </main>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="sidebar-box">
+            <h4>About DirectSponsor</h4>
+            <p>100% direct peer-to-peer donations. Every satoshi goes straight to the recipient.</p>
+            <a href="about.html">Learn more</a>
+        </div>
+
+        <div class="sidebar-box">
+            <h4>Active Projects</h4>
+            <p><a href="projects.html">Browse all projects →</a></p>
+        </div>
+
+        <!-- Ad slot -->
+        <div class="sidebar-box ad-slot">
+            <p class="ad-label">Advertisement</p>
+        </div>
+
+    </aside>
+
+</div>
+<!-- End layout container -->
+
+<!-- Sticky Header Script (Inline for performance) -->
+<script>
+(function() {
+    const header = document.querySelector('.site-header');
+    let lastScrollY = window.scrollY;
+    let isCondensed = false;
+    
+    function handleScroll() {
+        const currentScrollY = window.scrollY;
+        
+        // Condense when scrolled down more than 50px
+        if (currentScrollY > 50 && !isCondensed) {
+            header.classList.add('condensed');
+            isCondensed = true;
+        } 
+        // Expand when near top
+        else if (currentScrollY <= 30 && isCondensed) {
+            header.classList.remove('condensed');
+            isCondensed = false;
+        }
+        
+        lastScrollY = currentScrollY;
+    }
+    
+    // Throttled scroll listener for performance
+    let ticking = false;
+    window.addEventListener('scroll', function() {
+        if (!ticking) {
+            requestAnimationFrame(function() {
+                handleScroll();
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
+})();
+
+// Show Profile nav link if logged in
+(function() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (jwt) {
+        var el = document.getElementById('nav-profile-link');
+        if (el) el.style.display = '';
+    }
+})();
+</script>
+<!-- include end social-layout-end.incl -->
+
+<!-- include start footer.incl -->
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>💎 DirectSponsor</h4>
+                    <p>Revolutionary peer-to-peer charity eliminating middlemen and connecting sponsors directly with verified recipients.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">Twitter</a>
+                        <a href="#" class="social-link">Nostr</a>
+                        <a href="#" class="social-link">GitHub</a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>🔗 Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="projects.html">Projects</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="about.html#how-it-works">How It Works</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>🚀 DS-CMS</h4>
+                    <p>Zero dependencies, maximum simplicity. Perfect for shared hosting.</p>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/satoshihost/ds-cms" target="_blank">GitHub</a></li>
+                        <li><a href="#" target="_blank">Documentation</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 DS-CMS Demo Site. Built with HTML-first principles.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
+<!-- include end footer.incl -->
