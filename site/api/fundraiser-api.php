@@ -162,8 +162,9 @@ if ($action === 'list') {
         ]);
     }
 } else if ($action === 'get') {
-    // Get specific project by ID (searches all users)
+    // Get specific project by ID (searches all users, or specific user if username given)
     $fundraiserId = $_GET['id'] ?? '';
+    $hintUsername = preg_replace('/[^a-z0-9_-]/i', '', $_GET['username'] ?? '');
     
     if (!$fundraiserId) {
         http_response_code(400);
@@ -178,17 +179,25 @@ if ($action === 'list') {
         $projectData = null;
         
         if (is_dir(PROJECTS_DIR)) {
-            // Search all user directories for this project ID
-            $userDirs = glob(PROJECTS_DIR . '/*', GLOB_ONLYDIR);
-            foreach ($userDirs as $userDir) {
-                $username = basename($userDir);
-                if (in_array($username, ['completed', 'images', 'img'])) continue;
-                
-                $projectFile = $userDir . '/active/' . $fundraiserId . '.html';
+            // Check hinted user directory first if provided
+            if ($hintUsername) {
+                $projectFile = PROJECTS_DIR . '/' . $hintUsername . '/active/' . $fundraiserId . '.html';
                 if (file_exists($projectFile)) {
                     $projectData = parseProjectFromHTML($projectFile, $fundraiserId);
-                    if ($projectData) {
-                        break;
+                }
+            }
+            // Fall back to searching all user directories
+            if (!$projectData) {
+                $userDirs = glob(PROJECTS_DIR . '/*', GLOB_ONLYDIR);
+                foreach ($userDirs as $userDir) {
+                    $username = basename($userDir);
+                    if (in_array($username, ['completed', 'images', 'img'])) continue;
+                    if ($hintUsername && $username === $hintUsername) continue; // already checked
+                    
+                    $projectFile = $userDir . '/active/' . $fundraiserId . '.html';
+                    if (file_exists($projectFile)) {
+                        $projectData = parseProjectFromHTML($projectFile, $fundraiserId);
+                        if ($projectData) break;
                     }
                 }
             }
