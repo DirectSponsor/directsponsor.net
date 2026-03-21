@@ -250,10 +250,15 @@ main() {
     # Copy only production files
     rsync -av \
         --include='*.html' \
+        --include='*.php' \
         --include='styles/' \
         --include='styles/**' \
         --include='js/' \
         --include='js/**' \
+        --include='scripts/' \
+        --include='scripts/**' \
+        --include='api/' \
+        --include='api/**' \
         --include='images/' \
         --include='images/**' \
         --include='assets/' \
