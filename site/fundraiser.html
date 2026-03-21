@@ -1,0 +1,696 @@
+<!-- DS-CMS Built File - Edit source files in includes/ folder -->
+
+<!-- 🏷️ BBEdit-style parameters - EDIT THESE for your new page: -->
+<!-- #TITLE#="Project Fundraiser - DirectSponsor" -->
+<!-- #DESC#="Support this project directly via Bitcoin Lightning. 100% goes to the recipient." -->
+<!-- #KEYWORDS#="fundraiser, direct donation, bitcoin, lightning, peer-to-peer charity" -->
+
+<!-- include start doctype-head.incl -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Fundraiser - DirectSponsor</title>
+    <meta name="description" content="Support this project directly via Bitcoin Lightning. 100% goes to the recipient.">
+    <meta name="keywords" content="fundraiser, direct donation, bitcoin, lightning, peer-to-peer charity">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://directsponsor.net">
+    <meta property="og:title" content="DirectSponsor - Revolutionary Peer-to-Peer Charity">
+    <meta property="og:description" content="Eliminate charity middlemen. Send money directly to verified recipients with complete transparency.">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐫</text></svg>">
+    
+    <!-- Main Styles (New Compact Social Layout) -->
+    <link rel="stylesheet" href="styles/directsponsor-compact.css">
+    
+    <!-- Optional: Add analytics, fonts, or other scripts here -->
+</head>
+<body>
+
+<!-- BETa RIBBON -->
+<div class="corner-ribbon top-left sticky red shadow">BETA</div>
+<!-- include end doctype-head.incl -->
+
+<!-- Fundraiser page styles -->
+<style>
+.fundraiser-hero {
+    width: 100%;
+    max-height: 20em;
+    object-fit: cover;
+    border-radius: 0.4em;
+    margin-bottom: 1em;
+    display: block;
+}
+
+.fundraiser-title {
+    font-size: 1.6em;
+    font-weight: bold;
+    margin-bottom: 0.25em;
+    color: #222;
+}
+
+.fundraiser-recipient {
+    color: #555;
+    font-size: 0.95em;
+    margin-bottom: 1em;
+}
+
+.progress-wrap {
+    margin: 1em 0;
+}
+
+.progress-track {
+    width: 100%;
+    height: 1em;
+    background: #eee;
+    border-radius: 0.5em;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #2a9d2a;
+    border-radius: 0.5em;
+    transition: width 0.4s ease;
+}
+
+.progress-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85em;
+    color: #555;
+    margin-top: 0.3em;
+}
+
+.fundraiser-story {
+    line-height: 1.7;
+    color: #333;
+}
+
+.fundraiser-story h2 {
+    font-size: 1.1em;
+    margin: 1.2em 0 0.4em;
+    color: #222;
+}
+
+.recent-donors {
+    margin-top: 1.5em;
+}
+
+.recent-donors h3 {
+    font-size: 1em;
+    margin-bottom: 0.5em;
+    color: #333;
+}
+
+.donor-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.donor-list li {
+    padding: 0.4em 0;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9em;
+    color: #444;
+}
+
+.donor-list li:last-child {
+    border-bottom: none;
+}
+
+/* Sidebar donate box */
+.donate-box {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 0.4em;
+    padding: 1em;
+    text-align: center;
+    margin-bottom: 0.75em;
+}
+
+.donate-box .amount-raised {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #2a9d2a;
+    line-height: 1.1;
+}
+
+.donate-box .goal-label {
+    font-size: 0.85em;
+    color: #666;
+    margin-bottom: 0.75em;
+}
+
+.donate-btn {
+    display: block;
+    width: 100%;
+    background: #f7b731;
+    color: #000;
+    border: none;
+    padding: 0.7em 1em;
+    border-radius: 0.3em;
+    font-size: 1.05em;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    margin-top: 0.75em;
+    transition: background 0.2s;
+}
+
+.donate-btn:hover {
+    background: #e0a520;
+}
+
+.verified-badge {
+    display: inline-block;
+    background: #2a9d2a;
+    color: #fff;
+    font-size: 0.75em;
+    padding: 0.2em 0.5em;
+    border-radius: 0.3em;
+    margin-left: 0.4em;
+    vertical-align: middle;
+}
+
+#donate-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+#donate-modal-overlay.open {
+    display: flex;
+}
+
+#donate-modal {
+    background: #fff;
+    border-radius: 0.5em;
+    padding: 1.5em;
+    max-width: 28em;
+    width: 95%;
+    position: relative;
+}
+
+#donate-modal h2 {
+    margin-bottom: 0.75em;
+    font-size: 1.2em;
+}
+
+.modal-close {
+    position: absolute;
+    top: 0.75em;
+    right: 0.75em;
+    background: none;
+    border: none;
+    font-size: 1.3em;
+    cursor: pointer;
+    color: #666;
+}
+
+.amount-presets {
+    display: flex;
+    gap: 0.5em;
+    flex-wrap: wrap;
+    margin-bottom: 0.75em;
+}
+
+.preset-btn {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 0.4em 0.8em;
+    border-radius: 0.3em;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.preset-btn:hover, .preset-btn.selected {
+    background: #f7b731;
+    border-color: #e0a520;
+}
+
+.amount-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-bottom: 1em;
+}
+
+.amount-input-wrap input {
+    flex: 1;
+    padding: 0.5em;
+    border: 1px solid #ccc;
+    border-radius: 0.3em;
+    font-size: 1em;
+}
+
+.amount-input-wrap span {
+    color: #666;
+    font-size: 0.9em;
+}
+
+#invoice-section {
+    display: none;
+    text-align: center;
+}
+
+#invoice-section p {
+    font-size: 0.85em;
+    color: #555;
+    margin-bottom: 0.5em;
+}
+
+#qr-code-container {
+    margin: 0.5em auto;
+}
+
+#payment-request-text {
+    word-break: break-all;
+    font-size: 0.7em;
+    color: #666;
+    background: #f5f5f5;
+    padding: 0.5em;
+    border-radius: 0.3em;
+    margin-top: 0.5em;
+}
+
+#payment-status {
+    margin-top: 0.75em;
+    font-weight: bold;
+    color: #2a9d2a;
+}
+
+.error-msg {
+    color: #c00;
+    font-size: 0.9em;
+    margin-top: 0.5em;
+}
+</style>
+
+<!-- include start social-layout-start.incl -->
+<header class="site-header">
+    <div class="header-content">
+        <div class="logo">
+            <a href="index.html">💎 DirectSponsor</a>
+            <span class="tagline">Peer-to-Peer Charity</span>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html">Home</a>
+            <a href="projects.html">Projects</a>
+            <a href="about.html">About</a>
+            <a href="contact.html">Contact</a>
+        </nav>
+    </div>
+</header>
+
+<!-- 2-Column Layout: main content + right sidebar -->
+<div class="layout-container">
+
+    <main class="main-content">
+
+<!-- UNIQUE PAGE CONTENT GOES HERE -->
+<!-- include end social-layout-start.incl -->
+
+<!-- Fundraiser page content -->
+<div id="fundraiser-loading" class="project-card" style="text-align:center;padding:2em;">
+    <p>Loading project...</p>
+</div>
+
+<div id="fundraiser-content" style="display:none;">
+
+    <img id="fundraiser-image" src="" alt="" class="fundraiser-hero" style="display:none;">
+
+    <div class="project-card">
+        <h1 class="fundraiser-title" id="fundraiser-title">—</h1>
+        <p class="fundraiser-recipient">Recipient: <strong id="fundraiser-recipient">—</strong>
+            <span class="verified-badge" id="verified-badge" style="display:none;">✅ Verified</span>
+        </p>
+
+        <div class="progress-wrap">
+            <div class="progress-track">
+                <div class="progress-fill" id="progress-bar" style="width:0%"></div>
+            </div>
+            <div class="progress-labels">
+                <span><strong id="amount-raised">0</strong> sats raised</span>
+                <span>Goal: <strong id="amount-goal">—</strong> sats</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="project-card fundraiser-story" id="fundraiser-story">
+    </div>
+
+    <div class="recent-donors project-card" id="recent-donors-section" style="display:none;">
+        <h3>Recent Donations</h3>
+        <ul class="donor-list" id="donor-list"></ul>
+    </div>
+
+</div>
+
+<div id="fundraiser-notfound" class="project-card" style="display:none;text-align:center;padding:2em;">
+    <h2>Project not found</h2>
+    <p>This project may have moved or completed.</p>
+    <a href="projects.html">Browse all projects →</a>
+</div>
+
+<!-- Sidebar content injected by JS into the sidebar -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inject donate box into sidebar
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        const donateBox = document.createElement('div');
+        donateBox.className = 'donate-box sidebar-box';
+        donateBox.id = 'sidebar-donate-box';
+        donateBox.innerHTML = '<div class="amount-raised" id="sidebar-amount-raised">—</div>' +
+            '<div class="goal-label">sats raised of <span id="sidebar-goal">—</span> goal</div>' +
+            '<button class="donate-btn" onclick="openDonateModal()">⚡ Donate via Lightning</button>';
+        sidebar.insertBefore(donateBox, sidebar.firstChild);
+    }
+    loadFundraiser();
+});
+
+function getProjectParam() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('project') || params.get('p');
+}
+
+function loadFundraiser() {
+    const project = getProjectParam();
+    if (!project) {
+        document.getElementById('fundraiser-loading').style.display = 'none';
+        document.getElementById('fundraiser-notfound').style.display = 'block';
+        return;
+    }
+
+    fetch('/api/fundraiser-api.php?project=' + encodeURIComponent(project))
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('fundraiser-loading').style.display = 'none';
+            if (!data || data.error) {
+                document.getElementById('fundraiser-notfound').style.display = 'block';
+                return;
+            }
+            populateFundraiser(data);
+        })
+        .catch(() => {
+            document.getElementById('fundraiser-loading').style.display = 'none';
+            document.getElementById('fundraiser-notfound').style.display = 'block';
+        });
+}
+
+function populateFundraiser(d) {
+    document.getElementById('fundraiser-content').style.display = 'block';
+    document.getElementById('fundraiser-title').textContent = d.title || 'Untitled Project';
+    document.getElementById('fundraiser-recipient').textContent = d.recipient || d.username || '—';
+
+    if (d.image_url) {
+        const img = document.getElementById('fundraiser-image');
+        img.src = d.image_url;
+        img.alt = d.title || '';
+        img.style.display = 'block';
+    }
+
+    const raised = parseInt(d.current_amount) || 0;
+    const goal   = parseInt(d.target_amount) || 0;
+    const pct    = goal > 0 ? Math.min(100, Math.round(raised / goal * 100)) : 0;
+
+    document.getElementById('amount-raised').textContent = raised.toLocaleString();
+    document.getElementById('amount-goal').textContent   = goal.toLocaleString();
+    document.getElementById('progress-bar').style.width  = pct + '%';
+    document.getElementById('sidebar-amount-raised').textContent = raised.toLocaleString();
+    document.getElementById('sidebar-goal').textContent  = goal.toLocaleString() + ' sats';
+
+    if (d.verified) document.getElementById('verified-badge').style.display = 'inline-block';
+
+    if (d.story) {
+        document.getElementById('fundraiser-story').innerHTML = '<h2>About this project</h2>' + d.story;
+    }
+
+    if (d.recent_donations && d.recent_donations.length) {
+        const list = document.getElementById('donor-list');
+        d.recent_donations.forEach(function(don) {
+            const li = document.createElement('li');
+            li.textContent = '⚡ ' + (don.amount || '?') + ' sats — ' + (don.note || 'Anonymous');
+            list.appendChild(li);
+        });
+        document.getElementById('recent-donors-section').style.display = 'block';
+    }
+
+    // Store project id for donate modal
+    window._currentProject = d.project_id || getProjectParam();
+    window._currentUsername = d.username;
+}
+
+function openDonateModal() {
+    document.getElementById('donate-modal-overlay').classList.add('open');
+}
+
+function closeDonateModal() {
+    document.getElementById('donate-modal-overlay').classList.remove('open');
+    document.getElementById('invoice-section').style.display = 'none';
+    document.getElementById('amount-section').style.display = 'block';
+    document.getElementById('payment-status').textContent = '';
+    document.getElementById('modal-error').textContent = '';
+}
+
+function selectPreset(sats) {
+    document.getElementById('custom-amount').value = sats;
+    document.querySelectorAll('.preset-btn').forEach(function(b) {
+        b.classList.toggle('selected', parseInt(b.dataset.sats) === sats);
+    });
+}
+
+function requestInvoice() {
+    const amount = parseInt(document.getElementById('custom-amount').value);
+    const errEl = document.getElementById('modal-error');
+    errEl.textContent = '';
+
+    if (!amount || amount < 1) {
+        errEl.textContent = 'Please enter an amount.';
+        return;
+    }
+
+    document.getElementById('generate-btn').disabled = true;
+    document.getElementById('generate-btn').textContent = 'Generating...';
+
+    fetch('/api/project-donations-api.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            action: 'create_invoice',
+            username: window._currentUsername,
+            project_id: window._currentProject,
+            amount: amount
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('generate-btn').disabled = false;
+        document.getElementById('generate-btn').textContent = 'Generate Invoice';
+        if (data.error) {
+            errEl.textContent = data.error;
+            return;
+        }
+        showInvoice(data.payment_request, data.invoice_id);
+    })
+    .catch(() => {
+        document.getElementById('generate-btn').disabled = false;
+        document.getElementById('generate-btn').textContent = 'Generate Invoice';
+        errEl.textContent = 'Network error. Please try again.';
+    });
+}
+
+function showInvoice(payreq, invoiceId) {
+    document.getElementById('amount-section').style.display = 'none';
+    const inv = document.getElementById('invoice-section');
+    inv.style.display = 'block';
+    document.getElementById('payment-request-text').textContent = payreq;
+
+    // QR code via Google Charts (no JS lib needed)
+    const qr = document.getElementById('qr-code-container');
+    qr.innerHTML = '<img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=' +
+        encodeURIComponent('lightning:' + payreq) +
+        '" alt="Lightning QR code" width="200" height="200">';
+
+    pollPayment(invoiceId);
+}
+
+function pollPayment(invoiceId) {
+    let attempts = 0;
+    const max = 60;
+    const interval = setInterval(function() {
+        attempts++;
+        if (attempts > max) {
+            clearInterval(interval);
+            document.getElementById('payment-status').textContent = 'Timed out — reload to check status.';
+            return;
+        }
+        fetch('/api/project-donations-api.php?action=check_payment&invoice_id=' + encodeURIComponent(invoiceId))
+            .then(r => r.json())
+            .then(data => {
+                if (data.paid) {
+                    clearInterval(interval);
+                    document.getElementById('payment-status').textContent = '✅ Payment received! Thank you.';
+                    setTimeout(function() { location.reload(); }, 3000);
+                }
+            })
+            .catch(() => {});
+    }, 3000);
+}
+</script>
+
+<!-- Donate Modal -->
+<div id="donate-modal-overlay" role="dialog" aria-modal="true" aria-label="Donate">
+    <div id="donate-modal">
+        <button class="modal-close" onclick="closeDonateModal()" aria-label="Close">✕</button>
+        <h2>⚡ Donate via Lightning</h2>
+
+        <div id="amount-section">
+            <p style="font-size:0.9em;color:#555;margin-bottom:0.75em;">Choose an amount in satoshis:</p>
+            <div class="amount-presets">
+                <button class="preset-btn" data-sats="1000" onclick="selectPreset(1000)">1,000</button>
+                <button class="preset-btn" data-sats="5000" onclick="selectPreset(5000)">5,000</button>
+                <button class="preset-btn" data-sats="10000" onclick="selectPreset(10000)">10,000</button>
+                <button class="preset-btn" data-sats="50000" onclick="selectPreset(50000)">50,000</button>
+            </div>
+            <div class="amount-input-wrap">
+                <input type="number" id="custom-amount" min="1" placeholder="custom amount" value="1000">
+                <span>sats</span>
+            </div>
+            <button id="generate-btn" class="donate-btn" onclick="requestInvoice()">Generate Invoice</button>
+            <p class="error-msg" id="modal-error"></p>
+        </div>
+
+        <div id="invoice-section">
+            <p>Scan with your Lightning wallet or copy the invoice below:</p>
+            <div id="qr-code-container"></div>
+            <div id="payment-request-text"></div>
+            <div id="payment-status"></div>
+            <button class="donate-btn" onclick="closeDonateModal()" style="margin-top:1em;background:#eee;color:#333;">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- include start social-layout-end.incl -->
+<!-- END UNIQUE PAGE CONTENT -->
+
+    </main>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="sidebar-box">
+            <h4>About DirectSponsor</h4>
+            <p>100% direct peer-to-peer donations. Every satoshi goes straight to the recipient.</p>
+            <a href="about.html">Learn more</a>
+        </div>
+
+        <div class="sidebar-box">
+            <h4>Active Projects</h4>
+            <p><a href="projects.html">Browse all projects →</a></p>
+        </div>
+
+        <!-- Ad slot -->
+        <div class="sidebar-box ad-slot">
+            <p class="ad-label">Advertisement</p>
+        </div>
+
+    </aside>
+
+</div>
+<!-- End layout container -->
+
+<!-- Sticky Header Script (Inline for performance) -->
+<script>
+(function() {
+    const header = document.querySelector('.site-header');
+    let lastScrollY = window.scrollY;
+    let isCondensed = false;
+    
+    function handleScroll() {
+        const currentScrollY = window.scrollY;
+        
+        // Condense when scrolled down more than 50px
+        if (currentScrollY > 50 && !isCondensed) {
+            header.classList.add('condensed');
+            isCondensed = true;
+        } 
+        // Expand when near top
+        else if (currentScrollY <= 30 && isCondensed) {
+            header.classList.remove('condensed');
+            isCondensed = false;
+        }
+        
+        lastScrollY = currentScrollY;
+    }
+    
+    // Throttled scroll listener for performance
+    let ticking = false;
+    window.addEventListener('scroll', function() {
+        if (!ticking) {
+            requestAnimationFrame(function() {
+                handleScroll();
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
+})();
+</script>
+<!-- include end social-layout-end.incl -->
+
+<!-- include start footer.incl -->
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>💎 DirectSponsor</h4>
+                    <p>Revolutionary peer-to-peer charity eliminating middlemen and connecting sponsors directly with verified recipients.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">Twitter</a>
+                        <a href="#" class="social-link">Nostr</a>
+                        <a href="#" class="social-link">GitHub</a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>🔗 Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="projects.html">Projects</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="about.html#how-it-works">How It Works</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>🚀 DS-CMS</h4>
+                    <p>Zero dependencies, maximum simplicity. Perfect for shared hosting.</p>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/satoshihost/ds-cms" target="_blank">GitHub</a></li>
+                        <li><a href="#" target="_blank">Documentation</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 DS-CMS Demo Site. Built with HTML-first principles.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
+<!-- include end footer.incl -->

@@ -68,6 +68,133 @@
     <p>DirectSponsor sponsors <strong>individual people</strong>, not organizations. This eliminates power abuse and ensures your money goes directly to the people doing the work.</p>
 </div>
 
+<!-- Dynamic active projects (loaded from API) -->
+<div id="active-projects-section">
+    <div id="projects-loading" style="text-align:center;padding:1.5em;color:#666;">Loading active projects...</div>
+    <div id="projects-grid" style="display:none;"></div>
+    <div id="projects-empty" style="display:none;"></div>
+</div>
+
+<style>
+.project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(18em, 1fr));
+    gap: 1em;
+    margin-bottom: 1em;
+}
+
+.project-tile {
+    background: #fff;
+    border: 1px solid #e1e8ed;
+    border-radius: 0.4em;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+
+.project-tile:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.project-tile img {
+    width: 100%;
+    height: 10em;
+    object-fit: cover;
+    display: block;
+}
+
+.project-tile-body {
+    padding: 0.75em;
+}
+
+.project-tile-body h3 {
+    font-size: 1em;
+    margin-bottom: 0.25em;
+    color: #222;
+}
+
+.project-tile-body .recipient {
+    font-size: 0.85em;
+    color: #666;
+    margin-bottom: 0.5em;
+}
+
+.tile-progress-track {
+    width: 100%;
+    height: 0.5em;
+    background: #eee;
+    border-radius: 0.25em;
+    overflow: hidden;
+    margin-bottom: 0.3em;
+}
+
+.tile-progress-fill {
+    height: 100%;
+    background: #2a9d2a;
+    border-radius: 0.25em;
+}
+
+.tile-stats {
+    font-size: 0.8em;
+    color: #555;
+    margin-bottom: 0.5em;
+}
+
+.tile-donate-link {
+    display: inline-block;
+    background: #f7b731;
+    color: #000;
+    text-decoration: none;
+    padding: 0.35em 0.75em;
+    border-radius: 0.3em;
+    font-size: 0.85em;
+    font-weight: bold;
+}
+
+.tile-donate-link:hover {
+    background: #e0a520;
+}
+</style>
+
+<script>
+(function() {
+    fetch('/api/fundraiser-api.php?action=list_active')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            document.getElementById('projects-loading').style.display = 'none';
+            if (!data || !data.projects || data.projects.length === 0) {
+                document.getElementById('projects-empty').style.display = 'block';
+                document.getElementById('projects-empty').innerHTML =
+                    '<div class="project-card"><p>No active projects found via API yet — see featured projects below.</p></div>';
+                return;
+            }
+            var grid = document.getElementById('projects-grid');
+            var html = '<div class="project-card"><h2>Active Projects</h2></div><div class="project-grid">';
+            data.projects.forEach(function(p) {
+                var raised = parseInt(p.current_amount) || 0;
+                var goal   = parseInt(p.target_amount) || 0;
+                var pct    = goal > 0 ? Math.min(100, Math.round(raised / goal * 100)) : 0;
+                var img    = p.image_url
+                    ? '<img src="' + p.image_url + '" alt="' + (p.title || '') + '" loading="lazy">'
+                    : '';
+                html += '<div class="project-tile">' + img +
+                    '<div class="project-tile-body">' +
+                    '<h3>' + (p.title || 'Untitled') + '</h3>' +
+                    '<div class="recipient">Recipient: ' + (p.recipient || p.username || '—') + '</div>' +
+                    '<div class="tile-progress-track"><div class="tile-progress-fill" style="width:' + pct + '%"></div></div>' +
+                    '<div class="tile-stats">' + raised.toLocaleString() + ' / ' + goal.toLocaleString() + ' sats (' + pct + '%)</div>' +
+                    '<a href="fundraiser.html?project=' + encodeURIComponent(p.project_id || p.username) + '" class="tile-donate-link">⚡ Donate</a>' +
+                    '</div></div>';
+            });
+            html += '</div>';
+            grid.innerHTML = html;
+            grid.style.display = 'block';
+        })
+        .catch(function() {
+            document.getElementById('projects-loading').style.display = 'none';
+        });
+})();
+</script>
+
 <!-- Verification Standards -->
 <div class="project-card">
     <h2>🔍 Our Verification Standard</h2>
