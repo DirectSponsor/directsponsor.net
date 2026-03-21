@@ -501,11 +501,12 @@ function requestInvoice() {
     .then(data => {
         document.getElementById('generate-btn').disabled = false;
         document.getElementById('generate-btn').textContent = 'Generate Invoice';
-        if (data.error) {
-            errEl.textContent = data.error;
+        if (!data.success || data.error) {
+            errEl.textContent = data.error || 'Failed to create invoice.';
             return;
         }
-        showInvoice(data.payment_request, data.invoice_id);
+        var d = data.data;
+        showInvoice(d.invoice, d.donation_id, d.qr_code);
     })
     .catch(() => {
         document.getElementById('generate-btn').disabled = false;
@@ -514,17 +515,15 @@ function requestInvoice() {
     });
 }
 
-function showInvoice(payreq, invoiceId) {
+function showInvoice(payreq, invoiceId, qrUrl) {
     document.getElementById('amount-section').style.display = 'none';
     const inv = document.getElementById('invoice-section');
     inv.style.display = 'block';
     document.getElementById('payment-request-text').textContent = payreq;
 
-    // QR code via Google Charts (no JS lib needed)
     const qr = document.getElementById('qr-code-container');
-    qr.innerHTML = '<img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=' +
-        encodeURIComponent('lightning:' + payreq) +
-        '" alt="Lightning QR code" width="200" height="200">';
+    var src = qrUrl || 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(payreq);
+    qr.innerHTML = '<img src="' + src + '" alt="Lightning QR code" width="200" height="200">';
 
     pollPayment(invoiceId);
 }
@@ -539,7 +538,11 @@ function pollPayment(invoiceId) {
             document.getElementById('payment-status').textContent = 'Timed out — reload to check status.';
             return;
         }
-        fetch('/api/project-donations-api.php?action=check_payment&invoice_id=' + encodeURIComponent(invoiceId))
+        fetch('/api/project-donations-api.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({action: 'check_payment', donation_id: invoiceId})
+        })
             .then(r => r.json())
             .then(data => {
                 if (data.paid) {
