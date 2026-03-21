@@ -154,8 +154,17 @@ function processPaymentConfirmation($webhookData) {
 /**
  * Find project HTML file in user directory structure
  */
-function findProjectHtmlFile($projectId) {
-    // Try each user directory
+function findProjectHtmlFile($projectId, $username = null) {
+    // If username provided, check that user's directory first
+    if ($username) {
+        $userDir = PROJECTS_DIR . '/' . $username;
+        $htmlFile = $userDir . '/active/' . $projectId . '.html';
+        if (file_exists($htmlFile)) {
+            return ['file' => $htmlFile, 'completed' => false, 'username' => $username];
+        }
+    }
+    
+    // Fall back: search all user directories
     $userDirs = glob(PROJECTS_DIR . '/*', GLOB_ONLYDIR);
     foreach ($userDirs as $userDir) {
         $basename = basename($userDir);
@@ -163,10 +172,14 @@ function findProjectHtmlFile($projectId) {
         if ($basename === 'completed' || $basename === 'img') {
             continue;
         }
+        // Skip already-checked username
+        if ($username && $basename === $username) {
+            continue;
+        }
         
         $htmlFile = $userDir . '/active/' . $projectId . '.html';
         if (file_exists($htmlFile)) {
-            return ['file' => $htmlFile, 'completed' => false];
+            return ['file' => $htmlFile, 'completed' => false, 'username' => $basename];
         }
     }
     
@@ -306,8 +319,8 @@ function updateProjectHtml($htmlFile, $donation, $amountSats) {
 function processProjectDonation($donation, $foundIndex, $webhookData) {
     logWebhook("Processing PROJECT donation for project: " . $donation['project_id']);
     
-    // Find project HTML file
-    $projectInfo = findProjectHtmlFile($donation['project_id']);
+    // Find project HTML file - use username from pending donation if available
+    $projectInfo = findProjectHtmlFile($donation['project_id'], $donation['username'] ?? null);
     
     if (!$projectInfo) {
         logWebhook("Project file not found for project: " . $donation['project_id'], 'ERROR');

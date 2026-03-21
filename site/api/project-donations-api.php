@@ -52,6 +52,7 @@ function createProjectInvoice($project_id, $amount, $donor_name = '', $message =
     // Find project config.json in user directory structure
     $configFile = null;
     $htmlFile = null;
+    $foundUsername = null;
     $userDirs = glob(PROJECTS_DIR . '/*', GLOB_ONLYDIR);
     
     logProjectPayment("DEBUG: Found user directories: " . json_encode($userDirs), 'DEBUG');
@@ -65,7 +66,8 @@ function createProjectInvoice($project_id, $amount, $donor_name = '', $message =
         if (file_exists($testConfig) && file_exists($testHtml)) {
             $configFile = $testConfig;
             $htmlFile = $testHtml;
-            logProjectPayment("DEBUG: Found config and HTML files at $configFile", 'DEBUG');
+            $foundUsername = basename($userDir);
+            logProjectPayment("DEBUG: Found config and HTML files at $configFile (username: $foundUsername)", 'DEBUG');
             break;
         }
     }
@@ -160,7 +162,7 @@ function createProjectInvoice($project_id, $amount, $donor_name = '', $message =
     // Only confirmed payments are logged via webhook processing
     
     // Store pending donation for payment tracking (project system only)
-    storePendingProjectDonation($project_id, $donation_id, $amount, $donor_name, $message, $invoice["text"], $invoice["paymentHash"] ?? $invoice["hash"] ?? "");
+    storePendingProjectDonation($project_id, $donation_id, $amount, $donor_name, $message, $invoice["text"], $invoice["paymentHash"] ?? $invoice["hash"] ?? "", $foundUsername ?? '');
     
     return [
         'success' => true,
@@ -366,11 +368,12 @@ try {
 }
 
 // Store pending project donation (project system only - no cross-system pollution)
-function storePendingProjectDonation($project_id, $donation_id, $amount, $donor_name, $message, $invoice, $payment_hash) {
+function storePendingProjectDonation($project_id, $donation_id, $amount, $donor_name, $message, $invoice, $payment_hash, $username = '') {
     // Create project-specific pending donation entry
     $donation_entry = [
         'donation_id' => $donation_id,
         'project_id' => $project_id,
+        'username' => $username,
         'donor_name' => $donor_name ?: 'Anonymous',
         'donor_message' => $message,
         'amount_sats' => $amount,
