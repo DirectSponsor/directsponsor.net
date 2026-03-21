@@ -181,10 +181,10 @@
                 html += '<div class="project-tile">' + img +
                     '<div class="project-tile-body">' +
                     '<h3>' + (p.title || 'Untitled') + '</h3>' +
-                    '<div class="recipient">Recipient: ' + (p.recipient || p.username || '—') + '</div>' +
+                    '<div class="recipient">Recipient: ' + (p.recipient || p.owner_user_id || '—') + '</div>' +
                     '<div class="tile-progress-track"><div class="tile-progress-fill" style="width:' + pct + '%"></div></div>' +
                     '<div class="tile-stats">' + raised.toLocaleString() + ' / ' + goal.toLocaleString() + ' sats (' + pct + '%)</div>' +
-                    '<a href="fundraiser.html?project=' + encodeURIComponent(p.project_id || p.username) + '" class="tile-donate-link">⚡ Donate</a>' +
+                    '<a href="fundraiser.html?project=' + encodeURIComponent(p.id) + '&user=' + encodeURIComponent(p.owner_user_id) + '" class="tile-donate-link">⚡ Donate</a>' +
                     '</div></div>';
             });
             html += '</div>';

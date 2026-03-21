@@ -382,26 +382,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function getProjectParam() {
     const params = new URLSearchParams(window.location.search);
-    return params.get('project') || params.get('p');
+    return { id: params.get('project') || params.get('p'), user: params.get('user') || '' };
 }
 
 function loadFundraiser() {
-    const project = getProjectParam();
+    const { id: project, user } = getProjectParam();
     if (!project) {
         document.getElementById('fundraiser-loading').style.display = 'none';
         document.getElementById('fundraiser-notfound').style.display = 'block';
         return;
     }
 
-    fetch('/api/fundraiser-api.php?project=' + encodeURIComponent(project))
+    var url = '/api/fundraiser-api.php?action=get&id=' + encodeURIComponent(project);
+    if (user) url += '&username=' + encodeURIComponent(user);
+    fetch(url)
         .then(r => r.json())
         .then(data => {
             document.getElementById('fundraiser-loading').style.display = 'none';
-            if (!data || data.error) {
+            if (!data || !data.success || data.error) {
                 document.getElementById('fundraiser-notfound').style.display = 'block';
                 return;
             }
-            populateFundraiser(data);
+            populateFundraiser(data.fundraiser || data);
         })
         .catch(() => {
             document.getElementById('fundraiser-loading').style.display = 'none';
@@ -412,7 +414,7 @@ function loadFundraiser() {
 function populateFundraiser(d) {
     document.getElementById('fundraiser-content').style.display = 'block';
     document.getElementById('fundraiser-title').textContent = d.title || 'Untitled Project';
-    document.getElementById('fundraiser-recipient').textContent = d.recipient || d.username || '—';
+    document.getElementById('fundraiser-recipient').textContent = d.recipient || d.owner_user_id || '—';
 
     if (d.image_url) {
         const img = document.getElementById('fundraiser-image');
@@ -448,8 +450,9 @@ function populateFundraiser(d) {
     }
 
     // Store project id for donate modal
-    window._currentProject = d.project_id || getProjectParam();
-    window._currentUsername = d.username;
+    var params = getProjectParam();
+    window._currentProject = d.id || params.id;
+    window._currentUsername = d.owner_user_id || params.user;
 }
 
 function openDonateModal() {
