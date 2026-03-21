@@ -96,7 +96,7 @@ function getActiveProjectForUser($username) {
         return null;
     }
     
-    $htmlFiles = glob($userDir . '/*.html');
+    $htmlFiles = glob($userDir . '/active/*.html');
     $projectNumbers = [];
     
     foreach ($htmlFiles as $file) {
@@ -184,7 +184,7 @@ if ($action === 'list') {
                 $username = basename($userDir);
                 if (in_array($username, ['completed', 'images', 'img'])) continue;
                 
-                $projectFile = $userDir . '/' . $fundraiserId . '.html';
+                $projectFile = $userDir . '/active/' . $fundraiserId . '.html';
                 if (file_exists($projectFile)) {
                     $projectData = parseProjectFromHTML($projectFile, $fundraiserId);
                     if ($projectData) {
