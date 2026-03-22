@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../auth-server"
 		}
 	],
 	"settings": {}

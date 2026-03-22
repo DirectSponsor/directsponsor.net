@@ -309,9 +309,21 @@
             <a href="about.html">About</a>
             <a href="contact.html">Contact</a>
             <a href="profile.html" id="nav-profile-link" style="display:none;">Profile</a>
+            <a href="#" id="nav-login-link" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href); return false;">Login</a>
         </nav>
     </div>
 </header>
+<script>
+(function() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (jwt) {
+        var profileLink = document.getElementById('nav-profile-link');
+        var loginLink = document.getElementById('nav-login-link');
+        if (profileLink) profileLink.style.display = '';
+        if (loginLink) loginLink.style.display = 'none';
+    }
+})();
+</script>
 
 <!-- 2-Column Layout: main content + right sidebar -->
 <div class="layout-container">
