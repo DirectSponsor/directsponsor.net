@@ -112,10 +112,12 @@ function createProjectInvoice($project_id, $amount, $donor_name = '', $message =
             'secret' => 'directsponsor_webhook_secret_2025'
         ],
         'user' => [
-            'username' => $config['recipient_wallet']['coinos_username'] ?? basename($userDir)
+            'username' => $config['recipient_wallet']['coinos_username'] ?? $foundUsername
         ]
     ];
     
+    $resolved_username = $config['recipient_wallet']['coinos_username'] ?? $foundUsername;
+    logProjectPayment("DEBUG: Invoice username resolved to: $resolved_username (coinos_username in config: " . ($config['recipient_wallet']['coinos_username'] ?? 'NOT SET') . ", foundUsername: $foundUsername)", 'DEBUG');
     logProjectPayment("DEBUG: About to call Coinos API with key preview: " . substr($recipient_api_key, 0, 20) . '...' . substr($recipient_api_key, -20), 'DEBUG');
     
     $curl = curl_init();
