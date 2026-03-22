@@ -27,6 +27,18 @@
     <link rel="stylesheet" href="styles/directsponsor-compact.css">
     
     <!-- Optional: Add analytics, fonts, or other scripts here -->
+    <script>
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var jwt = params.get('jwt');
+        if (jwt) {
+            sessionStorage.setItem('jwt', jwt);
+            params.delete('jwt');
+            var newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+            window.history.replaceState({}, '', newUrl);
+        }
+    })();
+    </script>
 </head>
 <body>
 
