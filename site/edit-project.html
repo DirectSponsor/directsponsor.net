@@ -353,6 +353,11 @@ function populateForm(f) {
 function saveProject() {
     var btn = document.getElementById('save-btn');
     var status = document.getElementById('save-status');
+    var title = document.getElementById('f-title').value.trim();
+    var amount = document.getElementById('f-target-amount').value;
+    if (!title) { document.getElementById('save-status').textContent = 'Please enter a project title.'; return; }
+    if (!amount || parseInt(amount) < 1000) { document.getElementById('save-status').textContent = 'Please enter a funding goal (minimum 1000 sats).'; return; }
+
     btn.disabled = true;
     btn.textContent = 'Saving...';
     status.textContent = '';
