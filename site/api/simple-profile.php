@@ -410,19 +410,32 @@ if (!$userId) {
 }
 
 // Determine profile file path
-// If userId doesn't contain a dash, try to find by username (PHP 7.4 compatible)
-if (strpos($userId, '-') === false) {
-    $foundFile = findProfileByUsername($userId);
-    if ($foundFile) {
-        $profileFile = $foundFile;
-        // Extract the actual combined user_id from the found profile
-        $data = json_decode(file_get_contents($foundFile), true);
+// If userId is already combined (contains dash), use directly.
+// If it's a bare numeric ID, try to find the file by globbing {userId}-*.txt first,
+// then fall back to searching file contents, then fall back to bare {userId}.txt.
+if (strpos($userId, '-') !== false) {
+    $profileFile = USERDATA_DIR . "/profiles/{$userId}.txt";
+} else {
+    // Try fast glob: {userId}-*.txt
+    $glob = glob(USERDATA_DIR . "/profiles/{$userId}-*.txt");
+    if ($glob) {
+        $profileFile = $glob[0];
+        $data = json_decode(file_get_contents($profileFile), true);
         $userId = $data['user_id'] ?? $userId;
     } else {
-        $profileFile = USERDATA_DIR . "/profiles/{$userId}.txt";
+        // Fall back to content search (legacy bare files)
+        $foundFile = findProfileByUsername($usernameHint);
+        if ($foundFile) {
+            $profileFile = $foundFile;
+            $data = json_decode(file_get_contents($foundFile), true);
+            $userId = $data['user_id'] ?? $userId;
+        } else {
+            // Will be created with combined name once username is known
+            $profileFile = $usernameHint
+                ? USERDATA_DIR . "/profiles/{$userId}-{$usernameHint}.txt"
+                : USERDATA_DIR . "/profiles/{$userId}.txt";
+        }
     }
-} else {
-    $profileFile = USERDATA_DIR . "/profiles/{$userId}.txt";
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'profile') {

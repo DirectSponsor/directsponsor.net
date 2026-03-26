@@ -234,12 +234,16 @@ class SessionBridge {
      * Create profile file if it doesn't exist
      */
     private function ensureProfileFileExists($userId, $username, $email) {
-        $profileFile = USERDATA_DIR . "/profiles/{$userId}.txt";
+        // Use combined {userId}-{username}.txt for human-readable filenames and fast glob lookup
+        $profileFile = $username
+            ? USERDATA_DIR . "/profiles/{$userId}-{$username}.txt"
+            : USERDATA_DIR . "/profiles/{$userId}.txt";
         
         if (!file_exists($profileFile)) {
+            $combinedId = $username ? "{$userId}-{$username}" : $userId;
             $profileData = [
-                'user_id' => $userId,
-                'level' => 1, // Starting level
+                'user_id' => $combinedId,
+                'level' => 1,
                 'username' => $username,
                 'email' => $email,
                 'bio' => '',

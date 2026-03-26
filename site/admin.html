@@ -13,19 +13,20 @@
     <title>Admin — DirectSponsor</title>
     <meta name="description" content="Admin role management for DirectSponsor.">
     <meta name="keywords" content="admin, roles, directsponsor">
-
+    
     <!-- Open Graph Meta Tags -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://directsponsor.net">
     <meta property="og:title" content="DirectSponsor - Revolutionary Peer-to-Peer Charity">
     <meta property="og:description" content="Eliminate charity middlemen. Send money directly to verified recipients with complete transparency.">
-
+    
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐫</text></svg>">
-
-    <!-- Main Styles -->
+    
+    <!-- Main Styles (New Compact Social Layout) -->
     <link rel="stylesheet" href="styles/directsponsor-compact.css">
-
+    
+    <!-- Optional: Add analytics, fonts, or other scripts here -->
     <script>
     (function() {
         var params = new URLSearchParams(window.location.search);
@@ -330,16 +331,19 @@ function escAttr(s) { return escHtml(s); }
     <aside class="sidebar">
 
         <div class="sidebar-box">
-            <h4>Admin Panel</h4>
-            <p>Manage user roles and permissions.</p>
+            <h4>About DirectSponsor</h4>
+            <p>100% direct peer-to-peer donations. Every satoshi goes straight to the recipient.</p>
+            <a href="about.html">Learn more</a>
         </div>
 
         <div class="sidebar-box">
-            <h4>Quick Links</h4>
-            <ul style="margin:0;padding-left:1.2em;font-size:0.9em;line-height:1.8em;">
-                <li><a href="profile.html">My Profile</a></li>
-                <li><a href="projects.html">Projects</a></li>
-            </ul>
+            <h4>Active Projects</h4>
+            <p><a href="projects.html">Browse all projects →</a></p>
+        </div>
+
+        <!-- Ad slot -->
+        <div class="sidebar-box ad-slot">
+            <p class="ad-label">Advertisement</p>
         </div>
 
     </aside>
@@ -347,25 +351,50 @@ function escAttr(s) { return escHtml(s); }
 </div>
 <!-- End layout container -->
 
+<!-- Sticky Header Script (Inline for performance) -->
 <script>
 (function() {
     const header = document.querySelector('.site-header');
     let lastScrollY = window.scrollY;
     let isCondensed = false;
+    
     function handleScroll() {
         const currentScrollY = window.scrollY;
-        if (currentScrollY > 50 && !isCondensed) { header.classList.add('condensed'); isCondensed = true; }
-        else if (currentScrollY <= 30 && isCondensed) { header.classList.remove('condensed'); isCondensed = false; }
+        
+        // Condense when scrolled down more than 50px
+        if (currentScrollY > 50 && !isCondensed) {
+            header.classList.add('condensed');
+            isCondensed = true;
+        } 
+        // Expand when near top
+        else if (currentScrollY <= 30 && isCondensed) {
+            header.classList.remove('condensed');
+            isCondensed = false;
+        }
+        
         lastScrollY = currentScrollY;
     }
+    
+    // Throttled scroll listener for performance
     let ticking = false;
     window.addEventListener('scroll', function() {
-        if (!ticking) { requestAnimationFrame(function() { handleScroll(); ticking = false; }); ticking = true; }
+        if (!ticking) {
+            requestAnimationFrame(function() {
+                handleScroll();
+                ticking = false;
+            });
+            ticking = true;
+        }
     });
 })();
+
+// Show Profile nav link if logged in
 (function() {
     var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
-    if (jwt) { var el = document.getElementById('nav-profile-link'); if (el) el.style.display = ''; }
+    if (jwt) {
+        var el = document.getElementById('nav-profile-link');
+        if (el) el.style.display = '';
+    }
 })();
 </script>
 <!-- include end social-layout-end.incl -->
@@ -384,7 +413,7 @@ function escAttr(s) { return escHtml(s); }
                         <a href="#" class="social-link">GitHub</a>
                     </div>
                 </div>
-
+                
                 <div class="footer-section">
                     <h4>🔗 Quick Links</h4>
                     <ul class="footer-links">
@@ -395,7 +424,7 @@ function escAttr(s) { return escHtml(s); }
                         <li><a href="contact.html">Contact</a></li>
                     </ul>
                 </div>
-
+                
                 <div class="footer-section">
                     <h4>🚀 DS-CMS</h4>
                     <p>Zero dependencies, maximum simplicity. Perfect for shared hosting.</p>
@@ -405,7 +434,7 @@ function escAttr(s) { return escHtml(s); }
                     </ul>
                 </div>
             </div>
-
+            
             <div class="footer-bottom">
                 <p>&copy; 2025 DS-CMS Demo Site. Built with HTML-first principles.</p>
             </div>
