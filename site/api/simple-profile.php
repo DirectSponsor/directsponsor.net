@@ -1,7 +1,7 @@
 <?php
 // DirectSponsor Data Directory Configuration
 define('DS_DATA_DIR', '/var/www/directsponsor.net/userdata');
-define('USERDATA_DIR', DS_DATA_DIR . '/userdata');
+define('USERDATA_DIR', DS_DATA_DIR);
 
 /**
  * DirectSponsor Simple Profile API
@@ -77,6 +77,24 @@ function getUserId() {
         return $input['user_id'];
     }
     return null;
+}
+
+/**
+ * Get username from request (optional, used to seed new profile files)
+ * @return string Username or empty string if not provided
+ */
+function getUsername() {
+    if (!empty($_GET['username'])) {
+        return $_GET['username'];
+    }
+    if (!empty($_POST['username'])) {
+        return $_POST['username'];
+    }
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!empty($input['username'])) {
+        return $input['username'];
+    }
+    return '';
 }
 
 /**
@@ -183,9 +201,10 @@ function fetchProfileFromAuthServer($userId) {
  * Load user profile data with default structure
  * @param string $profileFile Path to profile file
  * @param string $userId User ID for default data
+ * @param string $username Username hint for seeding new profiles (optional)
  * @return array Profile data structure
  */
-function loadProfileData($profileFile, $userId) {
+function loadProfileData($profileFile, $userId, $username = '') {
     if (file_exists($profileFile)) {
         $data = json_decode(file_get_contents($profileFile), true);
         if ($data && is_array($data)) {
@@ -225,7 +244,7 @@ function loadProfileData($profileFile, $userId) {
         $data = array_merge([
             'user_id' => $userId,
             'level' => 1,
-            'username' => $authProfile['username'] ?? '',
+            'username' => $authProfile['username'] ?? $username,
             'display_name' => $authProfile['display_name'] ?? $authProfile['username'] ?? '',
             'avatar' => $authProfile['avatar'] ?? '👤',
             'email' => '',
@@ -254,11 +273,11 @@ function loadProfileData($profileFile, $userId) {
         return $data;
     }
     
-    // Default structure for new users
-    return [
+    // Default structure for new users — seed with username if provided, then save
+    $newProfile = [
         'user_id' => $userId,
         'level' => 1,
-        'username' => '',
+        'username' => $username,
         'display_name' => '',
         'avatar' => '👤',
         'email' => '',
@@ -280,6 +299,9 @@ function loadProfileData($profileFile, $userId) {
         'public_profile' => false,
         'last_profile_update' => time()
     ];
+    // Persist immediately so the profile file exists for future requests
+    saveProfileData($profileFile, $newProfile);
+    return $newProfile;
 }
 
 /**
@@ -347,8 +369,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'search') {
     exit;
 }
 
+// PUBLIC PROFILE - no auth required, lookup by username
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'public_profile') {
+    $pubUsername = trim($_GET['username'] ?? '');
+    if (!$pubUsername) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Username required']);
+        exit;
+    }
+    $pubFile = findProfileByUsername($pubUsername);
+    if (!$pubFile) {
+        http_response_code(404);
+        echo json_encode(['error' => 'User not found']);
+        exit;
+    }
+    $pubData = json_decode(file_get_contents($pubFile), true) ?: [];
+    echo json_encode([
+        'success' => true,
+        'profile' => [
+            'username'     => $pubData['username']     ?? $pubUsername,
+            'display_name' => $pubData['display_name'] ?? '',
+            'avatar'       => $pubData['avatar']       ?? '👤',
+            'bio'          => $pubData['bio']          ?? '',
+            'location'     => $pubData['location']     ?? '',
+            'website'      => $pubData['website']      ?? '',
+            'roles'        => $pubData['roles']        ?? ['member'],
+            'joined_date'  => $pubData['joined_date']  ?? null,
+        ]
+    ]);
+    exit;
+}
+
 // For all other actions, require authentication
 $userId = getUserId();
+$usernameHint = getUsername();
 if (!$userId) {
     http_response_code(401);
     echo json_encode(['error' => 'Authentication required']);
@@ -373,7 +427,7 @@ if (strpos($userId, '-') === false) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'profile') {
     // GET PROFILE - Return user profile data (with lazy loading from auth server)
-    $data = loadProfileData($profileFile, $userId);
+    $data = loadProfileData($profileFile, $userId, $usernameHint);
     
     echo json_encode([
         'success' => true,

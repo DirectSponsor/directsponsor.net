@@ -226,11 +226,44 @@ if ($action === 'list') {
             'error' => 'Failed to load fundraiser: ' . $e->getMessage()
         ]);
     }
+} else if ($action === 'user_projects') {
+    // Get all projects (active + completed) for a specific user
+    $username = preg_replace('/[^a-z0-9_-]/i', '', $_GET['username'] ?? '');
+    if (!$username) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Username required']);
+        exit;
+    }
+
+    $userDir = PROJECTS_DIR . '/' . $username;
+    if (!is_dir($userDir)) {
+        echo json_encode(['success' => true, 'active' => [], 'completed' => []]);
+        exit;
+    }
+
+    $active = [];
+    foreach (glob($userDir . '/active/*.html') ?: [] as $file) {
+        if (preg_match('/\/(\d+)\.html$/', $file, $m)) {
+            $p = parseProjectFromHTML($file, $m[1]);
+            if ($p) $active[] = convertToFundraiserFormat($p);
+        }
+    }
+
+    $completed = [];
+    foreach (glob($userDir . '/completed/*.html') ?: [] as $file) {
+        if (preg_match('/\/(\d+)\.html$/', $file, $m)) {
+            $p = parseProjectFromHTML($file, $m[1]);
+            if ($p) $completed[] = convertToFundraiserFormat($p);
+        }
+    }
+
+    echo json_encode(['success' => true, 'active' => $active, 'completed' => $completed]);
+
 } else {
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'error' => 'Invalid action. Supported actions: list, get'
+        'error' => 'Invalid action. Supported actions: list, get, user_projects'
     ]);
 }
 ?>

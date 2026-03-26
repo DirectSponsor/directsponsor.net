@@ -130,7 +130,8 @@ function createProjectInvoice($project_id, $amount, $donor_name = '', $message =
             'Content-Type: application/json',
             'Authorization: Bearer ' . $recipient_api_key
         ],
-        CURLOPT_TIMEOUT => 30
+        CURLOPT_TIMEOUT => 15,
+        CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
     ]);
     
     $response = curl_exec($curl);

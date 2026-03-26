@@ -2,7 +2,7 @@
 // DirectSponsor Data Directory Configuration
 // Updated for separated architecture
 define('DS_DATA_DIR', '/var/www/directsponsor.net/userdata');
-define('USERDATA_DIR', DS_DATA_DIR . '/userdata');
+define('USERDATA_DIR', DS_DATA_DIR);
 define('PROJECTS_DIR', DS_DATA_DIR . '/projects');
 define('PAYMENTS_DIR', DS_DATA_DIR . '/payments');
 define('ANALYTICS_DIR', DS_DATA_DIR . '/analytics');

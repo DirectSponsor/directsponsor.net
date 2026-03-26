@@ -438,7 +438,13 @@ function loadFundraiser() {
 function populateFundraiser(d) {
     document.getElementById('fundraiser-content').style.display = 'block';
     document.getElementById('fundraiser-title').textContent = d.title || 'Untitled Project';
-    document.getElementById('fundraiser-recipient').textContent = d.recipient || d.owner_user_id || '—';
+    var recipientName = d.recipient || d.owner_user_id || '—';
+    var recipientEl = document.getElementById('fundraiser-recipient');
+    if (d.owner_user_id && d.owner_user_id !== '—') {
+        recipientEl.innerHTML = '<a href="profile.html?user=' + encodeURIComponent(d.owner_user_id) + '" style="color:inherit;">' + recipientName + '</a>';
+    } else {
+        recipientEl.textContent = recipientName;
+    }
 
     if (d.image_url) {
         const img = document.getElementById('fundraiser-image');

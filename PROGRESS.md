@@ -1,5 +1,5 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-03-21_
+_Last updated: 2026-03-22_
 
 ## What's done and live
 
@@ -84,8 +84,17 @@ _Last updated: 2026-03-21_
 - Idea: coin holdings give weight to fundraisers → influences automatic project selection when advertiser buys ad space
 - No existing system to copy — needs design work before implementation
 
+### Admin role management
+- Currently roles are assigned manually via SSH (editing profile `.txt` files directly)
+- Default role on signup is `member`; recipients need `recipient` role added manually
+- The `recipient` role gates the Coinos username field on `profile.html`
+- API endpoint already exists: `simple-profile.php?action=manage_roles` (admin-only POST)
+- **Todo:** Build a simple `admin.html` page — search users, view their roles, add/remove roles
+- **Todo:** When a new recipient is onboarded, document the steps: create account → assign `recipient` role → set Coinos username in profile → add `*-config.json` with API key
+
 ### Evans project
 - Needs Coinos account + API key added to `evans/001-config.json` to accept donations
+- Evans profile now has `recipient` role — Coinos username field visible on profile.html
 
 ---
 

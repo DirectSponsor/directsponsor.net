@@ -192,10 +192,38 @@
     <p>Loading profile...</p>
 </div>
 
-<div id="profile-not-logged-in" class="project-card">
+<div id="profile-not-logged-in" class="project-card" style="display:none;">
     <h2>Login required</h2>
     <p>Please log in to view your profile.</p>
     <a href="#" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href); return false;" class="save-btn" style="text-decoration:none;display:inline-block;">Log in</a>
+</div>
+
+<div id="profile-not-found" class="project-card" style="display:none;">
+    <h2>User not found</h2>
+    <p>No profile exists for that username.</p>
+    <a href="projects.html">Browse projects →</a>
+</div>
+
+<!-- PUBLIC VIEW (read-only, shown when ?user=USERNAME) -->
+<div id="profile-public" style="display:none;">
+    <div class="project-card profile-section">
+        <h2 id="pub-heading">👤 Profile</h2>
+        <p id="pub-roles"></p>
+        <p id="pub-bio" style="margin-top:0.5em;"></p>
+        <p id="pub-location" style="font-size:0.9em;color:#666;"></p>
+        <p id="pub-website" style="font-size:0.9em;"></p>
+    </div>
+    <div class="project-card profile-section" id="pub-projects-section" style="display:none;">
+        <h2>📋 Projects</h2>
+        <div id="pub-projects-active"></div>
+        <div id="pub-projects-completed" style="display:none;">
+            <h3 style="font-size:1em;color:#666;margin-top:1em;border-top:1px solid #e1e8ed;padding-top:0.75em;">Completed</h3>
+            <div id="pub-projects-completed-list"></div>
+        </div>
+        <div id="pub-projects-none" style="display:none;">
+            <p style="color:#888;font-size:0.9em;">No projects yet.</p>
+        </div>
+    </div>
 </div>
 
 <div id="profile-content" style="display:none;">
@@ -246,14 +274,36 @@
         <span class="status-msg" id="save-status"></span>
     </div>
 
+    <div class="project-card profile-section" id="my-projects-section" style="display:none;">
+        <h2>📋 My Projects</h2>
+        <div id="my-projects-active"></div>
+        <div id="my-projects-completed" style="display:none;">
+            <h3 style="font-size:1em;color:#666;margin-top:1em;border-top:1px solid #e1e8ed;padding-top:0.75em;">Completed</h3>
+            <div id="my-projects-completed-list"></div>
+        </div>
+        <div id="my-projects-none" style="display:none;">
+            <p style="color:#888;font-size:0.9em;">No projects yet.</p>
+        </div>
+    </div>
+
 </div>
 
 <script>
 var _profile = null;
 var _userId = null;
+var _username = '';
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Check login via JWT in sessionStorage (DS auth system)
+    var params = new URLSearchParams(window.location.search);
+    var viewUser = params.get('user');
+
+    // PUBLIC VIEW — no auth needed
+    if (viewUser) {
+        loadPublicProfile(viewUser);
+        return;
+    }
+
+    // OWN PROFILE — requires login
     var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
     if (!jwt) {
         document.getElementById('profile-loading').style.display = 'none';
@@ -261,10 +311,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Decode JWT payload (no verification needed client-side)
     try {
         var payload = JSON.parse(atob(jwt.split('.')[1]));
         _userId = payload.user_id || payload.sub || payload.id;
+        _username = payload.username || '';
     } catch(e) {
         document.getElementById('profile-loading').style.display = 'none';
         document.getElementById('profile-not-logged-in').style.display = 'block';
@@ -277,11 +327,69 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    loadProfile(_userId);
+    loadProfile(_userId, _username);
 });
 
-function loadProfile(userId) {
-    fetch('/api/simple-profile.php?action=profile&user_id=' + encodeURIComponent(userId))
+function loadPublicProfile(username) {
+    fetch('/api/simple-profile.php?action=public_profile&username=' + encodeURIComponent(username))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            document.getElementById('profile-loading').style.display = 'none';
+            if (!data.success) {
+                document.getElementById('profile-not-found').style.display = 'block';
+                return;
+            }
+            var p = data.profile;
+            document.getElementById('pub-heading').textContent =
+                (p.display_name || p.username || username) + "'s Profile";
+            var roles = p.roles || ['member'];
+            document.getElementById('pub-roles').innerHTML = roles.map(function(r) {
+                return '<span class="role-badge ' + (r === 'recipient' ? 'recipient' : '') + '">' + r + '</span>';
+            }).join(' ');
+            if (p.bio)      document.getElementById('pub-bio').textContent      = p.bio;
+            if (p.location) document.getElementById('pub-location').textContent = '📍 ' + p.location;
+            if (p.website)  document.getElementById('pub-website').innerHTML    =
+                '🔗 <a href="' + escHtml(p.website) + '" rel="noopener" target="_blank">' + escHtml(p.website) + '</a>';
+            document.getElementById('profile-public').style.display = 'block';
+            // Load their projects into the public section
+            loadPublicProjects(username);
+        })
+        .catch(function() {
+            document.getElementById('profile-loading').style.display = 'none';
+            document.getElementById('profile-not-found').style.display = 'block';
+        });
+}
+
+function loadPublicProjects(username) {
+    fetch('/api/fundraiser-api.php?action=user_projects&username=' + encodeURIComponent(username))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success) return;
+            var section  = document.getElementById('pub-projects-section');
+            var activeEl = document.getElementById('pub-projects-active');
+            var compEl   = document.getElementById('pub-projects-completed-list');
+            var compWrap = document.getElementById('pub-projects-completed');
+            var noneEl   = document.getElementById('pub-projects-none');
+            var active   = data.active    || [];
+            var completed= data.completed || [];
+            section.style.display = 'block';
+            if (active.length === 0 && completed.length === 0) {
+                noneEl.style.display = 'block';
+                return;
+            }
+            active.forEach(function(p) { activeEl.appendChild(renderProjectCard(p, true)); });
+            if (completed.length > 0) {
+                compWrap.style.display = 'block';
+                completed.forEach(function(p) { compEl.appendChild(renderProjectCard(p, false)); });
+            }
+        })
+        .catch(function() {});
+}
+
+function loadProfile(userId, username) {
+    var url = '/api/simple-profile.php?action=profile&user_id=' + encodeURIComponent(userId);
+    if (username) url += '&username=' + encodeURIComponent(username);
+    fetch(url)
         .then(function(r) { return r.json(); })
         .then(function(data) {
             document.getElementById('profile-loading').style.display = 'none';
@@ -321,6 +429,76 @@ function populateForm(p) {
         document.getElementById('coinos-username').value    = p.coinos_username || '';
         document.getElementById('lightning-address').value  = p.lightning_address || '';
     }
+
+    // Load projects for any logged-in user (recipients will have projects; others see the empty state)
+    var uname = p.username || _username;
+    if (uname) {
+        loadUserProjects(uname);
+    }
+}
+
+function loadUserProjects(username) {
+    fetch('/api/fundraiser-api.php?action=user_projects&username=' + encodeURIComponent(username))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success) return;
+            var section = document.getElementById('my-projects-section');
+            section.style.display = 'block';
+
+            var activeEl  = document.getElementById('my-projects-active');
+            var compEl    = document.getElementById('my-projects-completed-list');
+            var compWrap  = document.getElementById('my-projects-completed');
+            var noneEl    = document.getElementById('my-projects-none');
+
+            var active    = data.active    || [];
+            var completed = data.completed || [];
+
+            if (active.length === 0 && completed.length === 0) {
+                noneEl.style.display = 'block';
+                return;
+            }
+
+            active.forEach(function(p) {
+                activeEl.appendChild(renderProjectCard(p, true));
+            });
+
+            if (completed.length > 0) {
+                compWrap.style.display = 'block';
+                completed.forEach(function(p) {
+                    compEl.appendChild(renderProjectCard(p, false));
+                });
+            }
+        })
+        .catch(function() {});
+}
+
+function renderProjectCard(p, isActive) {
+    var pct = p.goal_amount > 0 ? Math.min(100, Math.round(p.current_amount / p.goal_amount * 100)) : 0;
+    var div = document.createElement('div');
+    div.style.cssText = 'border:1px solid #e1e8ed;border-radius:0.4em;padding:0.75em;margin-bottom:0.6em;' +
+        (isActive ? 'border-left:3px solid #f7b731;' : 'opacity:0.8;');
+    div.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;">' +
+            '<strong><a href="fundraiser.html?project=' + encodeURIComponent(p.id) +
+                '&user=' + encodeURIComponent(p.owner_user_id || '') + '" style="color:#333;">' +
+                escHtml(p.title) + '</a></strong>' +
+            '<span style="font-size:0.8em;color:' + (isActive ? '#2a9d2a' : '#999') + ';">' +
+                (isActive ? '● Active' : '✓ Completed') + '</span>' +
+        '</div>' +
+        '<div style="margin-top:0.4em;background:#f0f0f0;border-radius:2em;height:6px;">' +
+            '<div style="width:' + pct + '%;background:#f7b731;height:6px;border-radius:2em;"></div>' +
+        '</div>' +
+        '<div style="font-size:0.8em;color:#666;margin-top:0.3em;">' +
+            pct + '% &nbsp;·&nbsp; ' + p.current_amount.toLocaleString() + ' / ' +
+            p.goal_amount.toLocaleString() + ' sats' +
+        '</div>';
+    return div;
+}
+
+function escHtml(s) {
+    return String(s).replace(/[&<>"']/g, function(c) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
 }
 
 function saveProfile() {
