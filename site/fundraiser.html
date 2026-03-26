@@ -489,7 +489,7 @@ function populateFundraiser(d) {
     }
 
     const raised = parseInt(d.current_amount) || 0;
-    const goal   = parseInt(d.target_amount) || 0;
+    const goal   = parseInt(d.goal_amount || d.target_amount) || 0;
     const pct    = goal > 0 ? Math.min(100, Math.round(raised / goal * 100)) : 0;
 
     document.getElementById('amount-raised').textContent = raised.toLocaleString();
