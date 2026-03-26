@@ -1,0 +1,417 @@
+<!-- DS-CMS Built File - Edit source files in includes/ folder -->
+
+<!-- #TITLE#="Admin — DirectSponsor" -->
+<!-- #DESC#="Admin role management for DirectSponsor." -->
+<!-- #KEYWORDS#="admin, roles, directsponsor" -->
+
+<!-- include start doctype-head.incl -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — DirectSponsor</title>
+    <meta name="description" content="Admin role management for DirectSponsor.">
+    <meta name="keywords" content="admin, roles, directsponsor">
+
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://directsponsor.net">
+    <meta property="og:title" content="DirectSponsor - Revolutionary Peer-to-Peer Charity">
+    <meta property="og:description" content="Eliminate charity middlemen. Send money directly to verified recipients with complete transparency.">
+
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐫</text></svg>">
+
+    <!-- Main Styles -->
+    <link rel="stylesheet" href="styles/directsponsor-compact.css">
+
+    <script>
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var jwt = params.get('jwt');
+        if (jwt) {
+            sessionStorage.setItem('jwt', jwt);
+            params.delete('jwt');
+            var newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+            window.history.replaceState({}, '', newUrl);
+        }
+    })();
+    </script>
+</head>
+<body>
+
+<!-- BETa RIBBON -->
+<div class="corner-ribbon top-left sticky red shadow">BETA</div>
+<!-- include end doctype-head.incl -->
+
+<style>
+.admin-section { margin-bottom: 1.5em; }
+.admin-section h2 { font-size: 1.1em; border-bottom: 1px solid #e1e8ed; padding-bottom: 0.4em; margin-bottom: 0.8em; color: #333; }
+
+.search-row { display: flex; gap: 0.5em; align-items: center; }
+.search-row input { flex: 1; padding: 0.5em; border: 1px solid #ccc; border-radius: 0.3em; font-size: 0.95em; }
+.search-row button { padding: 0.5em 1em; background: #555; color: #fff; border: none; border-radius: 0.3em; cursor: pointer; font-size: 0.9em; }
+.search-row button:hover { background: #333; }
+
+.user-result {
+    border: 1px solid #e1e8ed;
+    border-radius: 0.4em;
+    padding: 0.75em;
+    margin-bottom: 0.6em;
+}
+.user-result-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.4em; }
+.user-result-name { font-weight: bold; font-size: 0.95em; }
+.user-result-id { font-size: 0.8em; color: #999; }
+
+.roles-row { display: flex; gap: 0.4em; flex-wrap: wrap; align-items: center; }
+.role-badge {
+    background: #e8f4e8; border: 1px solid #aad4aa; color: #2a6a2a;
+    font-size: 0.8em; padding: 0.2em 0.5em; border-radius: 1em;
+    display: inline-flex; align-items: center; gap: 0.3em;
+}
+.role-badge.recipient { background: #fff3cd; border-color: #f7b731; color: #7a5a00; }
+.role-badge.admin { background: #fde8e8; border-color: #e88; color: #700; }
+.role-badge button {
+    background: none; border: none; cursor: pointer; color: inherit;
+    font-size: 0.9em; padding: 0; line-height: 1;
+}
+.role-badge button:hover { opacity: 0.7; }
+
+.add-role-row { display: flex; gap: 0.4em; margin-top: 0.5em; align-items: center; }
+.add-role-row select { padding: 0.3em 0.5em; border: 1px solid #ccc; border-radius: 0.3em; font-size: 0.85em; }
+.add-role-row button { padding: 0.3em 0.75em; background: #f7b731; color: #000; border: none; border-radius: 0.3em; cursor: pointer; font-size: 0.85em; font-weight: bold; }
+.add-role-row button:hover { background: #e0a520; }
+
+.msg { font-size: 0.85em; margin-left: 0.5em; }
+.msg.ok { color: #2a9d2a; }
+.msg.err { color: #c00; }
+
+#access-denied, #not-logged-in { display: none; text-align: center; padding: 3em; }
+#admin-panel { display: none; }
+#loading { text-align: center; padding: 2em; color: #666; }
+</style>
+
+<!-- include start social-layout-start.incl -->
+<header class="site-header">
+    <div class="header-content">
+        <div class="logo">
+            <a href="index.html">💎 DirectSponsor</a>
+            <span class="tagline">Peer-to-Peer Charity</span>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html">Home</a>
+            <a href="projects.html">Projects</a>
+            <a href="about.html">About</a>
+            <a href="contact.html">Contact</a>
+            <a href="profile.html" id="nav-profile-link" style="display:none;">Profile</a>
+            <a href="#" id="nav-login-link" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href); return false;">Login</a>
+        </nav>
+    </div>
+</header>
+<script>
+(function() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (jwt) {
+        var profileLink = document.getElementById('nav-profile-link');
+        var loginLink = document.getElementById('nav-login-link');
+        if (profileLink) profileLink.style.display = '';
+        if (loginLink) loginLink.style.display = 'none';
+    }
+})();
+</script>
+
+<!-- 2-Column Layout: main content + right sidebar -->
+<div class="layout-container">
+
+    <main class="main-content">
+
+<!-- UNIQUE PAGE CONTENT GOES HERE -->
+<!-- include end social-layout-start.incl -->
+
+<div id="loading" class="project-card"><p>Loading...</p></div>
+
+<div id="not-logged-in" class="project-card">
+    <h2>Login required</h2>
+    <p>You must be logged in as an admin to access this page.</p>
+    <a href="#" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href); return false;" class="save-btn" style="text-decoration:none;display:inline-block;">Log in</a>
+</div>
+
+<div id="access-denied" class="project-card">
+    <h2>⛔ Access Denied</h2>
+    <p>This page is for admins only.</p>
+    <a href="index.html">← Back to home</a>
+</div>
+
+<div id="admin-panel">
+
+    <div class="project-card admin-section">
+        <h2>🔑 Role Management</h2>
+        <p style="font-size:0.9em;color:#666;margin-bottom:0.75em;">Search for a user by username, then add or remove roles.</p>
+        <div class="search-row">
+            <input type="text" id="search-input" placeholder="Search username…" onkeydown="if(event.key==='Enter')searchUsers()">
+            <button onclick="searchUsers()">Search</button>
+        </div>
+        <div id="search-status" style="font-size:0.85em;color:#888;margin-top:0.4em;"></div>
+        <div id="search-results" style="margin-top:0.75em;"></div>
+    </div>
+
+    <div class="project-card admin-section">
+        <h2>ℹ️ Available Roles</h2>
+        <ul style="font-size:0.9em;color:#555;margin:0;padding-left:1.2em;line-height:1.8em;">
+            <li><strong>member</strong> — default for all users, cannot be removed</li>
+            <li><strong>recipient</strong> — can receive donations; unlocks Coinos username field and My Projects section</li>
+            <li><strong>admin</strong> — full admin access including this panel</li>
+        </ul>
+    </div>
+
+</div>
+
+<script>
+var _adminUserId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (!jwt) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('not-logged-in').style.display = 'block';
+        return;
+    }
+
+    var payload;
+    try {
+        payload = JSON.parse(atob(jwt.split('.')[1]));
+    } catch(e) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('not-logged-in').style.display = 'block';
+        return;
+    }
+
+    _adminUserId = payload.user_id || payload.sub || payload.id;
+    var username  = payload.username || '';
+
+    // Check roles via API (can't trust client-side JWT alone for admin gate)
+    fetch('/api/simple-profile.php?action=check_roles&roles=admin&user_id=' + encodeURIComponent(_adminUserId)
+          + (username ? '&username=' + encodeURIComponent(username) : ''))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            document.getElementById('loading').style.display = 'none';
+            if (!data.success || !data.role_checks['admin']) {
+                document.getElementById('access-denied').style.display = 'block';
+                return;
+            }
+            document.getElementById('admin-panel').style.display = 'block';
+        })
+        .catch(function() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('access-denied').style.display = 'block';
+        });
+});
+
+function searchUsers() {
+    var q = document.getElementById('search-input').value.trim();
+    if (!q) return;
+    var status = document.getElementById('search-status');
+    var results = document.getElementById('search-results');
+    status.textContent = 'Searching…';
+    results.innerHTML = '';
+
+    fetch('/api/simple-profile.php?action=search&query=' + encodeURIComponent(q)
+          + '&user_id=' + encodeURIComponent(_adminUserId))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success) {
+                status.textContent = data.error || 'Search failed.';
+                return;
+            }
+            status.textContent = data.count + ' user(s) found.';
+            if (data.count === 0) return;
+            data.results.forEach(function(u) {
+                results.appendChild(renderUserCard(u));
+            });
+        })
+        .catch(function() { status.textContent = 'Network error.'; });
+}
+
+function renderUserCard(u) {
+    var div = document.createElement('div');
+    div.className = 'user-result';
+    div.id = 'user-card-' + u.user_id;
+
+    var roles = u.roles || ['member'];
+
+    div.innerHTML =
+        '<div class="user-result-header">' +
+            '<span class="user-result-name">' + escHtml(u.display_name || u.username) + '</span>' +
+            '<span class="user-result-id">@' + escHtml(u.username) + ' &nbsp;·&nbsp; id: ' + escHtml(u.user_id) + '</span>' +
+        '</div>' +
+        '<div class="roles-row" id="roles-row-' + u.user_id + '">' +
+            renderRoleBadges(u.user_id, roles) +
+        '</div>' +
+        '<div class="add-role-row">' +
+            '<select id="role-select-' + u.user_id + '">' +
+                '<option value="recipient">recipient</option>' +
+                '<option value="admin">admin</option>' +
+                '<option value="member">member</option>' +
+            '</select>' +
+            '<button onclick="addRole(\'' + escAttr(u.user_id) + '\')">+ Add role</button>' +
+            '<span class="msg" id="msg-' + u.user_id + '"></span>' +
+        '</div>';
+    return div;
+}
+
+function renderRoleBadges(userId, roles) {
+    return roles.map(function(r) {
+        var removable = r !== 'member';
+        return '<span class="role-badge ' + r + '">' + escHtml(r) +
+            (removable ? ' <button title="Remove role" onclick="removeRole(\'' + escAttr(userId) + '\',\'' + escAttr(r) + '\')">✕</button>' : '') +
+            '</span>';
+    }).join('');
+}
+
+function addRole(userId) {
+    var role = document.getElementById('role-select-' + userId).value;
+    manageRole(userId, 'add', role);
+}
+
+function removeRole(userId, role) {
+    manageRole(userId, 'remove', role);
+}
+
+function manageRole(userId, operation, role) {
+    var msgEl = document.getElementById('msg-' + userId);
+    msgEl.textContent = 'Saving…';
+    msgEl.className = 'msg';
+
+    fetch('/api/simple-profile.php?action=manage_roles', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            user_id:        _adminUserId,
+            target_user_id: userId,
+            operation:      operation,
+            role:           role
+        })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            msgEl.textContent = '✅ Done';
+            msgEl.className = 'msg ok';
+            // Re-render the badges with updated roles
+            document.getElementById('roles-row-' + userId).innerHTML =
+                renderRoleBadges(userId, data.new_roles);
+        } else {
+            msgEl.textContent = data.error || 'Failed.';
+            msgEl.className = 'msg err';
+        }
+        setTimeout(function() { msgEl.textContent = ''; }, 3000);
+    })
+    .catch(function() {
+        msgEl.textContent = 'Network error.';
+        msgEl.className = 'msg err';
+    });
+}
+
+function escHtml(s) {
+    return String(s).replace(/[&<>"']/g, function(c) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+}
+function escAttr(s) { return escHtml(s); }
+</script>
+
+<!-- include start social-layout-end.incl -->
+<!-- END UNIQUE PAGE CONTENT -->
+
+    </main>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="sidebar-box">
+            <h4>Admin Panel</h4>
+            <p>Manage user roles and permissions.</p>
+        </div>
+
+        <div class="sidebar-box">
+            <h4>Quick Links</h4>
+            <ul style="margin:0;padding-left:1.2em;font-size:0.9em;line-height:1.8em;">
+                <li><a href="profile.html">My Profile</a></li>
+                <li><a href="projects.html">Projects</a></li>
+            </ul>
+        </div>
+
+    </aside>
+
+</div>
+<!-- End layout container -->
+
+<script>
+(function() {
+    const header = document.querySelector('.site-header');
+    let lastScrollY = window.scrollY;
+    let isCondensed = false;
+    function handleScroll() {
+        const currentScrollY = window.scrollY;
+        if (currentScrollY > 50 && !isCondensed) { header.classList.add('condensed'); isCondensed = true; }
+        else if (currentScrollY <= 30 && isCondensed) { header.classList.remove('condensed'); isCondensed = false; }
+        lastScrollY = currentScrollY;
+    }
+    let ticking = false;
+    window.addEventListener('scroll', function() {
+        if (!ticking) { requestAnimationFrame(function() { handleScroll(); ticking = false; }); ticking = true; }
+    });
+})();
+(function() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (jwt) { var el = document.getElementById('nav-profile-link'); if (el) el.style.display = ''; }
+})();
+</script>
+<!-- include end social-layout-end.incl -->
+
+<!-- include start footer.incl -->
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>💎 DirectSponsor</h4>
+                    <p>Revolutionary peer-to-peer charity eliminating middlemen and connecting sponsors directly with verified recipients.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">Twitter</a>
+                        <a href="#" class="social-link">Nostr</a>
+                        <a href="#" class="social-link">GitHub</a>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h4>🔗 Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="projects.html">Projects</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="about.html#how-it-works">How It Works</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>🚀 DS-CMS</h4>
+                    <p>Zero dependencies, maximum simplicity. Perfect for shared hosting.</p>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/satoshihost/ds-cms" target="_blank">GitHub</a></li>
+                        <li><a href="#" target="_blank">Documentation</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2025 DS-CMS Demo Site. Built with HTML-first principles.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
+<!-- include end footer.incl -->
