@@ -335,16 +335,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'search') {
         exit;
     }
     
-    // Determine requester's profile file (PHP 7.4 compatible)
-    if (strpos($requesterId, '-') === false) {
-        $foundFile = findProfileByUsername($requesterId);
-        if ($foundFile) {
-            $requesterFile = $foundFile;
-        } else {
-            $requesterFile = USERDATA_DIR . "/profiles/{$requesterId}.txt";
-        }
-    } else {
+    // Determine requester's profile file
+    if (strpos($requesterId, '-') !== false) {
         $requesterFile = USERDATA_DIR . "/profiles/{$requesterId}.txt";
+    } else {
+        $glob = glob(USERDATA_DIR . "/profiles/{$requesterId}-*.txt");
+        $requesterFile = $glob ? $glob[0] : USERDATA_DIR . "/profiles/{$requesterId}.txt";
     }
     
     $requesterData = loadProfileData($requesterFile, $requesterId);
@@ -543,7 +539,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'profile') {
     $input = json_decode(file_get_contents('php://input'), true);
     
     // Load current admin's profile to check permissions
-    $adminProfileFile = USERDATA_DIR . "/profiles/{$userId}.txt";
+    if (strpos($userId, '-') !== false) {
+        $adminProfileFile = USERDATA_DIR . "/profiles/{$userId}.txt";
+    } else {
+        $glob = glob(USERDATA_DIR . "/profiles/{$userId}-*.txt");
+        $adminProfileFile = $glob ? $glob[0] : USERDATA_DIR . "/profiles/{$userId}.txt";
+    }
     $adminProfile = loadProfileData($adminProfileFile, $userId);
     
     // Check if current user is admin
@@ -564,7 +565,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'profile') {
     }
     
     // Load target user's profile
-    $targetProfileFile = USERDATA_DIR . "/profiles/{$targetUserId}.txt";
+    if (strpos($targetUserId, '-') !== false) {
+        $targetProfileFile = USERDATA_DIR . "/profiles/{$targetUserId}.txt";
+    } else {
+        $glob = glob(USERDATA_DIR . "/profiles/{$targetUserId}-*.txt");
+        $targetProfileFile = $glob ? $glob[0] : USERDATA_DIR . "/profiles/{$targetUserId}.txt";
+    }
     $targetData = loadProfileData($targetProfileFile, $targetUserId);
     
     // Perform role operation
@@ -583,6 +589,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'profile') {
     $targetData['roles'] = $roles;
     
     // Save updated data
+    $targetData['roles'] = $roles;
     if (saveProfileData($targetProfileFile, $targetData)) {
         echo json_encode([
             'success' => true,
