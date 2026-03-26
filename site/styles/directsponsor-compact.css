@@ -188,7 +188,15 @@ ul li {
 }
 
 /* Main navigation (compact) */
-.main-nav a {
+.main-nav {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0;
+}
+
+.main-nav a,
+.main-nav .nav-user-menu > a {
     color: #0066cc;
     text-decoration: none;
     padding: 0.25em 0.5em;
