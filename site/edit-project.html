@@ -275,26 +275,35 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Decode JWT payload
+    // Decode JWT payload to get user_id and username
+    var _userId = null;
     try {
         var payload = JSON.parse(atob(_jwt.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
         _username = payload.username || payload.sub || null;
-        var roles = payload.roles || [];
-        if (roles.indexOf('recipient') === -1 && roles.indexOf('admin') === -1) {
-            show('access-denied');
-            return;
-        }
+        _userId   = payload.user_id  || payload.sub || null;
     } catch(e) {
         show('not-logged-in');
         return;
     }
 
-    if (!_username) {
+    if (!_username || !_userId) {
         show('not-logged-in');
         return;
     }
 
-    loadProject();
+    // Check roles from profile API (JWT won't contain them)
+    fetch('/api/simple-profile.php?action=check_roles&roles=recipient,admin&user_id='
+          + encodeURIComponent(_userId) + '&username=' + encodeURIComponent(_username))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var checks = data.role_checks || {};
+            if (!checks['recipient'] && !checks['admin']) {
+                show('access-denied');
+                return;
+            }
+            loadProject();
+        })
+        .catch(function() { show('access-denied'); });
 });
 
 function show(id) {

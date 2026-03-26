@@ -12,7 +12,7 @@
 
 define('DS_DATA_DIR', '/var/www/directsponsor.net/userdata');
 define('PROJECTS_DIR', DS_DATA_DIR . '/projects');
-define('USERDATA_DIR', DS_DATA_DIR . '/userdata');
+define('USERDATA_DIR', DS_DATA_DIR);
 define('JWT_SECRET', getenv('JWT_SECRET') ?: 'hybrid_fresh_2025_secret_key');
 
 header('Content-Type: application/json');
@@ -44,7 +44,7 @@ if (preg_match('/Bearer\s+(.+)/i', $authHeader, $m)) {
 }
 
 $callerUsername = null;
-$callerRoles = [];
+$callerId = null;
 
 if ($jwt) {
     $parts = explode('.', $jwt);
@@ -52,12 +52,11 @@ if ($jwt) {
         $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
         if ($payload) {
             $callerUsername = $payload['username'] ?? $payload['sub'] ?? null;
-            $callerRoles    = $payload['roles'] ?? [];
+            $callerId       = $payload['user_id'] ?? $payload['sub'] ?? null;
         }
     }
 }
 
-// Fallback: accept user_id from body for now (session-bridge will handle proper auth later)
 if (!$callerUsername && !empty($input['username'])) {
     $callerUsername = $input['username'];
 }
@@ -68,23 +67,61 @@ if (!$callerUsername) {
     exit;
 }
 
+// Load roles from profile file (JWT won't contain them)
+$callerRoles = ['member'];
+if ($callerId) {
+    $glob = glob(USERDATA_DIR . '/profiles/' . $callerId . '-*.txt');
+    $pfile = $glob ? $glob[0] : USERDATA_DIR . '/profiles/' . $callerId . '.txt';
+    if (file_exists($pfile)) {
+        $pd = json_decode(file_get_contents($pfile), true);
+        $callerRoles = $pd['roles'] ?? ['member'];
+    }
+}
+
+// Must be recipient or admin
+$isAdmin = in_array('admin', $callerRoles);
+if (!$isAdmin && !in_array('recipient', $callerRoles)) {
+    http_response_code(403);
+    echo json_encode(['error' => 'Recipient role required to manage projects']);
+    exit;
+}
+
 $project_id = preg_replace('/[^a-z0-9-]/', '', strtolower($input['project_id'] ?? '001'));
 $target_username = $input['username'] ?? $callerUsername;
 
 // Permission check: must be own project or admin
-$isAdmin = in_array('admin', $callerRoles);
 if (!$isAdmin && $target_username !== $callerUsername) {
     http_response_code(403);
     echo json_encode(['error' => 'You can only edit your own projects']);
     exit;
 }
 
-// Find the project HTML file
+// Find or create the project HTML file
 $htmlFile = PROJECTS_DIR . '/' . $target_username . '/active/' . $project_id . '.html';
 if (!file_exists($htmlFile)) {
-    http_response_code(404);
-    echo json_encode(['error' => 'Project file not found: ' . $htmlFile]);
-    exit;
+    // New project — create directory and stub file from template
+    $dir = dirname($htmlFile);
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    // Minimal HTML stub with all required comment tags
+    $stub = '<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title><!-- title -->Untitled Project<!-- end title --></title></head>
+<body>
+<!-- OWNER: ' . htmlspecialchars($target_username, ENT_QUOTES) . ' -->
+<!-- title -->Untitled Project<!-- end title -->
+<!-- description --><!-- end description -->
+<!-- full-description --><!-- end full-description -->
+<!-- target-amount -->0<!-- end target-amount -->
+<!-- current-amount -->0<!-- end current-amount -->
+<!-- recipient-name -->' . htmlspecialchars($target_username, ENT_QUOTES) . '<!-- end recipient-name -->
+<!-- category -->General<!-- end category -->
+<!-- status -->active<!-- end status -->
+<!-- location --><!-- end location -->
+<!-- website-url --><!-- end website-url -->
+<!-- lightning-address --><!-- end lightning-address -->
+</body></html>';
+    file_put_contents($htmlFile, $stub);
 }
 
 $html = file_get_contents($htmlFile);
