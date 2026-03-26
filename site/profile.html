@@ -430,10 +430,12 @@ function populateForm(p) {
         document.getElementById('lightning-address').value  = p.lightning_address || '';
     }
 
-    // Load projects for any logged-in user (recipients will have projects; others see the empty state)
-    var uname = p.username || _username;
-    if (uname) {
-        loadUserProjects(uname);
+    // Only show My Projects section for recipients and admins
+    if (roles.indexOf('recipient') !== -1 || roles.indexOf('admin') !== -1) {
+        var uname = p.username || _username;
+        if (uname) {
+            loadUserProjects(uname);
+        }
     }
 }
 
