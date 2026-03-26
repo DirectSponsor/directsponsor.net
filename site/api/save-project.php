@@ -175,6 +175,22 @@ if (!rename($tmp, $htmlFile)) {
     exit;
 }
 
+// Write config.json if a Coinos API key was provided
+$coinosApiKey = trim($input['coinos_api_key'] ?? '');
+if ($coinosApiKey) {
+    $configFile = PROJECTS_DIR . '/' . $target_username . '/' . $project_id . '-config.json';
+    $existingConfig = file_exists($configFile)
+        ? (json_decode(file_get_contents($configFile), true) ?? [])
+        : [];
+    $existingConfig['project_id'] = $project_id;
+    $existingConfig['recipient_wallet'] = [
+        'type'            => 'coinos',
+        'api_key'         => $coinosApiKey,
+        'coinos_username' => $target_username,
+    ];
+    file_put_contents($configFile, json_encode($existingConfig, JSON_PRETTY_PRINT));
+}
+
 echo json_encode([
     'success'    => true,
     'message'    => 'Project saved',
