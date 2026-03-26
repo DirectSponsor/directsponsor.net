@@ -102,7 +102,7 @@ function createProjectInvoice($project_id, $amount, $donor_name = '', $message =
         $projectTitle = trim($matches[1]);
     }
     
-    // Create invoice
+    // Create invoice — API key identifies the account, no user wrapper needed
     $invoice_data = [
         'invoice' => [
             'amount' => $amount,
@@ -110,9 +110,6 @@ function createProjectInvoice($project_id, $amount, $donor_name = '', $message =
             'memo' => "Donation to: " . $projectTitle . ($message ? " - " . $message : ""),
             'webhook' => 'https://directsponsor.net/webhook.php',
             'secret' => 'directsponsor_webhook_secret_2025'
-        ],
-        'user' => [
-            'username' => $config['recipient_wallet']['coinos_username'] ?? $foundUsername
         ]
     ];
     
