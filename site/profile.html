@@ -310,7 +310,7 @@ function dsLogout() {
     </div>
 
     <div class="project-card profile-section" id="my-projects-section" style="display:none;">
-        <h2>📋 My Projects</h2>
+        <h2>📋 My Projects &nbsp;<a href="edit-project.html" style="font-size:0.7em;font-weight:normal;background:#f7b731;color:#000;padding:0.25em 0.75em;border-radius:0.3em;text-decoration:none;">+ New</a></h2>
         <div id="my-projects-active"></div>
         <div id="my-projects-completed" style="display:none;">
             <h3 style="font-size:1em;color:#666;margin-top:1em;border-top:1px solid #e1e8ed;padding-top:0.75em;">Completed</h3>
@@ -495,9 +495,13 @@ function loadUserProjects(username) {
                 return;
             }
 
-            active.forEach(function(p) {
-                activeEl.appendChild(renderProjectCard(p, true));
-            });
+            if (active.length === 0) {
+                activeEl.innerHTML = '<p style="margin:0 0 0.75em;"><a href="edit-project.html" style="background:#f7b731;color:#000;padding:0.4em 1em;border-radius:0.3em;text-decoration:none;font-weight:bold;font-size:0.9em;">+ Create a project</a></p>';
+            } else {
+                active.forEach(function(p) {
+                    activeEl.appendChild(renderProjectCard(p, true));
+                });
+            }
 
             if (completed.length > 0) {
                 compWrap.style.display = 'block';
@@ -514,11 +518,14 @@ function renderProjectCard(p, isActive) {
     var div = document.createElement('div');
     div.style.cssText = 'border:1px solid #e1e8ed;border-radius:0.4em;padding:0.75em;margin-bottom:0.6em;' +
         (isActive ? 'border-left:3px solid #f7b731;' : 'opacity:0.8;');
+    var editLink = isActive
+        ? ' &nbsp;<a href="edit-project.html?project=' + encodeURIComponent(p.id) + '" style="font-size:0.75em;color:#888;text-decoration:none;">✏️ Edit</a>'
+        : '';
     div.innerHTML =
         '<div style="display:flex;justify-content:space-between;align-items:baseline;">' +
             '<strong><a href="fundraiser.html?project=' + encodeURIComponent(p.id) +
                 '&user=' + encodeURIComponent(p.owner_user_id || '') + '" style="color:#333;">' +
-                escHtml(p.title) + '</a></strong>' +
+                escHtml(p.title) + '</a>' + editLink + '</strong>' +
             '<span style="font-size:0.8em;color:' + (isActive ? '#2a9d2a' : '#999') + ';">' +
                 (isActive ? '● Active' : '✓ Completed') + '</span>' +
         '</div>' +
