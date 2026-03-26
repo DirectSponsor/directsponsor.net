@@ -223,11 +223,6 @@ function dsLogout() {
         </div>
 
         <div class="form-group">
-            <label for="f-recipient-name">Recipient Display Name</label>
-            <input type="text" id="f-recipient-name" maxlength="100" placeholder="Name shown publicly on the project page">
-        </div>
-
-        <div class="form-group">
             <label for="f-location">Location</label>
             <input type="text" id="f-location" maxlength="100" placeholder="e.g. Nairobi, Kenya">
         </div>
@@ -236,6 +231,12 @@ function dsLogout() {
             <label for="f-website-url">Website / Social Link</label>
             <input type="url" id="f-website-url" placeholder="https://...">
             <p class="hint">Optional</p>
+        </div>
+
+        <div class="form-group">
+            <label for="f-coinos-api-key">Coinos API Key</label>
+            <input type="text" id="f-coinos-api-key" maxlength="200" placeholder="Your Coinos API key for receiving donations">
+            <p class="hint">Get this from your <a href="https://coinos.io" target="_blank">Coinos</a> account settings. Required to receive donations.</p>
         </div>
 
         <div class="form-group">
@@ -338,7 +339,6 @@ function populateForm(f) {
     document.getElementById('f-description').value     = f.description || '';
     document.getElementById('f-full-description').value = f.story || f.description || '';
     document.getElementById('f-target-amount').value   = f.goal_amount || '';
-    document.getElementById('f-recipient-name').value  = f.owner_user_id || _username;
     document.getElementById('f-location').value        =
         (f.contact_info && f.contact_info.location) ? f.contact_info.location : '';
     document.getElementById('f-website-url').value     = '';
@@ -365,10 +365,11 @@ function saveProject() {
         description:      document.getElementById('f-description').value.trim(),
         full_description: document.getElementById('f-full-description').value.trim(),
         target_amount:    document.getElementById('f-target-amount').value,
-        recipient_name:   document.getElementById('f-recipient-name').value.trim(),
+        recipient_name:   _username,
         location:         document.getElementById('f-location').value.trim(),
         website_url:      document.getElementById('f-website-url').value.trim(),
-        category:         document.getElementById('f-category').value
+        category:         document.getElementById('f-category').value,
+        coinos_api_key:   document.getElementById('f-coinos-api-key').value.trim()
     };
 
     fetch('/api/save-project.php', {

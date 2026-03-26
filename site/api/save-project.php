@@ -152,6 +152,7 @@ $fields = [
     'website-url'      => $input['website_url']       ?? null,
     'category'         => $input['category']          ?? null,
     'status'           => $input['status']            ?? null,
+    'coinos-api-key'   => $input['coinos_api_key']    ?? null,
 ];
 
 foreach ($fields as $tag => $value) {
