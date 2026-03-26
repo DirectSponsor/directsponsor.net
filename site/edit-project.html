@@ -359,6 +359,7 @@ function saveProject() {
     status.className = 'status-msg';
 
     var body = {
+        jwt:              _jwt,
         username:         _username,
         project_id:       _projectId,
         title:            document.getElementById('f-title').value.trim(),
