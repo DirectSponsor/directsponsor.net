@@ -232,7 +232,7 @@ function dsLogout() {
             var html = '<div class="project-card"><h2>Active Projects</h2></div><div class="project-grid">';
             projects.forEach(function(p) {
                 var raised = parseInt(p.current_amount) || 0;
-                var goal   = parseInt(p.target_amount) || 0;
+                var goal   = parseInt(p.goal_amount || p.target_amount) || 0;
                 var pct    = goal > 0 ? Math.min(100, Math.round(raised / goal * 100)) : 0;
                 var img    = p.image_url
                     ? '<img src="' + p.image_url + '" alt="' + (p.title || '') + '" loading="lazy">'
