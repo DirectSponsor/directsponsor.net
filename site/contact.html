@@ -59,21 +59,55 @@
             <a href="projects.html">Projects</a>
             <a href="about.html">About</a>
             <a href="contact.html">Contact</a>
-            <a href="profile.html" id="nav-profile-link" style="display:none;">Profile</a>
+            <div class="nav-user-menu" id="nav-user-menu" style="display:none;position:relative;">
+                <a href="#" id="nav-username-btn" onclick="toggleUserMenu(event)">👤 <span id="nav-username-label">Account</span> ▾</a>
+                <div id="nav-user-dropdown" style="display:none;position:absolute;right:0;top:100%;background:#fff;border:1px solid #ddd;border-radius:0.3em;min-width:130px;box-shadow:0 2px 8px rgba(0,0,0,0.12);z-index:999;">
+                    <a href="profile.html" style="display:block;padding:0.5em 1em;color:#333;text-decoration:none;font-size:0.9em;border-bottom:1px solid #eee;">Profile</a>
+                    <a href="#" onclick="dsLogout(); return false;" style="display:block;padding:0.5em 1em;color:#c00;text-decoration:none;font-size:0.9em;">Log out</a>
+                </div>
+            </div>
             <a href="#" id="nav-login-link" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href); return false;">Login</a>
         </nav>
     </div>
 </header>
+<style>
+.nav-user-menu > a { white-space:nowrap; }
+.nav-user-menu:hover #nav-user-dropdown, #nav-user-dropdown.open { display:block !important; }
+</style>
 <script>
 (function() {
     var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
     if (jwt) {
-        var profileLink = document.getElementById('nav-profile-link');
-        var loginLink = document.getElementById('nav-login-link');
-        if (profileLink) profileLink.style.display = '';
-        if (loginLink) loginLink.style.display = 'none';
+        try {
+            var payload = JSON.parse(atob(jwt.split('.')[1]));
+            var uname = payload.username || payload.sub || '';
+            if (uname) document.getElementById('nav-username-label').textContent = uname;
+        } catch(e) {}
+        document.getElementById('nav-user-menu').style.display = '';
+        document.getElementById('nav-login-link').style.display = 'none';
     }
 })();
+function toggleUserMenu(e) {
+    e.preventDefault();
+    var dd = document.getElementById('nav-user-dropdown');
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+    var menu = document.getElementById('nav-user-menu');
+    if (menu && !menu.contains(e.target)) {
+        document.getElementById('nav-user-dropdown').style.display = 'none';
+    }
+});
+function dsLogout() {
+    sessionStorage.removeItem('jwt');
+    localStorage.removeItem('jwt');
+    localStorage.removeItem('user_roles');
+    localStorage.removeItem('directsponsor_session');
+    localStorage.removeItem('username');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('combined_user_id');
+    window.location.href = 'index.html';
+}
 </script>
 
 <!-- 2-Column Layout: main content + right sidebar -->
