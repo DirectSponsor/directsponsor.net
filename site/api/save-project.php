@@ -78,19 +78,19 @@ if ($callerId) {
     }
 }
 
-// Must be recipient or admin
-$isAdmin = in_array('admin', $callerRoles);
-if (!$isAdmin && !in_array('recipient', $callerRoles)) {
+// Only recipients may create/edit projects
+if (!in_array('recipient', $callerRoles)) {
     http_response_code(403);
     echo json_encode(['error' => 'Recipient role required to manage projects']);
     exit;
 }
 
+$isAdmin = in_array('admin', $callerRoles);
 $project_id = preg_replace('/[^a-z0-9-]/', '', strtolower($input['project_id'] ?? '001'));
 $target_username = $input['username'] ?? $callerUsername;
 
-// Permission check: must be own project or admin
-if (!$isAdmin && $target_username !== $callerUsername) {
+// Permission check: must be own project (admin+recipient can still only edit their own)
+if ($target_username !== $callerUsername) {
     http_response_code(403);
     echo json_encode(['error' => 'You can only edit your own projects']);
     exit;

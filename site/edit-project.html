@@ -292,12 +292,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Check roles from profile API (JWT won't contain them)
-    fetch('/api/simple-profile.php?action=check_roles&roles=recipient,admin&user_id='
+    fetch('/api/simple-profile.php?action=check_roles&roles=recipient&user_id='
           + encodeURIComponent(_userId) + '&username=' + encodeURIComponent(_username))
         .then(function(r) { return r.json(); })
         .then(function(data) {
             var checks = data.role_checks || {};
-            if (!checks['recipient'] && !checks['admin']) {
+            if (!checks['recipient']) {
                 show('access-denied');
                 return;
             }
