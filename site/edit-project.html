@@ -263,12 +263,12 @@ function dsLogout() {
 
 <script>
 var _username = null;
-var _projectId = '001';
+var _projectId = null;
 var _jwt = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     var params = new URLSearchParams(window.location.search);
-    _projectId = params.get('project') || '001';
+    _projectId = params.get('project') || null;
 
     _jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
     if (!_jwt) {
@@ -366,7 +366,7 @@ function saveProject() {
     var body = {
         jwt:              _jwt,
         username:         _username,
-        project_id:       _projectId,
+        project_id:       _projectId || '',
         title:            document.getElementById('f-title').value.trim(),
         description:      document.getElementById('f-description').value.trim(),
         full_description: document.getElementById('f-full-description').value.trim(),
@@ -391,7 +391,12 @@ function saveProject() {
         btn.disabled = false;
         btn.textContent = '💾 Save Changes';
         if (data.success) {
-            status.textContent = '✅ Saved! Changes are live.';
+            if (data.project_id) {
+                _projectId = data.project_id;
+                var newUrl = window.location.pathname + '?project=' + encodeURIComponent(_projectId);
+                window.history.replaceState({}, '', newUrl);
+            }
+            status.textContent = '✅ Saved! Project ' + (_projectId || '') + ' is live.';
         } else {
             status.textContent = data.error || 'Save failed.';
             status.className = 'status-msg error';

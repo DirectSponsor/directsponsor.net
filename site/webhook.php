@@ -347,7 +347,61 @@ function processProjectDonation($donation, $foundIndex, $webhookData) {
         logWebhook("Failed to update project HTML file", 'ERROR');
         return false;
     }
-    
+
+    // --- Goal-reached check: auto-advance queue ---
+    $htmlContent = file_get_contents($projectInfo['file']);
+    $currentAmount = 0;
+    $targetAmount  = 0;
+    if (preg_match('/<!-- current-amount -->([^<]+)<!-- end current-amount -->/', $htmlContent, $m)) {
+        $currentAmount = intval(str_replace(',', '', trim($m[1])));
+    }
+    if (preg_match('/<!-- target-amount -->([^<]+)<!-- end target-amount -->/', $htmlContent, $m)) {
+        $targetAmount = intval(str_replace(',', '', trim($m[1])));
+    }
+
+    if ($targetAmount > 0 && $currentAmount >= $targetAmount) {
+        $username    = $projectInfo['username'];
+        $completedId = $donation['project_id'];
+        logWebhook("Goal reached for project $completedId (user: $username). current=$currentAmount target=$targetAmount");
+
+        // Move to completed/
+        $completedDir = PROJECTS_DIR . '/' . $username . '/completed';
+        if (!is_dir($completedDir)) mkdir($completedDir, 0755, true);
+        $completedDest = $completedDir . '/' . $completedId . '.html';
+        if (rename($projectInfo['file'], $completedDest)) {
+            logWebhook("Moved $completedId.html to completed/ for $username");
+        } else {
+            logWebhook("Failed to move $completedId.html to completed/", 'ERROR');
+        }
+
+        // Find next queued project for this recipient (lowest numbered remaining)
+        $nextFiles = glob(PROJECTS_DIR . '/' . $username . '/active/*.html') ?: [];
+        $nextProjectFile = null;
+        $lowestNum = PHP_INT_MAX;
+        foreach ($nextFiles as $f) {
+            if (preg_match('/\/(\d+)\.html$/', $f, $nm)) {
+                if (intval($nm[1]) < $lowestNum) {
+                    $lowestNum = intval($nm[1]);
+                    $nextProjectFile = $f;
+                }
+            }
+        }
+
+        // Carry overpayment into next project
+        $overpayment = $currentAmount - $targetAmount;
+        if ($nextProjectFile && $overpayment > 0) {
+            $nextId = str_pad($lowestNum, 3, '0', STR_PAD_LEFT);
+            logWebhook("Carrying over $overpayment sats overpayment into project $nextId");
+            $overDonation = ['donor_name' => 'Overpayment carry-over'];
+            updateProjectHtml($nextProjectFile, $overDonation, $overpayment);
+        } elseif ($nextProjectFile) {
+            logWebhook("Next project queued: " . basename($nextProjectFile));
+        } else {
+            logWebhook("No next project queued for $username — recipient should add more projects");
+        }
+    }
+    // --- End goal-reached check ---
+
     // Remove from pending
     $projectPending = loadJsonData(PROJECT_DONATIONS_DIR . '/pending.json');
     array_splice($projectPending, $foundIndex, 1);

@@ -86,14 +86,34 @@ if (!in_array('recipient', $callerRoles)) {
 }
 
 $isAdmin = in_array('admin', $callerRoles);
-$project_id = preg_replace('/[^a-z0-9-]/', '', strtolower($input['project_id'] ?? '001'));
 $target_username = $input['username'] ?? $callerUsername;
 
-// Permission check: must be own project (admin+recipient can still only edit their own)
+// Permission check: must be own project
 if ($target_username !== $callerUsername) {
     http_response_code(403);
     echo json_encode(['error' => 'You can only edit your own projects']);
     exit;
+}
+
+// Resolve project_id: if provided and file exists, edit it; otherwise auto-assign next free number
+$raw_project_id = preg_replace('/[^a-z0-9-]/', '', strtolower($input['project_id'] ?? ''));
+$userProjectDir  = PROJECTS_DIR . '/' . $target_username;
+
+if ($raw_project_id) {
+    // Explicit ID requested — use it (editing existing or creating at specific slot)
+    $project_id = $raw_project_id;
+} else {
+    // Auto-assign: find lowest number not used in active/ or completed/
+    $used = [];
+    foreach (glob($userProjectDir . '/active/*.html') ?: [] as $f) {
+        if (preg_match('/\/(\d+)\.html$/', $f, $m)) $used[] = intval($m[1]);
+    }
+    foreach (glob($userProjectDir . '/completed/*.html') ?: [] as $f) {
+        if (preg_match('/\/(\d+)\.html$/', $f, $m)) $used[] = intval($m[1]);
+    }
+    $next = 1;
+    while (in_array($next, $used)) $next++;
+    $project_id = str_pad($next, 3, '0', STR_PAD_LEFT);
 }
 
 // Find or create the project HTML file
