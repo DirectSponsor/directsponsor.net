@@ -530,7 +530,7 @@ function populateFundraiser(d) {
             overEl = document.createElement('p');
             overEl.id = 'overpayment-note';
             overEl.style.cssText = 'font-size:0.85em;color:#888;margin-top:0.4em;';
-            document.getElementById('progress-bar').parentNode.appendChild(overEl);
+            document.getElementById('progress-bar').parentNode.parentNode.appendChild(overEl);
         }
         overEl.textContent = over.toLocaleString() + ' sats donated beyond the goal — thank you! Feel free to donate more, the target is not a hard limit.';
     }
