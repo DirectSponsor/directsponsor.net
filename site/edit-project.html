@@ -302,6 +302,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 show('access-denied');
                 return;
             }
+            // Auto-populate Coinos API key from profile
+            fetch('/api/simple-profile.php?action=profile&user_id='
+                  + encodeURIComponent(_userId) + '&username=' + encodeURIComponent(_username))
+                .then(function(r) { return r.json(); })
+                .then(function(pd) {
+                    var p = pd.profile || pd;
+                    if (p.coinos_api_key) {
+                        document.getElementById('f-coinos-api-key').value = p.coinos_api_key;
+                    }
+                }).catch(function() {});
             loadProject();
         })
         .catch(function() { show('access-denied'); });

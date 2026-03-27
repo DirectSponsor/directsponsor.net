@@ -451,7 +451,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'profile') {
     $data = loadProfileData($profileFile, $userId);
     
     // Update fields (only allow safe fields to be updated) - roles excluded for security
-    $allowedFields = ['username', 'display_name', 'avatar', 'email', 'bio', 'location', 'website', 'settings', 'public_profile', 'coinos_username', 'lightning_address'];
+    $allowedFields = ['username', 'display_name', 'avatar', 'email', 'bio', 'location', 'website', 'settings', 'public_profile', 'coinos_username', 'coinos_api_key', 'lightning_address'];
     foreach ($allowedFields as $field) {
         if (isset($input[$field])) {
             if ($field === 'settings' && is_array($input[$field])) {

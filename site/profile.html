@@ -298,6 +298,11 @@ function dsLogout() {
             <p class="field-hint">Your username on <a href="https://coinos.io" target="_blank" rel="noopener">coinos.io</a>. Used to receive Lightning donations into your wallet.</p>
         </div>
         <div class="form-row">
+            <label for="coinos-api-key">Coinos API Key</label>
+            <input type="password" id="coinos-api-key" placeholder="Paste your Coinos API token here">
+            <p class="field-hint">From coinos.io → Settings → API. Used to receive donations into your projects. Keep this private.</p>
+        </div>
+        <div class="form-row">
             <label for="lightning-address">Lightning Address (optional)</label>
             <input type="text" id="lightning-address" placeholder="you@coinos.io or any lightning address">
             <p class="field-hint">Alternative Lightning address if not using Coinos directly.</p>
@@ -462,6 +467,7 @@ function populateForm(p) {
     if (roles.indexOf('recipient') !== -1 || roles.indexOf('admin') !== -1) {
         document.getElementById('recipient-section').style.display = 'block';
         document.getElementById('coinos-username').value    = p.coinos_username || '';
+        document.getElementById('coinos-api-key').value      = p.coinos_api_key || '';
         document.getElementById('lightning-address').value  = p.lightning_address || '';
     }
 
@@ -560,6 +566,7 @@ function saveProfile() {
         location:         document.getElementById('location').value.trim(),
         website:          document.getElementById('website').value.trim(),
         coinos_username:  document.getElementById('coinos-username').value.trim(),
+        coinos_api_key:   document.getElementById('coinos-api-key').value.trim(),
         lightning_address: document.getElementById('lightning-address').value.trim()
     };
 

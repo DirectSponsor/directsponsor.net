@@ -1,5 +1,5 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-03-22_
+_Last updated: 2026-03-26_
 
 ## What's done and live
 
@@ -8,53 +8,77 @@ _Last updated: 2026-03-22_
 - File-based storage under `/var/www/directsponsor.net/userdata/`
 - Build system: `build.sh site` compiles includes, `deploy.sh --auto` rsyncs to RN1
 - JWT auth shared with ROFLFaucet (`roflfaucet_session` in localStorage)
+- Profile files named `{userId}-{username}.txt` under `userdata/profiles/`
+- Nav includes username dropdown with Profile + Logout links (all pages via `social-layout-start.incl`)
 
 ### Pages (all live on directsponsor.net)
 - `index.html` — homepage
 - `projects.html` — lists all active projects from `fundraiser-api.php?action=list`
 - `fundraiser.html?project=ID&user=USERNAME` — individual project page with donate modal
-- `profile.html` — user profile, shows coinos_username field
-- `edit-project.html?project=ID` — recipient edits their project
+- `profile.html` — own profile (edit mode) or public profile (`?user=USERNAME`, read-only)
+- `edit-project.html` — recipient creates/edits project (no `?project=` = new project, auto-assigned ID)
+- `edit-project.html?project=ID` — edit existing project
+- `admin.html` — admin role management UI (search users, add/remove roles)
 - `about.html`, `contact.html`
 
 ### APIs (all under `/api/`)
-- `fundraiser-api.php` — `action=list` / `action=get&id=X&username=Y`
-- `project-donations-api.php` — `create_invoice`, `check_payment`, `get_donations`
-- `webhook.php` — receives Coinos payment confirmation, updates project HTML
-- `save-project.php` — saves edits to project HTML comment-tags
-- `auth-proxy.php` — proxies JWT validation to RF auth server
+- `fundraiser-api.php` — `action=list` / `action=get&id=X&username=Y` / `action=user_projects&username=Y`
+- `project-donations-api.php` — creates Coinos invoice using per-project API key from `config.json`
+- `webhook.php` — receives Coinos payment confirmation, updates `current-amount` in project HTML, auto-advances queue on goal reached
+- `save-project.php` — saves edits to project HTML comment-tags + writes `{id}-config.json` with Coinos API key
+- `simple-profile.php` — profile CRUD + role management (admin-only `manage_roles` action)
+- `auth-proxy.php` — proxies JWT validation to auth server
 
 ### Donation flow (fully tested with real payments)
-1. User clicks Donate → picks amount → `create_invoice` POSTs to Coinos API
-2. Invoice + QR shown in modal, with 📋 Copy Invoice button
-3. Webhook fires automatically from Coinos on payment → `webhook.php` updates `current-amount` in project HTML
-4. Poll loop detects payment (pending.json entry removed) → shows "✅ Payment received!"
-5. User clicks Close → page reloads with updated balance
+1. User clicks Donate → picks amount → `project-donations-api.php` POSTs to Coinos API using project's own API key
+2. Invoice + QR shown in modal, with Copy Invoice button
+3. Webhook fires from Coinos on payment → `webhook.php` updates `current-amount` in project HTML
+4. If `current-amount >= target-amount`: file moved to `completed/`, overpayment carried into next queued project
+5. Poll loop detects payment → shows "Payment received!"
+6. User clicks Close → page reloads with updated balance
+
+### Project queue system
+- Active project = lowest numbered HTML file in `username/active/`
+- Recipient queues future projects by creating `002`, `003`... via `edit-project.html`
+- On goal reached: webhook auto-moves current project to `username/completed/`, next lowest becomes active
+- New project auto-numbering skips numbers already used in both `active/` and `completed/`
+- Overpayment carried into `current-amount` of next queued project
+
+### Recipient self-service
+- Recipient can create/edit projects without admin involvement
+- Role check: `recipient` role required (checked against profile file, not JWT)
+- JWT sent in POST body as fallback (Apache strips Authorization header)
+- Coinos API key entered per-project for now (TODO: move to profile)
 
 ### RF Cutover
 - `roflfaucet.com/fundraisers.html` → redirects to `directsponsor.net/projects.html`
 - `roflfaucet.com/fundraiser.html` → redirects to `directsponsor.net/projects.html`
-- `site-income.html` link updated to DS
-- `projects-404.html` link updated to DS
 
 ### Live projects
-- `lightninglova/001.html` — Bitcoin4Ghana Internet Connectivity (active, tested with real payments)
-- `evans/001.html` — Test project (needs Coinos wallet configured)
+- `lightninglova/001.html` — Bitcoin4Ghana Internet Connectivity (active, tested)
+- `andytest2/001.html` — Test project 1 (1000 sat goal, partially funded — queue test in progress)
+- `andytest2/002.html` — Test project 2 (queued, waiting for 001 to complete)
+- `evans/001.html` — needs Coinos wallet configured
 
 ---
 
 ## Data structure
 ```
 /var/www/directsponsor.net/userdata/
+  profiles/
+    {userId}-{username}.txt    # JSON: roles, display name, etc.
   projects/
-    lightninglova/
-      001-config.json        # coinos API key + wallet info
-      active/001.html        # project page (comment-tags store all data)
-    evans/
-      001-config.json
-      active/001.html
-  project-donations-pending/
-    pending.json             # in-flight invoices, removed on webhook confirmation
+    {username}/
+      {id}-config.json         # Coinos API key for this project
+      active/
+        001.html               # comment-tags store all project data
+        002.html               # queued next project
+      completed/
+        000.html               # past projects
+  data/
+    project-donations-pending/
+      pending.json             # in-flight invoices
+    transaction-ledger.json
   logs/
     project_payments.log
     webhook.log
@@ -62,49 +86,35 @@ _Last updated: 2026-03-22_
 
 ---
 
-## Next priorities (rough order)
+## Pending / next priorities
 
-### User profiles
-- `profile.html` currently shows username + coinos_username field only
-- **Todo:** expand to show list of user's projects (current at top, highlighted; past below)
-- **Todo:** make `[username]` links on project pages link to `/profile.html?user=USERNAME`
-- **Todo:** public profile view vs own profile (edit mode)
+### Immediate
+- **Queue test:** push `andytest2/001` over 1000 sat goal via donations → confirm webhook moves to `completed/` and `002` becomes active
+- **Coinos API key in profile:** store key once in profile.txt, auto-populate `edit-project.html`, `save-project.php` falls back to profile key if not in form
 
-### Accounts / transaction history
-- RF had a transaction history system — check zip archive for reusable parts
-- DS needs: per-user donation history, totals, maybe a simple ledger view
+### Soon
+- Evans Coinos account + API key → add to `evans/001-config.json`
+- Project images — upload flow (port from ROFLFaucet `upload-project-image.php`)
+- Accounts / transaction history view per user
 
-### Project pages
-- Recipient name should link to their profile
-- Project images — upload flow exists in RF (`upload-project-image.php`), needs porting to DS
-- Project updates / blog-style posts per project
-
-### Coin weighting for ad placement (future / novel)
-- RF "useless coins" reframed as reputation/acknowledgement tokens
-- Idea: coin holdings give weight to fundraisers → influences automatic project selection when advertiser buys ad space
-- No existing system to copy — needs design work before implementation
-
-### Admin role management
-- Currently roles are assigned manually via SSH (editing profile `.txt` files directly)
-- Default role on signup is `member`; recipients need `recipient` role added manually
-- The `recipient` role gates the Coinos username field on `profile.html`
-- API endpoint already exists: `simple-profile.php?action=manage_roles` (admin-only POST)
-- **Todo:** Build a simple `admin.html` page — search users, view their roles, add/remove roles
-- **Todo:** When a new recipient is onboarded, document the steps: create account → assign `recipient` role → set Coinos username in profile → add `*-config.json` with API key
-
-### Evans project
-- Needs Coinos account + API key added to `evans/001-config.json` to accept donations
-- Evans profile now has `recipient` role — Coinos username field visible on profile.html
+### Future
+- Coin weighting for ad placement (design work needed first)
+- Project updates / blog posts per project
 
 ---
 
-## Key files to know
+## Key files
 | File | Purpose |
 |------|---------|
-| `site/fundraiser.html` | Main project page + donate modal (source, built by build.sh) |
+| `site/fundraiser.html` | Project page + donate modal |
 | `site/projects.html` | Project listing |
-| `site/api/project-donations-api.php` | Invoice creation + payment checking |
-| `site/api/webhook.php` | Coinos webhook handler |
+| `site/edit-project.html` | Recipient project create/edit form |
+| `site/profile.html` | User profile (own + public view) |
+| `site/admin.html` | Admin role management |
+| `site/api/project-donations-api.php` | Coinos invoice creation |
+| `site/api/webhook.php` | Payment webhook + queue advance |
 | `site/api/fundraiser-api.php` | Project data reader |
-| `site/api/save-project.php` | Project editor save endpoint |
-| `build.sh` | Build + deploy script |
+| `site/api/save-project.php` | Project save endpoint |
+| `site/api/simple-profile.php` | Profile + role management API |
+| `build.sh` | Build includes |
+| `deploy.sh` | Rsync to RN1 |

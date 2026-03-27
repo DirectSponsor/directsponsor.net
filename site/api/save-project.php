@@ -195,8 +195,16 @@ if (!rename($tmp, $htmlFile)) {
     exit;
 }
 
-// Write config.json if a Coinos API key was provided
+// Write config.json if a Coinos API key was provided (fall back to profile if empty)
 $coinosApiKey = trim($input['coinos_api_key'] ?? '');
+if (!$coinosApiKey) {
+    // Try profile file
+    $profileGlob = glob(USERDATA_DIR . '/profiles/' . $callerId . '-*.txt');
+    if ($profileGlob) {
+        $profileData = json_decode(file_get_contents($profileGlob[0]), true);
+        $coinosApiKey = trim($profileData['coinos_api_key'] ?? '');
+    }
+}
 if ($coinosApiKey) {
     $configFile = PROJECTS_DIR . '/' . $target_username . '/' . $project_id . '-config.json';
     $existingConfig = file_exists($configFile)
