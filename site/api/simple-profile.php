@@ -621,8 +621,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'profile') {
         'role_checks' => $hasRoles
     ]);
     
+} elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'my_donations') {
+    // MY DONATIONS - Return donations made by the logged-in user
+    $ledgerFile = '/var/www/directsponsor.net/userdata/data/transaction-ledger.json';
+    $donations = [];
+    if (file_exists($ledgerFile)) {
+        $ledger = json_decode(file_get_contents($ledgerFile), true);
+        foreach ($ledger['transactions'] ?? [] as $tx) {
+            if (($tx['donor_username'] ?? null) === $usernameHint) {
+                $donations[] = [
+                    'timestamp'    => $tx['timestamp'],
+                    'project_id'   => $tx['project_id'],
+                    'recipient'    => $tx['recipient_username'] ?? null,
+                    'amount_sats'  => $tx['amount_sats'],
+                    'donor_name'   => $tx['donor_name'],
+                ];
+            }
+        }
+        // Most recent first
+        usort($donations, fn($a, $b) => strcmp($b['timestamp'], $a['timestamp']));
+    }
+    echo json_encode(['donations' => $donations]);
+
 } else {
     http_response_code(400);
-    echo json_encode(['error' => 'Invalid request - Use GET ?action=profile|check_roles|search or POST ?action=update_profile|update_level|update_stats|manage_roles']);
+    echo json_encode(['error' => 'Invalid request - Use GET ?action=profile|check_roles|search|my_donations or POST ?action=update_profile|update_level|update_stats|manage_roles']);
 }
 ?>

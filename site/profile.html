@@ -326,6 +326,12 @@ function dsLogout() {
         </div>
     </div>
 
+    <div class="project-card profile-section" id="my-donations-section" style="display:none;">
+        <h2>⚡ Donations I've Made</h2>
+        <ul id="my-donations-list" style="list-style:none;padding:0;margin:0;"></ul>
+        <p id="my-donations-none" style="color:#888;font-size:0.9em;display:none;">No donations recorded yet.</p>
+    </div>
+
 </div>
 
 <script>
@@ -478,6 +484,37 @@ function populateForm(p) {
             loadUserProjects(uname);
         }
     }
+
+    // Show donations made — for all logged-in users
+    loadMyDonations();
+}
+
+function loadMyDonations() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (!jwt) return;
+    fetch('/api/simple-profile.php?action=my_donations', {
+        headers: { 'Authorization': 'Bearer ' + jwt }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        var donations = data.donations || [];
+        var section = document.getElementById('my-donations-section');
+        section.style.display = 'block';
+        if (!donations.length) {
+            document.getElementById('my-donations-none').style.display = 'block';
+            return;
+        }
+        var list = document.getElementById('my-donations-list');
+        donations.forEach(function(d) {
+            var li = document.createElement('li');
+            li.style.cssText = 'padding:0.5em 0;border-bottom:1px solid #f0f0f0;font-size:0.9em;';
+            var date = d.timestamp ? d.timestamp.split(' ')[0] : '';
+            var recipient = d.recipient ? ' → <a href="fundraiser.html?project=' + encodeURIComponent(d.project_id) + '&user=' + encodeURIComponent(d.recipient) + '">' + d.recipient + ' #' + d.project_id + '</a>' : ' project #' + d.project_id;
+            li.innerHTML = '<strong>' + parseInt(d.amount_sats).toLocaleString() + ' sats</strong>' + recipient + (date ? ' <span style="color:#aaa;">(' + date + ')</span>' : '');
+            list.appendChild(li);
+        });
+    })
+    .catch(function() {});
 }
 
 function loadUserProjects(username) {

@@ -275,12 +275,7 @@ function updateProjectHtml($htmlFile, $donation, $amountSats) {
             // Add new donation at the top
             $newDonations = $donationHtml . $existingDonations;
             
-            // Keep only last 10 donations
-            preg_match_all('/<li>.*?<\/li>/s', $newDonations, $donationMatches);
-            if (count($donationMatches[0]) > 10) {
-                $donationMatches[0] = array_slice($donationMatches[0], 0, 10);
-            }
-            $newDonations = implode("\n", $donationMatches[0]) . "\n        ";
+            $newDonations = trim($newDonations) . "\n        ";
             
             $html = preg_replace(
                 '/<!-- recent_donations -->.*?<!-- end recent_donations -->/s',
