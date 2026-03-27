@@ -403,10 +403,11 @@ function saveProject() {
         if (data.success) {
             if (data.project_id) {
                 _projectId = data.project_id;
-                var newUrl = window.location.pathname + '?project=' + encodeURIComponent(_projectId);
-                window.history.replaceState({}, '', newUrl);
             }
-            status.textContent = '✅ Saved! Project ' + (_projectId || '') + ' is live.';
+            status.textContent = '✅ Saved! Redirecting...';
+            setTimeout(function() {
+                window.location.href = '/fundraiser.html?project=' + encodeURIComponent(_projectId) + '&user=' + encodeURIComponent(_username);
+            }, 800);
         } else {
             status.textContent = data.error || 'Save failed.';
             status.className = 'status-msg error';

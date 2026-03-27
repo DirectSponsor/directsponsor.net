@@ -418,7 +418,7 @@ function dsLogout() {
 
 <div id="fundraiser-notfound" class="project-card" style="display:none;text-align:center;padding:2em;">
     <h2>Project not found</h2>
-    <p>This project may have moved or completed.</p>
+    <p>This project may have moved or been completed. <a href="projects.html">See active projects →</a></p>
     <a href="projects.html">Browse all projects →</a>
 </div>
 
@@ -473,6 +473,31 @@ function loadFundraiser() {
 function populateFundraiser(d) {
     document.getElementById('fundraiser-content').style.display = 'block';
     document.getElementById('fundraiser-title').textContent = d.title || 'Untitled Project';
+
+    // Show edit button if logged-in user owns this project
+    try {
+        var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+        if (jwt) {
+            var payload = JSON.parse(atob(jwt.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+            var loggedInUser = payload.username || payload.sub;
+            if (loggedInUser && loggedInUser === d.owner_user_id) {
+                var params = getProjectParam();
+                var editBtn = document.createElement('a');
+                editBtn.href = '/edit-project.html?project=' + encodeURIComponent(params.id) + '&user=' + encodeURIComponent(loggedInUser);
+                editBtn.textContent = '✏️ Edit this project';
+                editBtn.style.cssText = 'display:inline-block;margin-top:0.5em;font-size:0.85em;color:#888;';
+                document.getElementById('fundraiser-title').insertAdjacentElement('afterend', editBtn);
+            }
+        }
+    } catch(e) {}
+
+    // Show completed banner if project is not active
+    if (d.status && d.status !== 'active') {
+        var banner = document.createElement('div');
+        banner.style.cssText = 'background:#f0f0f0;border-left:4px solid #aaa;padding:0.6em 1em;margin-bottom:1em;font-size:0.9em;color:#555;';
+        banner.textContent = '✅ This project has been completed. Thank you to all donors!';
+        document.getElementById('fundraiser-title').insertAdjacentElement('afterend', banner);
+    }
     var recipientName = d.recipient || d.owner_user_id || '—';
     var recipientEl = document.getElementById('fundraiser-recipient');
     if (d.owner_user_id && d.owner_user_id !== '—') {

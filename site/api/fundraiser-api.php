@@ -179,21 +179,21 @@ if ($action === 'list') {
         $projectData = null;
         
         if (is_dir(PROJECTS_DIR)) {
-            // Check hinted user directory first if provided
             if ($hintUsername) {
-                $projectFile = PROJECTS_DIR . '/' . $hintUsername . '/active/' . $fundraiserId . '.html';
-                if (file_exists($projectFile)) {
-                    $projectData = parseProjectFromHTML($projectFile, $fundraiserId);
+                // Check active/ first, then completed/ for the hinted user only
+                foreach (['active', 'completed'] as $subdir) {
+                    $projectFile = PROJECTS_DIR . '/' . $hintUsername . '/' . $subdir . '/' . $fundraiserId . '.html';
+                    if (file_exists($projectFile)) {
+                        $projectData = parseProjectFromHTML($projectFile, $fundraiserId);
+                        break;
+                    }
                 }
-            }
-            // Fall back to searching all user directories
-            if (!$projectData) {
+            } else {
+                // No username hint — search all user active/ directories only
                 $userDirs = glob(PROJECTS_DIR . '/*', GLOB_ONLYDIR);
                 foreach ($userDirs as $userDir) {
                     $username = basename($userDir);
                     if (in_array($username, ['completed', 'images', 'img'])) continue;
-                    if ($hintUsername && $username === $hintUsername) continue; // already checked
-                    
                     $projectFile = $userDir . '/active/' . $fundraiserId . '.html';
                     if (file_exists($projectFile)) {
                         $projectData = parseProjectFromHTML($projectFile, $fundraiserId);
