@@ -327,7 +327,7 @@
                     <a href="#" onclick="dsLogout(); return false;" style="display:block;padding:0.5em 1em;color:#c00;text-decoration:none;font-size:0.9em;">Log out</a>
                 </div>
             </div>
-            <a href="#" id="nav-login-link" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href); return false;">Login</a>
+            <a href="#" id="nav-login-link" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href.replace(/^http:/, 'https:')); return false;">Login</a>
         </nav>
     </div>
 </header>
