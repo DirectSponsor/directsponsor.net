@@ -413,7 +413,26 @@ function processProjectDonation($donation, $foundIndex, $webhookData) {
     }
     $ledger['transactions'][] = $ledgerEntry;
     saveJsonData($ledgerFile, $ledger);
-    
+
+    // Also write directly to donor's profile so profile page needs no ledger scan
+    $donorUsername = $donation['donor_username'] ?? null;
+    if ($donorUsername) {
+        $profileGlob = glob(DS_DATA_DIR . '/profiles/' . $donorUsername . '-*.txt');
+        if ($profileGlob) {
+            $profileData = json_decode(file_get_contents($profileGlob[0]), true) ?: [];
+            if (!isset($profileData['donations_made'])) $profileData['donations_made'] = [];
+            $profileData['donations_made'][] = [
+                'timestamp'   => date('Y-m-d H:i:s'),
+                'project_id'  => $donation['project_id'],
+                'recipient'   => $projectInfo['username'] ?? null,
+                'amount_sats' => $amountSats,
+                'donor_name'  => $donation['donor_name'],
+            ];
+            file_put_contents($profileGlob[0], json_encode($profileData, JSON_PRETTY_PRINT));
+            logWebhook("Appended donation to donor profile: $donorUsername");
+        }
+    }
+
     logWebhook("Project donation confirmed: {$amountSats} sats to project {$donation['project_id']}");
     return true;
 }
