@@ -327,17 +327,10 @@ function processProjectDonation($donation, $foundIndex, $webhookData) {
         return false;
     }
     
-    // If project already completed, redirect to next available project
+    // If project already completed (race condition — two donors crossed the goal simultaneously),
+    // just update the completed file's balance directly. No redirect.
     if ($projectInfo['completed']) {
-        $nextProject = findNextActiveProject();
-        if (!$nextProject) {
-            logWebhook("No active projects available for redirect", 'ERROR');
-            return false;
-        }
-        
-        logWebhook("Redirecting donation from completed project {$donation['project_id']} to next project {$nextProject['id']}");
-        $projectInfo = ['file' => $nextProject['file'], 'completed' => false];
-        $donation['project_id'] = $nextProject['id']; // Update for logging
+        logWebhook("Project {$donation['project_id']} already completed — updating completed file balance");
     }
     
     $amountSats = intval($donation['amount_sats']);
@@ -387,17 +380,15 @@ function processProjectDonation($donation, $foundIndex, $webhookData) {
             }
         }
 
-        // Carry overpayment into next project
+        // Log overpayment (not carried over — shown on completed project page instead)
         $overpayment = $currentAmount - $targetAmount;
-        if ($nextProjectFile && $overpayment > 0) {
-            $nextId = str_pad($lowestNum, 3, '0', STR_PAD_LEFT);
-            logWebhook("Carrying over $overpayment sats overpayment into project $nextId");
-            $overDonation = ['donor_name' => 'Overpayment carry-over'];
-            updateProjectHtml($nextProjectFile, $overDonation, $overpayment);
-        } elseif ($nextProjectFile) {
-            logWebhook("Next project queued: " . basename($nextProjectFile));
+        if ($overpayment > 0) {
+            logWebhook("Overpayment of $overpayment sats on project $completedId — shown on project page");
+        }
+        if ($nextProjectFile) {
+            logWebhook("Next project now active: " . basename($nextProjectFile));
         } else {
-            logWebhook("No next project queued for $username — recipient should add more projects");
+            logWebhook("No next project queued for $username");
         }
     }
     // --- End goal-reached check ---

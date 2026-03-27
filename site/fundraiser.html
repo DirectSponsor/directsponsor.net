@@ -516,12 +516,24 @@ function populateFundraiser(d) {
     const raised = parseInt(d.current_amount) || 0;
     const goal   = parseInt(d.goal_amount || d.target_amount) || 0;
     const pct    = goal > 0 ? Math.min(100, Math.round(raised / goal * 100)) : 0;
+    const over   = raised > goal ? raised - goal : 0;
 
-    document.getElementById('amount-raised').textContent = raised.toLocaleString();
+    document.getElementById('amount-raised').textContent = Math.min(raised, goal).toLocaleString();
     document.getElementById('amount-goal').textContent   = goal.toLocaleString();
     document.getElementById('progress-bar').style.width  = pct + '%';
-    document.getElementById('sidebar-amount-raised').textContent = raised.toLocaleString();
+    document.getElementById('sidebar-amount-raised').textContent = Math.min(raised, goal).toLocaleString();
     document.getElementById('sidebar-goal').textContent  = goal.toLocaleString() + ' sats';
+
+    if (over > 0) {
+        var overEl = document.getElementById('overpayment-note');
+        if (!overEl) {
+            overEl = document.createElement('p');
+            overEl.id = 'overpayment-note';
+            overEl.style.cssText = 'font-size:0.85em;color:#888;margin-top:0.4em;';
+            document.getElementById('progress-bar').parentNode.appendChild(overEl);
+        }
+        overEl.textContent = over.toLocaleString() + ' sats donated beyond the goal — thank you! Feel free to donate more, the target is not a hard limit.';
+    }
 
     if (d.verified) document.getElementById('verified-badge').style.display = 'inline-block';
 
