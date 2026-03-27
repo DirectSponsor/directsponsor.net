@@ -19,6 +19,29 @@ function extractByComments($html, $tag, $default = '') {
     return $default;
 }
 
+function parseRecentDonations($html) {
+    $block = extractByComments($html, 'recent_donations', '');
+    if (!$block) return [];
+    $donations = [];
+    preg_match_all('/<li>(.*?)<\/li>/s', $block, $items);
+    foreach ($items[1] as $item) {
+        $name   = '';
+        $amount = 0;
+        $date   = '';
+        if (preg_match('/<strong>([^<]+)<\/strong>\s*donated\s*<strong>(\d+)\s*sats<\/strong>/i', $item, $m)) {
+            $name   = trim($m[1]);
+            $amount = (int)$m[2];
+        }
+        if (preg_match('/<span[^>]*class=["\']donation-time["\'][^>]*>([^<]+)<\/span>/i', $item, $m)) {
+            $date = trim($m[1]);
+        }
+        if ($amount > 0) {
+            $donations[] = ['note' => $name ?: 'Anonymous', 'amount' => $amount, 'date' => $date];
+        }
+    }
+    return $donations;
+}
+
 function parseProjectFromHTML($htmlFile, $projectId) {
     $html = file_get_contents($htmlFile);
     if ($html === false) {
@@ -53,7 +76,8 @@ function parseProjectFromHTML($htmlFile, $projectId) {
         'image_url' => extractByComments($html, 'image-url', ''),
         'location' => extractByComments($html, 'location', ''),
         'owner' => $owner,
-        'filename' => basename($htmlFile)
+        'filename' => basename($htmlFile),
+        'recent_donations' => parseRecentDonations($html)
     ];
 }
 
@@ -82,7 +106,7 @@ function convertToFundraiserFormat($projectData) {
         'image_url' => $projectData['image_url'] ?: null,
         'hero_image' => null,
         'verification' => ['verified' => true, 'verified_by' => 'admin'],
-        'contributions' => [],
+        'recent_donations' => $projectData['recent_donations'] ?? [],
         'updates' => [],
         'contact_info' => [
             'location' => $projectData['location'] ?? null

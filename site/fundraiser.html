@@ -571,7 +571,9 @@ function populateFundraiser(d) {
         const list = document.getElementById('donor-list');
         d.recent_donations.forEach(function(don) {
             const li = document.createElement('li');
-            li.textContent = '⚡ ' + (don.amount || '?') + ' sats — ' + (don.note || 'Anonymous');
+            var text = '⚡ ' + (don.amount || '?').toLocaleString() + ' sats — ' + (don.note || 'Anonymous');
+            if (don.date) text += ' <span style="color:#aaa;font-size:0.85em;">(' + don.date + ')</span>';
+            li.innerHTML = text;
             list.appendChild(li);
         });
         document.getElementById('recent-donors-section').style.display = 'block';

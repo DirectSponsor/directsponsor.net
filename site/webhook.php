@@ -404,7 +404,9 @@ function processProjectDonation($donation, $foundIndex, $webhookData) {
         'type' => 'project_donation',
         'project_id' => $donation['project_id'],
         'donation_id' => $donation['donation_id'],
+        'donor_username' => $donation['username'] ?? null,
         'donor_name' => $donation['donor_name'],
+        'recipient_username' => $projectInfo['username'] ?? null,
         'amount_sats' => $amountSats,
         'payment_hash' => $donation['payment_hash']
     ];
