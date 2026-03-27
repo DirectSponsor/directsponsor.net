@@ -417,7 +417,7 @@ function processProjectDonation($donation, $foundIndex, $webhookData) {
     // Also write directly to donor's profile so profile page needs no ledger scan
     $donorUsername = $donation['donor_username'] ?? null;
     if ($donorUsername) {
-        $profileGlob = glob(DS_DATA_DIR . '/profiles/' . $donorUsername . '-*.txt');
+        $profileGlob = glob(DS_DATA_DIR . '/profiles/*-' . $donorUsername . '.txt');
         if ($profileGlob) {
             $profileData = json_decode(file_get_contents($profileGlob[0]), true) ?: [];
             if (!isset($profileData['donations_made'])) $profileData['donations_made'] = [];
