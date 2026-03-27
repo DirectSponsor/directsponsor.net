@@ -158,8 +158,13 @@ function replaceTag($html, $tag, $value) {
     $pattern = '/<!-- ' . preg_quote($tag, '/') . ' -->.*?<!-- end ' . preg_quote($tag, '/') . ' -->/s';
     $replacement = '<!-- ' . $tag . ' -->' . $escaped . '<!-- end ' . $tag . ' -->';
     $new = preg_replace($pattern, $replacement, $html);
-    // If tag doesn't exist yet, append a data comment block at end of body
-    return ($new !== null) ? $new : $html;
+    if ($new === null || $new === $html) {
+        // Tag not found — insert before </body>
+        $insert = '\n' . $replacement . '\n';
+        $new = str_replace('</body>', $insert . '</body>', $html);
+        if ($new === $html) $new = $html . $insert; // no </body> fallback
+    }
+    return $new;
 }
 
 // --- Apply edits from request ---
