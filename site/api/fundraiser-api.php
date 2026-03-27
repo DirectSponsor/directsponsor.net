@@ -50,6 +50,7 @@ function parseProjectFromHTML($htmlFile, $projectId) {
         'created_date' => time(),
         'lightning_address' => extractByComments($html, 'lightning-address', ''),
         'website_url' => extractByComments($html, 'website-url', ''),
+        'image_url' => extractByComments($html, 'image-url', ''),
         'location' => extractByComments($html, 'location', ''),
         'owner' => $owner,
         'filename' => basename($htmlFile)
@@ -78,6 +79,7 @@ function convertToFundraiserFormat($projectData) {
         'last_updated' => $projectData['created_date'] ?? time(),
         'lightning_address' => $projectData['lightning_address'] ?? null,
         'website_url' => $projectData['website_url'] ?? null,
+        'image_url' => $projectData['image_url'] ?: null,
         'hero_image' => null,
         'verification' => ['verified' => true, 'verified_by' => 'admin'],
         'contributions' => [],

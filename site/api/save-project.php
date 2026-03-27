@@ -139,6 +139,7 @@ if (!file_exists($htmlFile)) {
 <!-- status -->active<!-- end status -->
 <!-- location --><!-- end location -->
 <!-- website-url --><!-- end website-url -->
+<!-- image-url --><!-- end image-url -->
 <!-- lightning-address --><!-- end lightning-address -->
 </body></html>';
     file_put_contents($htmlFile, $stub);
@@ -170,6 +171,7 @@ $fields = [
     'recipient-name'   => $input['recipient_name']    ?? $target_username,
     'location'         => $input['location']          ?? null,
     'website-url'      => $input['website_url']       ?? null,
+    'image-url'        => $input['image_url']         ?? null,
     'category'         => $input['category']          ?? null,
     'status'           => $input['status']            ?? null,
     'coinos-api-key'   => $input['coinos_api_key']    ?? null,
