@@ -510,8 +510,8 @@ function populateFundraiser(d) {
     var metaEl = document.getElementById('fundraiser-meta');
     var metaParts = [];
     if (d.contact_info && d.contact_info.location) metaParts.push('📍 ' + d.contact_info.location);
-    if (d.lightning_address && d.lightning_address !== d.owner_user_id) {
-        metaParts.push('🌐 <a href="' + encodeURI(d.lightning_address) + '" target="_blank" rel="noopener">' + d.lightning_address + '</a>');
+    if (d.website_url) {
+        metaParts.push('🌐 <a href="' + encodeURI(d.website_url) + '" target="_blank" rel="noopener">' + d.website_url + '</a>');
     }
     if (metaParts.length) {
         metaEl.innerHTML = metaParts.join('&nbsp;&nbsp;');

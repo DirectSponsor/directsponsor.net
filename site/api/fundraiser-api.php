@@ -77,6 +77,7 @@ function convertToFundraiserFormat($projectData) {
         'created_date' => $projectData['created_date'] ?? time(),
         'last_updated' => $projectData['created_date'] ?? time(),
         'lightning_address' => $projectData['lightning_address'] ?? null,
+        'website_url' => $projectData['website_url'] ?? null,
         'hero_image' => null,
         'verification' => ['verified' => true, 'verified_by' => 'admin'],
         'contributions' => [],
