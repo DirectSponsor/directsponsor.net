@@ -621,6 +621,14 @@ function requestInvoice() {
     document.getElementById('generate-btn').disabled = true;
     document.getElementById('generate-btn').textContent = 'Generating...';
 
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    var donorUsername = null;
+    if (jwt) {
+        try {
+            var payload = JSON.parse(atob(jwt.split('.')[1]));
+            donorUsername = payload.username || payload.sub || null;
+        } catch(e) {}
+    }
     fetch('/api/project-donations-api.php', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -628,7 +636,8 @@ function requestInvoice() {
             action: 'create_invoice',
             username: window._currentUsername,
             project_id: window._currentProject,
-            amount: amount
+            amount: amount,
+            donor_username: donorUsername
         })
     })
     .then(r => r.json())
