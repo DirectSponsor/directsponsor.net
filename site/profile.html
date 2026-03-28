@@ -492,7 +492,7 @@ function populateForm(p) {
 function loadMyDonations() {
     var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
     if (!jwt) return;
-    fetch('/api/simple-profile.php?action=my_donations', {
+    fetch('/api/simple-profile.php?action=my_donations&user_id=' + encodeURIComponent(_userId) + '&username=' + encodeURIComponent(_username), {
         headers: { 'Authorization': 'Bearer ' + jwt }
     })
     .then(function(r) { return r.json(); })
