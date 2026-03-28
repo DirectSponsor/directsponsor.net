@@ -587,6 +587,17 @@ function populateFundraiser(d) {
 
 function openDonateModal() {
     document.getElementById('donate-modal-overlay').classList.add('open');
+    var nameField = document.getElementById('donor-name');
+    if (!nameField.value) {
+        var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+        if (jwt) {
+            try {
+                var payload = JSON.parse(atob(jwt.split('.')[1]));
+                var uname = payload.username || payload.sub || '';
+                if (uname) nameField.value = uname;
+            } catch(e) {}
+        }
+    }
 }
 
 function closeDonateModal() {
@@ -629,6 +640,8 @@ function requestInvoice() {
             donorUsername = payload.username || payload.sub || null;
         } catch(e) {}
     }
+    var donorNameField = document.getElementById('donor-name').value.trim();
+    var donorName = donorNameField || donorUsername || '';
     fetch('/api/project-donations-api.php', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -637,6 +650,7 @@ function requestInvoice() {
             username: window._currentUsername,
             project_id: window._currentProject,
             amount: amount,
+            donor_name: donorName,
             donor_username: donorUsername
         })
     })
@@ -737,6 +751,9 @@ function pollPayment(invoiceId) {
             <div class="amount-input-wrap">
                 <input type="number" id="custom-amount" min="1" placeholder="custom amount" value="1000">
                 <span>sats</span>
+            </div>
+            <div class="amount-input-wrap" style="margin-top:0.5em;">
+                <input type="text" id="donor-name" placeholder="Your name (optional)" style="width:100%;padding:0.4em 0.6em;border:1px solid #ddd;border-radius:0.3em;font-size:0.95em;">
             </div>
             <button id="generate-btn" class="donate-btn" onclick="requestInvoice()">Generate Invoice</button>
             <p class="error-msg" id="modal-error"></p>
