@@ -141,6 +141,7 @@ if (!file_exists($htmlFile)) {
 <!-- website-url --><!-- end website-url -->
 <!-- image-url --><!-- end image-url -->
 <!-- lightning-address --><!-- end lightning-address -->
+<!-- recent_donations --><!-- end recent_donations -->
 </body></html>';
     file_put_contents($htmlFile, $stub);
 }
