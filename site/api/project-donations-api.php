@@ -376,7 +376,7 @@ function storePendingProjectDonation($project_id, $donation_id, $amount, $donor_
         'project_id' => $project_id,
         'username' => $username,
         'donor_username' => $donor_username,
-        'donor_name' => $donor_name ?: 'Anonymous',
+        'donor_name' => $donor_name ?: ($donor_username ?: 'Anonymous'),
         'donor_message' => $message,
         'amount_sats' => $amount,
         'invoice' => $invoice,
