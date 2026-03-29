@@ -1,5 +1,5 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-03-28 (session 2)_
+_Last updated: 2026-03-29 (session 3)_
 
 ## What's done and live
 
@@ -77,11 +77,12 @@ _Last updated: 2026-03-28 (session 2)_
 - `roflfaucet.com/fundraisers.html` → redirects to `directsponsor.net/projects.html`
 - `roflfaucet.com/fundraiser.html` → redirects to `directsponsor.net/projects.html`
 
-### Live projects (as of 2026-03-28)
-- `lightninglova/001.html` — Bitcoin4Ghana Internet Connectivity (active)
+### Live projects (as of 2026-03-29)
+- `lightninglova/001.html` — Bitcoin4Ghana Internet Connectivity (active, rebuilt with new system)
 - `andytest2/001.html`, `002.html`, `003.html` — completed test projects
 - `andytest2/004.html` — current active test project (partially funded)
-- `evans/001.html` — needs Coinos wallet configured
+- Old ROFLFaucet-era project file archived at `userdata/projects/lightninglova/archive/001-old-roflfaucet.html`
+- Evans (Badilisha Food Forest) + Grant & Annegret (Desert Farm): info archived in `archive/old-projects-hardcoded.md`, recreate when ready
 
 ---
 
@@ -113,7 +114,8 @@ _Last updated: 2026-03-28 (session 2)_
 ## Pending / next priorities
 
 ### Soon
-- Evans Coinos account + API key → configure `evans/001-config.json`
+- Evans (Badilisha Food Forest): get Coinos account + API key, recreate project via `edit-project.html`
+- Grant & Annegret (Desert Farm): same when ready
 - Accounts / transaction history overview (aggregate totals per user, pull from profile + ledger)
 
 ### Future
@@ -128,6 +130,8 @@ _Last updated: 2026-03-28 (session 2)_
 - **`my_donations` API needs `user_id` param** — `getUserId()` reads GET/POST params, not Authorization header; `loadMyDonations()` in `profile.html` must pass `user_id` and `username` as query params
 - **`recent_donations` block missing from older projects** — stub in `save-project.php` now includes it; existing files must be patched manually: `sed -i 's|</body>|<!-- recent_donations --><!-- end recent_donations -->\n</body>|' <file>`
 - **`donor_name` defaulted to Anonymous** — now falls back to `donor_username` in `storePendingProjectDonation`; even cleaner via explicit name field in modal
+- **lightninglova invoice failing with `user not provided`** — old ROFLFaucet-era project HTML had no comment tags; API key was also stale (6 months old). Fix: archive old file, recreate project stub on server, get fresh Coinos API key from lightninglova
+- **RN1 SSH broken after single-key migration** — `IdentityFile` line was missing from RN1 entry in `~/.ssh/config`; fixed by adding `IdentityFile ~/.ssh/id_rsa`. Also needed to add `id_rsa.pub` to RN1's `authorized_keys` via web panel
 
 ---
 
