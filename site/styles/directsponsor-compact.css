@@ -196,7 +196,7 @@ ul li {
     border: 1px solid #e1e8ed;
     border-radius: 0.5em;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    min-width: 200px;
+    min-width: 12em;
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
@@ -758,15 +758,15 @@ ul li {
 
 /* === CORNER RIBBON (BETA LABEL) === */
 .corner-ribbon {
-    width: 200px;
+    width: 12.5em;
     background: #e43;
     opacity: 0.7;
     position: absolute;
-    top: 25px;
-    left: -50px;
+    top: 1.5em;
+    left: -3em;
     text-align: center;
-    line-height: 50px;
-    letter-spacing: 1px;
+    line-height: 3em;
+    letter-spacing: 0.05em;
     color: #f0f0f0;
     transform: rotate(-45deg);
     -webkit-transform: rotate(-45deg);
@@ -784,8 +784,8 @@ ul li {
 }
 
 .corner-ribbon.top-left {
-    top: 25px;
-    left: -50px;
+    top: 1.5em;
+    left: -3em;
     transform: rotate(-45deg);
     -webkit-transform: rotate(-45deg);
 }
