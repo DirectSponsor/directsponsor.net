@@ -58,7 +58,7 @@ ul li {
     font-size: 0.9em;
 }
 
-.sidebar-box h4 {
+.sidebar-box h3 {
     margin-bottom: 0.4em;
     font-size: 1em;
     color: #333;
@@ -621,7 +621,7 @@ ul li {
 .mb-medium { margin-bottom: 0.5em; }
 .color-primary { color: #0066cc; }
 .color-success { color: #17bf63; }
-.color-muted { color: #657786; }
+.color-muted { color: #4a5568; }
 
 /* === FOOTER STYLES === */
 .footer {
@@ -654,7 +654,7 @@ ul li {
     margin-right: 0;
 }
 
-.footer-section h4 {
+.footer-section h3 {
     color: #3498db;
     font-size: 1.1em;
     margin-bottom: 0.5em;

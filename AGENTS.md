@@ -200,5 +200,8 @@ json.dump(d, open(f,'w'), indent=2)
 
 - Evans: Coinos account + API key → recreate Badilisha project via `edit-project.html`
 - Grant & Annegret: same when ready
-- Accounts/transaction history overview page
-- Reconciliation script: check `transaction-ledger.json` vs per-user `donations_made`
+- Reconciliation script (backend only, no UI): cross-check `transaction-ledger.json` against per-user `donations_made` arrays — the ledger is the horizontal audit trail (all payments in sequence), the profile arrays are the vertical view (per user). If they diverge, a webhook write was missed. Run via SSH or cron; alert on mismatch.
+
+## Deliberate Design Decisions
+
+- **No accounts/transaction overview page** — all money flows directly peer-to-peer; nothing passes through the platform. Donor accountability is covered by: (1) the donor's own profile page listing all their contributions, and (2) each project's fundraiser page listing all donations received. A separate accounts UI would imply platform-level financial responsibility that doesn't exist and would make DS look like a traditional charity org.
