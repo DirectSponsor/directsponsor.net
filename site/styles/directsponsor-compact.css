@@ -28,53 +28,24 @@ ul li {
 
 /* === 2-COLUMN LAYOUT (main content + right sidebar) === */
 .layout-container {
+    display: table;
+    width: 100%;
     max-width: 72em;
     margin: 0 auto;
     padding: 0.75em 0.5em;
-    /* Fallback: block stacking on old browsers */
 }
 
-/* Float fallback for old browsers */
 .main-content {
-    float: left;
-    width: 72%;
-    margin-right: 2%;
+    display: table-cell;
+    vertical-align: top;
+    padding-right: 1em;
 }
 
 .sidebar {
-    float: left;
-    width: 26%;
+    display: table-cell;
+    width: 16em;
     min-width: 14em;
-}
-
-.layout-container:after {
-    content: "";
-    display: table;
-    clear: both;
-}
-
-/* Modern flexbox */
-@supports (display: flex) {
-    .layout-container {
-        display: flex;
-        gap: 1em;
-        align-items: flex-start;
-    }
-
-    .main-content {
-        flex: 1;
-        min-width: 0;   /* prevent overflow */
-        float: none;
-        margin-right: 0;
-        width: auto;
-    }
-
-    .sidebar {
-        flex: 0 0 16em;
-        min-width: 14em;
-        float: none;
-        width: auto;
-    }
+    vertical-align: top;
 }
 
 /* Sidebar boxes */
@@ -116,19 +87,13 @@ ul li {
 
 /* Narrow screens: stack to single column */
 @media (max-width: 40em) {
-    .main-content, .sidebar {
-        float: none;
-        width: 100%;
-        margin-right: 0;
+    .layout-container {
+        display: block;
     }
-    @supports (display: flex) {
-        .layout-container {
-            flex-direction: column;
-        }
-        .sidebar {
-            flex: none;
-            width: 100%;
-        }
+    .main-content, .sidebar {
+        display: block;
+        width: 100%;
+        padding-right: 0;
     }
 }
 
@@ -152,13 +117,17 @@ ul li {
 }
 
 .header-content {
+    display: table;
+    width: 100%;
     max-width: 75em;
     margin: 0 auto;
     padding: 0 0.5em;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     transition: all 0.3s ease;
+}
+
+.logo {
+    display: table-cell;
+    vertical-align: middle;
 }
 
 .logo h1 {
@@ -189,10 +158,10 @@ ul li {
 
 /* Main navigation (compact) */
 .main-nav {
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap;
-    gap: 0;
+    display: table-cell;
+    vertical-align: middle;
+    text-align: right;
+    white-space: nowrap;
 }
 
 .main-nav a,
@@ -557,12 +526,10 @@ ul li {
         font-size: 0.8em;
     }
     
-    .header-content {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.5em;
+    .header-content, .logo, .main-nav {
+        display: block;
+        width: 100%;
     }
-    
     .main-nav {
         text-align: center;
     }
@@ -672,15 +639,19 @@ ul li {
 }
 
 .footer-content {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2em;
+    overflow: hidden;
     margin-bottom: 1em;
 }
 
 .footer-section {
-    flex: 1;
+    float: left;
     min-width: 15em;
+    width: 30%;
+    margin-right: 3%;
+}
+
+.footer-section:last-child {
+    margin-right: 0;
 }
 
 .footer-section h4 {
@@ -746,13 +717,11 @@ ul li {
 
 /* Footer mobile responsiveness */
 @media (max-width: 50em) {
-    .footer-content {
-        flex-direction: column;
-        gap: 1em;
-    }
-    
     .footer-section {
-        min-width: auto;
+        float: none;
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 1em;
     }
     
     .social-links {
