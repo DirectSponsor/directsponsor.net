@@ -256,7 +256,7 @@ function dsLogout() {
             <div id="pub-projects-completed-list"></div>
         </div>
         <div id="pub-projects-none" style="display:none;">
-            <p style="color:#888;font-size:0.9em;">No projects yet.</p>
+            <p style="color:#4a5568;font-size:0.9em;">No projects yet.</p>
         </div>
     </div>
 </div>
@@ -322,14 +322,14 @@ function dsLogout() {
             <div id="my-projects-completed-list"></div>
         </div>
         <div id="my-projects-none" style="display:none;">
-            <p style="color:#888;font-size:0.9em;">No projects yet.</p>
+            <p style="color:#4a5568;font-size:0.9em;">No projects yet.</p>
         </div>
     </div>
 
     <div class="project-card profile-section" id="my-donations-section" style="display:none;">
         <h2>⚡ Donations I've Made</h2>
         <ul id="my-donations-list" style="list-style:none;padding:0;margin:0;"></ul>
-        <p id="my-donations-none" style="color:#888;font-size:0.9em;display:none;">No donations recorded yet.</p>
+        <p id="my-donations-none" style="color:#4a5568;font-size:0.9em;display:none;">No donations recorded yet.</p>
     </div>
 
 </div>
@@ -510,7 +510,7 @@ function loadMyDonations() {
             li.style.cssText = 'padding:0.5em 0;border-bottom:1px solid #f0f0f0;font-size:0.9em;';
             var date = d.timestamp ? d.timestamp.split(' ')[0] : '';
             var recipient = d.recipient ? ' → <a href="fundraiser.html?project=' + encodeURIComponent(d.project_id) + '&user=' + encodeURIComponent(d.recipient) + '">' + d.recipient + ' #' + d.project_id + '</a>' : ' project #' + d.project_id;
-            li.innerHTML = '<strong>' + parseInt(d.amount_sats).toLocaleString() + ' sats</strong>' + recipient + (date ? ' <span style="color:#aaa;">(' + date + ')</span>' : '');
+            li.innerHTML = '<strong>' + parseInt(d.amount_sats).toLocaleString() + ' sats</strong>' + recipient + (date ? ' <span style="color:#4a5568;">(' + date + ')</span>' : '');
             list.appendChild(li);
         });
     })
@@ -562,14 +562,14 @@ function renderProjectCard(p, isActive) {
     div.style.cssText = 'border:1px solid #e1e8ed;border-radius:0.4em;padding:0.75em;margin-bottom:0.6em;' +
         (isActive ? 'border-left:3px solid #f7b731;' : 'opacity:0.8;');
     var editLink = isActive
-        ? ' &nbsp;<a href="edit-project.html?project=' + encodeURIComponent(p.id) + '" style="font-size:0.75em;color:#888;text-decoration:none;">✏️ Edit</a>'
+        ? ' &nbsp;<a href="edit-project.html?project=' + encodeURIComponent(p.id) + '" style="font-size:0.75em;color:#4a5568;text-decoration:none;">✏️ Edit</a>'
         : '';
     div.innerHTML =
         '<div style="display:flex;justify-content:space-between;align-items:baseline;">' +
             '<strong><a href="fundraiser.html?project=' + encodeURIComponent(p.id) +
                 '&user=' + encodeURIComponent(p.owner_user_id || '') + '" style="color:#333;">' +
                 escHtml(p.title) + '</a>' + editLink + '</strong>' +
-            '<span style="font-size:0.8em;color:' + (isActive ? '#2a9d2a' : '#999') + ';">' +
+            '<span style="font-size:0.8em;color:' + (isActive ? '#2a9d2a' : '#4a5568') + ';">' +
                 (isActive ? '● Active' : '✓ Completed') + '</span>' +
         '</div>' +
         '<div style="margin-top:0.4em;background:#f0f0f0;border-radius:2em;height:6px;">' +
