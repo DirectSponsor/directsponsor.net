@@ -760,6 +760,7 @@ ul li {
 .corner-ribbon {
     width: 200px;
     background: #e43;
+    opacity: 0.7;
     position: absolute;
     top: 25px;
     left: -50px;
