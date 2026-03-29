@@ -161,6 +161,16 @@ json.dump(d, open(f,'w'), indent=2)
 
 ---
 
+## CSS & Layout Conventions
+
+- **Layout**: CSS table layout (`display: table` / `table-cell`) — no flexbox, no float hacks, no `@supports`
+- **Units**: `em` and `%` throughout; `1px` borders are the only exception (scaling borders with font size makes no sense)
+- **Target viewport**: 390px minimum (covers iPhone 14/15 and most modern Android). 320px not supported unless someone reports it.
+- **Mobile breakpoint**: `max-width: 40em` stacks the 2-column layout to single column
+- **No framework CSS**: handcrafted only — no Bootstrap, Tailwind, etc.
+
+---
+
 ## Known Gotchas
 
 - **Profile glob pattern** — profile files are `{id}-{username}.txt`; webhook glob must be `*-{username}.txt`
