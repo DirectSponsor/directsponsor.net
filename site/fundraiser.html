@@ -486,7 +486,7 @@ function populateFundraiser(d) {
                 var editBtn = document.createElement('a');
                 editBtn.href = '/edit-project.html?project=' + encodeURIComponent(params.id) + '&user=' + encodeURIComponent(loggedInUser);
                 editBtn.textContent = '✏️ Edit this project';
-                editBtn.style.cssText = 'display:inline-block;margin-top:0.5em;font-size:0.85em;color:#888;';
+                editBtn.style.cssText = 'display:inline-block;margin-top:0.5em;font-size:0.85em;color:#4a5568;';
                 document.getElementById('fundraiser-title').insertAdjacentElement('afterend', editBtn);
             }
         }
@@ -530,13 +530,6 @@ function populateFundraiser(d) {
         imgLink.rel = 'noopener';
         img.parentNode.insertBefore(imgLink, img);
         imgLink.appendChild(img);
-        // Attribution for postimages
-        if (d.image_url.indexOf('postimg') !== -1 || d.image_url.indexOf('postimages') !== -1) {
-            var credit = document.createElement('p');
-            credit.style.cssText = 'font-size:0.75em;color:#aaa;margin-top:0.25em;text-align:right;';
-            credit.innerHTML = 'Image hosted by <a href="https://postimages.org" target="_blank" rel="noopener" style="color:#aaa;">postimages.org</a>';
-            imgLink.insertAdjacentElement('afterend', credit);
-        }
     }
 
     const raised = parseInt(d.current_amount) || 0;
