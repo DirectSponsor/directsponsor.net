@@ -1,5 +1,5 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-03-28_
+_Last updated: 2026-03-28 (session 2)_
 
 ## What's done and live
 
@@ -31,14 +31,15 @@ _Last updated: 2026-03-28_
 - `auth-proxy.php` — proxies JWT validation to auth server
 
 ### Donation flow (fully tested with real payments)
-1. Donor clicks Donate → picks amount → JS decodes JWT to get `donor_username` → `project-donations-api.php` POSTs to Coinos API
-2. Invoice + QR shown in modal, with Copy Invoice button
-3. Webhook fires → `webhook.php` updates `current-amount` in project HTML, appends to donor list
-4. If `current-amount >= target-amount`: file moved to `completed/`, next queued project becomes active
-5. Overpayment shown on project page; no sats lost
-6. `donor_username` written to `donations_made` in donor's profile file (for profile history)
-7. `transaction-ledger.json` updated as audit trail
-8. Poll loop detects payment → "Payment received!" → reload
+1. Donor opens modal → name field auto-filled from JWT (editable); guests can type a name or leave blank
+2. Picks amount → JS decodes JWT to get `donor_username` and reads name field → `project-donations-api.php` POSTs to Coinos API
+3. Invoice + QR shown in modal, with Copy Invoice button
+4. Webhook fires → `webhook.php` updates `current-amount` in project HTML, appends `<li>` to `<!-- recent_donations -->` block
+5. If `current-amount >= target-amount`: file moved to `completed/`, next queued project becomes active
+6. Overpayment shown on project page; no sats lost
+7. `donor_username` written to `donations_made` in donor's profile file (for profile history)
+8. `transaction-ledger.json` updated as audit trail
+9. Poll loop detects payment → "Payment received!" → reload
 
 ### Project queue system
 - Active project = lowest numbered HTML file in `username/active/`
@@ -54,6 +55,7 @@ _Last updated: 2026-03-28_
 - Completed banner shown for non-active projects
 - Overpayment shown when `current > goal`
 - Recent donations list: donor name, amount, date (all donations kept, no cap)
+- Donor name field in modal: optional, auto-filled for logged-in users, editable, blank = Anonymous
 
 ### Profile page features
 - Recipient section: Coinos username, API key, lightning address (auto-populated from profile)
@@ -118,6 +120,14 @@ _Last updated: 2026-03-28_
 - Reconciliation script: periodic check that `transaction-ledger.json` and per-user `donations_made` arrays agree
 - Coin weighting for ad placement (design work needed first)
 - Project updates / blog posts per project
+
+---
+
+## Known gotchas / bug history
+- **Profile glob was backwards** — profile files are `{id}-{username}.txt`; webhook glob must be `*-{username}.txt` not `{username}-*.txt`
+- **`my_donations` API needs `user_id` param** — `getUserId()` reads GET/POST params, not Authorization header; `loadMyDonations()` in `profile.html` must pass `user_id` and `username` as query params
+- **`recent_donations` block missing from older projects** — stub in `save-project.php` now includes it; existing files must be patched manually: `sed -i 's|</body>|<!-- recent_donations --><!-- end recent_donations -->\n</body>|' <file>`
+- **`donor_name` defaulted to Anonymous** — now falls back to `donor_username` in `storePendingProjectDonation`; even cleaner via explicit name field in modal
 
 ---
 
