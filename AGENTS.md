@@ -168,6 +168,7 @@ json.dump(d, open(f,'w'), indent=2)
 - **Target viewport**: 390px minimum (covers iPhone 14/15 and most modern Android). 320px not supported unless someone reports it.
 - **Mobile breakpoint**: `max-width: 40em` stacks the 2-column layout to single column
 - **No framework CSS**: handcrafted only — no Bootstrap, Tailwind, etc.
+- **No inline colour values** — always use CSS classes (`.color-muted`, `.color-primary`, `.color-success`) rather than `style="color:#888"`. Inline colours are invisible to global updates and cause drift. Exception: dynamic colours set by JS at runtime (e.g. progress bar widths).
 
 ---
 
