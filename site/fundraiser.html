@@ -524,13 +524,6 @@ function populateFundraiser(d) {
         img.src = d.image_url;
         img.alt = d.title || '';
         img.style.display = 'block';
-        // Wrap in link to image source
-        var imgLink = document.createElement('a');
-        imgLink.href = d.image_url;
-        imgLink.target = '_blank';
-        imgLink.rel = 'noopener';
-        img.parentNode.insertBefore(imgLink, img);
-        imgLink.appendChild(img);
     }
 
     const raised = parseInt(d.current_amount) || 0;
