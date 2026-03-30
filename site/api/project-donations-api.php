@@ -7,7 +7,7 @@ define('LOGS_DIR', DS_DATA_DIR . '/logs');
 
 /**
  * PROJECT DONATIONS API - For specific projects only (001, 002, etc.)
- * Uses each project's individual Coinos API key for direct payments
+ * Uses each project's individual Coinos API key for direct paymenthanksts
  * Does NOT handle Project 000 (use site-income-api.php instead)
  * 
  * Deployed: 2025-10-11 - Clean unified project donations system
