@@ -324,26 +324,21 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Check roles from profile API (JWT won't contain them)
-    fetch('/api/simple-profile.php?action=check_roles&roles=recipient&user_id='
+    // Check recipient role
+    fetch('/api/simple-profile.php?action=profile&user_id='
           + encodeURIComponent(_userId) + '&username=' + encodeURIComponent(_username))
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            var checks = data.role_checks || {};
-            if (!checks['recipient']) {
+            var profile = data.profile || {};
+            var roles = profile.roles || [];
+            if (!roles.includes('recipient')) {
                 show('access-denied');
                 return;
             }
             // Auto-populate Coinos API key from profile
-            fetch('/api/simple-profile.php?action=profile&user_id='
-                  + encodeURIComponent(_userId) + '&username=' + encodeURIComponent(_username))
-                .then(function(r) { return r.json(); })
-                .then(function(pd) {
-                    var p = pd.profile || pd;
-                    if (p.coinos_api_key) {
-                        document.getElementById('f-coinos-api-key').value = p.coinos_api_key;
-                    }
-                }).catch(function() {});
+            if (profile.coinos_api_key) {
+                document.getElementById('f-coinos-api-key').value = profile.coinos_api_key;
+            }
             loadProject();
         })
         .catch(function() { show('access-denied'); });
