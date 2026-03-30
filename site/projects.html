@@ -145,11 +145,14 @@ function dsLogout() {
 }
 
 .project-tile {
+    display: block;
     background: #fff;
     border: 1px solid #e1e8ed;
     border-radius: 0.4em;
     overflow: hidden;
     transition: box-shadow 0.2s;
+    text-decoration: none;
+    color: inherit;
 }
 
 .project-tile:hover {
@@ -238,14 +241,14 @@ function dsLogout() {
                 var img    = p.image_url
                     ? '<img src="' + p.image_url + '" alt="' + (p.title || '') + '" loading="lazy">'
                     : '';
-                html += '<div class="project-tile">' + img +
+                var tileUrl = 'fundraiser.html?project=' + encodeURIComponent(p.id) + '&user=' + encodeURIComponent(p.owner_user_id);
+                html += '<a href="' + tileUrl + '" class="project-tile">' + img +
                     '<div class="project-tile-body">' +
                     '<h3>' + (p.title || 'Untitled') + '</h3>' +
-                    '<div class="recipient">Recipient: <a href="profile.html?user=' + encodeURIComponent(p.owner_user_id) + '">' + (p.recipient || p.owner_user_id || '—') + '</a></div>' +
+                    '<div class="recipient">Recipient: ' + (p.recipient || p.owner_user_id || '—') + '</div>' +
                     '<div class="tile-progress-track"><div class="tile-progress-fill" style="width:' + pct + '%"></div></div>' +
                     '<div class="tile-stats">' + raised.toLocaleString() + ' / ' + goal.toLocaleString() + ' sats (' + pct + '%)</div>' +
-                    '<a href="fundraiser.html?project=' + encodeURIComponent(p.id) + '&user=' + encodeURIComponent(p.owner_user_id) + '" class="tile-donate-link">⚡ Donate</a>' +
-                    '</div></div>';
+                    '</div></a>';
             });
             html += '</div>';
             grid.innerHTML = html;
