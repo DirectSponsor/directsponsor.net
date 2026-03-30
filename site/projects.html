@@ -151,7 +151,7 @@ function dsLogout() {
 
 <!-- Dynamic active projects (loaded from API) -->
 <div id="active-projects-section">
-    <div id="projects-loading" style="text-align:center;padding:1.5em;color:#666;">Loading active projects...</div>
+    <div id="projects-loading" style="text-align:center;padding:1.5em;color:var(--text-dim);">Loading active projects...</div>
     <div id="projects-grid" style="display:none;"></div>
     <div id="projects-empty" style="display:none;"></div>
 </div>
@@ -166,8 +166,8 @@ function dsLogout() {
 
 .project-tile {
     display: block;
-    background: #fff;
-    border: 1px solid #e1e8ed;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 0.4em;
     overflow: hidden;
     transition: box-shadow 0.2s;
@@ -193,19 +193,19 @@ function dsLogout() {
 .project-tile-body h3 {
     font-size: 1em;
     margin-bottom: 0.25em;
-    color: #222;
+    color: var(--text);
 }
 
 .project-tile-body .recipient {
     font-size: 0.85em;
-    color: #666;
+    color: var(--text-dim);
     margin-bottom: 0.5em;
 }
 
 .tile-progress-track {
     width: 100%;
     height: 0.5em;
-    background: #eee;
+    background: var(--bg-subtle);
     border-radius: 0.25em;
     overflow: hidden;
     margin-bottom: 0.3em;
@@ -219,7 +219,7 @@ function dsLogout() {
 
 .tile-stats {
     font-size: 0.8em;
-    color: #555;
+    color: var(--text-sec);
     margin-bottom: 0.5em;
 }
 
