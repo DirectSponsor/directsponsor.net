@@ -255,9 +255,14 @@ function dsLogout() {
         </div>
 
         <div class="form-group">
-            <label for="f-image-url">Project Image URL</label>
-            <input type="url" id="f-image-url" placeholder="https://i.postimg.cc/...">
-            <p class="hint">Upload to <a href="https://postimages.org" target="_blank" rel="noopener">postimages.org</a> (free), then use the <strong>Direct link</strong> — it starts with <code>https://i.postimg.cc/</code>, not the page link.</p>
+            <label for="f-image-upload">Project Image</label>
+            <input type="file" id="f-image-upload" accept="image/jpeg,image/jpg,image/png,image/webp">
+            <p class="hint">Maximum 2MB. JPG, PNG, or WebP.</p>
+            <div id="image-preview" style="margin-top:0.5em;display:none;">
+                <img id="preview-img" src="" alt="Preview" style="max-width:200px;max-height:150px;border:1px solid #ddd;">
+                <p style="font-size:0.8em;color:#888;margin-top:0.2em;">Current image</p>
+            </div>
+            <input type="hidden" id="f-image-url" value="">
         </div>
 
         <div class="form-group">
@@ -380,6 +385,11 @@ function populateForm(f) {
         (f.contact_info && f.contact_info.location) ? f.contact_info.location : '';
     document.getElementById('f-image-url').value       = f.image_url || '';
     document.getElementById('f-website-url').value     = f.website_url || '';
+    // Show existing image preview if available
+    if (f.image_url) {
+        document.getElementById('preview-img').src = f.image_url;
+        document.getElementById('image-preview').style.display = 'block';
+    }
     // Set category select
     var cat = f.category || 'General';
     var sel = document.getElementById('f-category');
@@ -387,6 +397,51 @@ function populateForm(f) {
         if (sel.options[i].value === cat) { sel.selectedIndex = i; break; }
     }
 }
+
+// Image upload handling
+var uploadedImageUrl = null;
+
+document.getElementById('f-image-upload').addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    
+    // Show preview
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('preview-img').src = e.target.result;
+        document.getElementById('image-preview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+    
+    // Upload image
+    var formData = new FormData();
+    formData.append('image', file);
+    formData.append('project_id', _projectId || '001');
+    formData.append('username', _username);
+    
+    fetch('/api/upload-project-image.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            uploadedImageUrl = data.url;
+            document.getElementById('f-image-url').value = data.url;
+            console.log('Image uploaded:', data.url);
+        } else {
+            alert('Upload failed: ' + (data.error || 'Unknown error'));
+            document.getElementById('f-image-upload').value = '';
+            document.getElementById('image-preview').style.display = 'none';
+        }
+    })
+    .catch(function(err) {
+        console.error('Upload error:', err);
+        alert('Upload failed. Please try again.');
+        document.getElementById('f-image-upload').value = '';
+        document.getElementById('image-preview').style.display = 'none';
+    });
+});
 
 function saveProject() {
     var btn = document.getElementById('save-btn');

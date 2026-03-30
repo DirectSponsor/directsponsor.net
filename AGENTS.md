@@ -4,7 +4,12 @@ This file provides guidance to AI coding assistants (Cascade/Windsurf, Warp, etc
 
 ## Project Overview
 
-DirectSponsor.net is a peer-to-peer fundraising platform using Bitcoin Lightning payments. Donors send sats directly to recipients via Coinos Lightning wallets — no intermediaries. Projects are managed by recipients through a self-service UI. All storage is file-based; no database.
+DirectSponsor.net is a peer-to-peer fundraising platform using Bitcoin Lightning payments. Donors send sats directly to recipients via Coinos Lightning wallets — no intermediaries. Recipients manage their fundraisers through a self-service UI. All storage is file-based; no database.
+
+### Terminology
+- **Recipient** — the person running a fundraising initiative (e.g. evans, lightninglova)
+- **Project** — the recipient's overarching initiative (e.g. Badilisha Food Forest, Bitcoin4Ghana); stored as a content page, not a system entity
+- **Fundraiser** — a specific campaign the system manages (goal, progress, donate button); stored as a numbered HTML file (`001.html`, `002.html`...)
 
 ## Philosophy
 
@@ -92,16 +97,16 @@ JSON stored in `{userId}-{username}.txt`:
 ## Key Files
 
 | File | Purpose |
-|------|---------|
-| `site/fundraiser.html` | Project fundraiser page + donate modal |
-| `site/projects.html` | Project listing (API-driven tiles) |
-| `site/edit-project.html` | Recipient project create/edit form |
+|------|---------||
+| `site/fundraiser.html` | Individual fundraiser page + donate modal |
+| `site/fundraisers.html` | Fundraiser listing (API-driven tiles) |
+| `site/edit-fundraiser.html` | Recipient fundraiser create/edit form |
 | `site/profile.html` | User profile (own + public view) + donations made |
 | `site/admin.html` | Admin role management UI |
 | `site/api/project-donations-api.php` | Coinos invoice creation |
-| `site/api/webhook.php` | Payment webhook: updates project HTML, advances queue, writes profile |
-| `site/api/fundraiser-api.php` | Project data reader (parses comment-tags) |
-| `site/api/save-project.php` | Project save endpoint (creates/updates project HTML + config.json) |
+| `site/api/webhook.php` | Payment webhook: updates fundraiser HTML, advances queue, writes profile |
+| `site/api/fundraiser-api.php` | Fundraiser data reader (parses comment-tags) |
+| `site/api/save-fundraiser.php` | Fundraiser save endpoint (creates/updates fundraiser HTML + config.json) |
 | `site/api/simple-profile.php` | Profile CRUD + role management + `my_donations` action |
 | `site/api/auth-proxy.php` | Proxies JWT validation to auth server |
 | `site/cms/includes/social-layout-start.incl` | Shared nav (login link, user menu) — included in all pages |
@@ -177,14 +182,14 @@ json.dump(d, open(f,'w'), indent=2)
 
 - **Profile glob pattern** — profile files are `{id}-{username}.txt`; webhook glob must be `*-{username}.txt`
 - **`my_donations` API needs query params** — `getUserId()` reads GET/POST params, not Authorization header; `loadMyDonations()` must pass `user_id` and `username` as query params
-- **`recent_donations` block required** — stub in `save-project.php` includes it; old files must be patched: `sed -i 's|</body>|<!-- recent_donations --><!-- end recent_donations -->\n</body>|' <file>`
+- **`recent_donations` block required** — stub in `save-fundraiser.php` includes it; old files must be patched: `sed -i 's|</body>|<!-- recent_donations --><!-- end recent_donations -->\n</body>|' <file>`
 - **Coinos API key format** — Bearer JWT. Keys can expire; if invoice creation returns `user not provided`, the key needs regenerating from Coinos account settings
 - **RN1 SSH config** — `IdentityFile ~/.ssh/id_rsa` must be present in the RN1 entry in `~/.ssh/config`; `id_rsa.pub` must be in RN1's `authorized_keys`
 - **`donor_name` fallback** — if no explicit name given, falls back to `donor_username`, then `Anonymous`
 
 ---
 
-## Live Projects (as of 2026-03-29)
+## Live Fundraisers (as of 2026-03-30)
 
 | Username | Project | Status |
 |----------|---------|--------|
@@ -193,15 +198,15 @@ json.dump(d, open(f,'w'), indent=2)
 | `andytest2` | 001, 002, 003 | Completed (test) |
 
 **Pending recreation** (info in `archive/old-projects-hardcoded.md`):
-- Evans — Badilisha Food Forest (needs Coinos account + API key)
+- Evans — Badilisha Food Forest stub created (`evans/active/001.html`); needs Coinos API key in `001-config.json`
 - Grant & Annegret — Desert Farm (when ready)
 
 ---
 
 ## Pending Tasks
 
-- Evans: Coinos account + API key → recreate Badilisha project via `edit-project.html`
-- Grant & Annegret: same when ready
+- Evans: add Coinos API key to `userdata/projects/evans/001-config.json` (stub already created); then Evans can edit via `edit-fundraiser.html`
+- Grant & Annegret: same when ready — create stub then they edit via `edit-fundraiser.html`
 - Reconciliation script (backend only, no UI): cross-check `transaction-ledger.json` against per-user `donations_made` arrays — the ledger is the horizontal audit trail (all payments in sequence), the profile arrays are the vertical view (per user). If they diverge, a webhook write was missed. Run via SSH or cron; alert on mismatch.
 
 ## Deliberate Design Decisions
