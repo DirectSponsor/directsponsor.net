@@ -8,6 +8,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>(function(){var t=localStorage.getItem('ds-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');})()</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile - DirectSponsor</title>
@@ -163,11 +164,11 @@
             <a href="index.html">Home</a>
             <a href="projects.html">Projects</a>
             <a href="about.html">About</a>
-            <a href="contact.html">Contact</a>
+            <button id="theme-toggle" onclick="dsToggleTheme()" title="Toggle dark mode" style="background:none;border:none;cursor:pointer;padding:0.25em 0.4em;font-size:1em;color:var(--link);margin-left:0.25em;vertical-align:middle;">🌙</button>
             <div class="nav-user-menu" id="nav-user-menu" style="display:none;position:relative;">
                 <a href="#" id="nav-username-btn" onclick="toggleUserMenu(event)">👤 <span id="nav-username-label">Account</span> ▾</a>
-                <div id="nav-user-dropdown" style="display:none;position:absolute;right:0;top:100%;background:#fff;border:1px solid #ddd;border-radius:0.3em;min-width:130px;box-shadow:0 2px 8px rgba(0,0,0,0.12);z-index:999;">
-                    <a href="profile.html" style="display:block;padding:0.5em 1em;color:#333;text-decoration:none;font-size:0.9em;border-bottom:1px solid #eee;">Profile</a>
+                <div id="nav-user-dropdown" style="display:none;position:absolute;right:0;top:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:0.3em;min-width:130px;box-shadow:0 2px 8px rgba(0,0,0,0.12);z-index:999;">
+                    <a href="profile.html" style="display:block;padding:0.5em 1em;color:var(--text);text-decoration:none;font-size:0.9em;border-bottom:1px solid var(--border);">Profile</a>
                     <a href="#" onclick="dsLogout(); return false;" style="display:block;padding:0.5em 1em;color:#c00;text-decoration:none;font-size:0.9em;">Log out</a>
                 </div>
             </div>
@@ -204,6 +205,25 @@ document.addEventListener('click', function(e) {
         document.getElementById('nav-user-dropdown').style.display = 'none';
     }
 });
+function dsToggleTheme() {
+    var html = document.documentElement;
+    var isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+        html.removeAttribute('data-theme');
+        localStorage.setItem('ds-theme', 'light');
+        document.getElementById('theme-toggle').textContent = '🌙';
+    } else {
+        html.setAttribute('data-theme', 'dark');
+        localStorage.setItem('ds-theme', 'dark');
+        document.getElementById('theme-toggle').textContent = '☀️';
+    }
+}
+(function() {
+    if (localStorage.getItem('ds-theme') === 'dark') {
+        var btn = document.getElementById('theme-toggle');
+        if (btn) btn.textContent = '☀️';
+    }
+})();
 function dsLogout() {
     sessionStorage.removeItem('jwt');
     localStorage.removeItem('jwt');
