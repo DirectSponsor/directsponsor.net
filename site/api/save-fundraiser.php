@@ -79,7 +79,6 @@ if ($callerId) {
 }
 
 // Only recipients may create/edit projects
-file_put_contents('/tmp/directsponsor-debug.log', "DEBUG: callerId=$callerId, callerUsername=$callerUsername, roles=" . json_encode($callerRoles) . "\n", FILE_APPEND);
 if (!in_array('recipient', $callerRoles)) {
     http_response_code(403);
     echo json_encode(['error' => 'Recipient role required to manage projects']);
