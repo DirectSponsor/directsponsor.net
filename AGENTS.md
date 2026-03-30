@@ -209,6 +209,31 @@ json.dump(d, open(f,'w'), indent=2)
 - Grant & Annegret: same when ready — create stub then they edit via `edit-fundraiser.html`
 - Reconciliation script (backend only, no UI): cross-check `transaction-ledger.json` against per-user `donations_made` arrays — the ledger is the horizontal audit trail (all payments in sequence), the profile arrays are the vertical view (per user). If they diverge, a webhook write was missed. Run via SSH or cron; alert on mismatch.
 
+## User Account Deletion
+
+To completely delete a user from the ecosystem (for GDPR compliance or user requests):
+
+1. **Site Data Cleanup** (on RN1):
+   ```bash
+   ./delete-user.sh <username>
+   ```
+   This removes:
+   - DirectSponsor profile and projects
+   - RoflFaucet profile (if exists)
+   - Any other site-specific data
+
+2. **Auth Server Cleanup** (on auth.directsponsor.org):
+   ```bash
+   ssh es3-auth "php /root/scripts/delete-auth-user.php <username>"
+   ```
+   This removes:
+   - Authentication credentials
+   - Session data
+   - Tokens
+
+**Scripts Location**: Stored in auth-server project at `/scripts/` directory
+**Important**: Always delete site data BEFORE auth data to avoid foreign key issues
+
 ## Deliberate Design Decisions
 
 - **No accounts/transaction overview page** — all money flows directly peer-to-peer; nothing passes through the platform. Donor accountability is covered by: (1) the donor's own profile page listing all their contributions, and (2) each project's fundraiser page listing all donations received. A separate accounts UI would imply platform-level financial responsibility that doesn't exist and would make DS look like a traditional charity org.

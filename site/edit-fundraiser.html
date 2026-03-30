@@ -421,9 +421,9 @@ document.getElementById('f-image-upload').addEventListener('change', function(e)
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (data.success) {
-            uploadedImageUrl = data.url;
-            document.getElementById('f-image-url').value = data.url;
-            console.log('Image uploaded:', data.url);
+            uploadedImageUrl = data.image_url;
+            document.getElementById('f-image-url').value = data.image_url;
+            console.log('Image uploaded:', data.image_url);
         } else {
             alert('Upload failed: ' + (data.error || 'Unknown error'));
             document.getElementById('f-image-upload').value = '';
