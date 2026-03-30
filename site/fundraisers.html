@@ -1,0 +1,451 @@
+<!-- DS-CMS Built File - Edit source files in includes/ folder -->
+
+<!-- 🏷️ BBEdit-style parameters - EDIT THESE for your new page: -->
+<!-- #TITLE#="Verified Projects - DirectSponsor" -->
+<!-- #DESC#="Browse verified conservation and development projects you can sponsor directly. Every project personally verified through our Web of Trust network." -->
+<!-- #KEYWORDS#="verified projects, conservation sponsorship, direct charity projects, web of trust verification, peer-to-peer charity" -->
+
+<!-- include start doctype-head.incl -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>(function(){var t=localStorage.getItem('ds-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');})()</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verified Projects - DirectSponsor</title>
+    <meta name="description" content="Browse verified conservation and development projects you can sponsor directly. Every project personally verified through our Web of Trust network.">
+    <meta name="keywords" content="verified projects, conservation sponsorship, direct charity projects, web of trust verification, peer-to-peer charity">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://directsponsor.net">
+    <meta property="og:title" content="DirectSponsor - Revolutionary Peer-to-Peer Charity">
+    <meta property="og:description" content="Eliminate charity middlemen. Send money directly to verified recipients with complete transparency.">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐫</text></svg>">
+    
+    <!-- Main Styles (New Compact Social Layout) -->
+    <link rel="preload" href="styles/directsponsor-compact.css" as="style">
+    <link rel="stylesheet" href="styles/directsponsor-compact.css">
+    
+    <!-- Optional: Add analytics, fonts, or other scripts here -->
+    <script>
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var jwt = params.get('jwt');
+        if (jwt) {
+            sessionStorage.setItem('jwt', jwt);
+            params.delete('jwt');
+            var newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+            window.history.replaceState({}, '', newUrl);
+        }
+    })();
+    </script>
+</head>
+<body>
+
+<!-- BETa RIBBON -->
+<div class="corner-ribbon top-left sticky red shadow">BETA</div>
+<!-- include end doctype-head.incl -->
+
+<!-- include start social-layout-start.incl -->
+<header class="site-header">
+    <div class="header-content">
+        <div class="logo">
+            <a href="index.html">💎 DirectSponsor</a>
+            <span class="tagline">Peer-to-Peer Charity</span>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html">Home</a>
+            <a href="fundraisers.html">Fundraisers</a>
+            <a href="about.html">About</a>
+            <button id="theme-toggle" onclick="dsToggleTheme()" title="Toggle dark mode" style="background:none;border:none;cursor:pointer;padding:0.25em 0.4em;font-size:1em;color:var(--link);margin-left:0.25em;vertical-align:middle;">🌙</button>
+            <div class="nav-user-menu" id="nav-user-menu" style="display:none;position:relative;">
+                <a href="#" id="nav-username-btn" onclick="toggleUserMenu(event)">👤 <span id="nav-username-label">Account</span> ▾</a>
+                <div id="nav-user-dropdown" style="display:none;position:absolute;right:0;top:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:0.3em;min-width:130px;box-shadow:0 2px 8px rgba(0,0,0,0.12);z-index:999;">
+                    <a href="profile.html" style="display:block;padding:0.5em 1em;color:var(--text);text-decoration:none;font-size:0.9em;border-bottom:1px solid var(--border);">Profile</a>
+                    <a href="#" onclick="dsLogout(); return false;" style="display:block;padding:0.5em 1em;color:#c00;text-decoration:none;font-size:0.9em;">Log out</a>
+                </div>
+            </div>
+            <a href="#" id="nav-login-link" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href.replace(/^http:/, 'https:')); return false;">Login</a>
+        </nav>
+    </div>
+</header>
+<style>
+.nav-user-menu { display:inline-block; vertical-align:middle; }
+.nav-user-menu > a { white-space:nowrap; }
+.nav-user-menu:hover #nav-user-dropdown, #nav-user-dropdown.open { display:block !important; }
+</style>
+<script>
+(function() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (jwt) {
+        try {
+            var payload = JSON.parse(atob(jwt.split('.')[1]));
+            var uname = payload.username || payload.sub || '';
+            if (uname) document.getElementById('nav-username-label').textContent = uname;
+        } catch(e) {}
+        document.getElementById('nav-user-menu').style.display = '';
+        document.getElementById('nav-login-link').style.display = 'none';
+    }
+})();
+function toggleUserMenu(e) {
+    e.preventDefault();
+    var dd = document.getElementById('nav-user-dropdown');
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+    var menu = document.getElementById('nav-user-menu');
+    if (menu && !menu.contains(e.target)) {
+        document.getElementById('nav-user-dropdown').style.display = 'none';
+    }
+});
+function dsToggleTheme() {
+    var html = document.documentElement;
+    var isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+        html.removeAttribute('data-theme');
+        localStorage.setItem('ds-theme', 'light');
+        document.getElementById('theme-toggle').textContent = '🌙';
+    } else {
+        html.setAttribute('data-theme', 'dark');
+        localStorage.setItem('ds-theme', 'dark');
+        document.getElementById('theme-toggle').textContent = '☀️';
+    }
+}
+(function() {
+    if (localStorage.getItem('ds-theme') === 'dark') {
+        var btn = document.getElementById('theme-toggle');
+        if (btn) btn.textContent = '☀️';
+    }
+})();
+function dsLogout() {
+    sessionStorage.removeItem('jwt');
+    localStorage.removeItem('jwt');
+    localStorage.removeItem('user_roles');
+    localStorage.removeItem('directsponsor_session');
+    localStorage.removeItem('username');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('combined_user_id');
+    window.location.href = 'index.html';
+}
+</script>
+
+<!-- 2-Column Layout: main content + right sidebar -->
+<div class="layout-container">
+
+    <main class="main-content">
+
+<!-- UNIQUE PAGE CONTENT GOES HERE -->
+<!-- include end social-layout-start.incl -->
+
+<!-- UNIQUE PAGE CONTENT GOES HERE -->
+
+<!-- Page Header -->
+<div class="project-card">
+    <h1>Verified Projects</h1>
+    <p class="project-location">Every project personally verified through our Web of Trust</p>
+    <p>DirectSponsor sponsors <strong>individual people</strong>, not organizations. This eliminates power abuse and ensures your money goes directly to the people doing the work.</p>
+</div>
+
+<!-- Dynamic active projects (loaded from API) -->
+<div id="active-projects-section">
+    <div id="projects-loading" style="text-align:center;padding:1.5em;color:var(--text-dim);">Loading active projects...</div>
+    <div id="projects-grid" style="display:none;"></div>
+    <div id="projects-empty" style="display:none;"></div>
+</div>
+
+<style>
+.project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(18em, 1fr));
+    gap: 1em;
+    margin-bottom: 1em;
+}
+
+.project-tile {
+    display: block;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 0.4em;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+    text-decoration: none;
+    color: inherit;
+}
+
+.project-tile:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.project-tile img {
+    width: 100%;
+    height: 10em;
+    object-fit: cover;
+    display: block;
+}
+
+.project-tile-body {
+    padding: 0.75em;
+}
+
+.project-tile-body h3 {
+    font-size: 1em;
+    margin-bottom: 0.25em;
+    color: var(--text);
+}
+
+.project-tile-body .recipient {
+    font-size: 0.85em;
+    color: var(--text-dim);
+    margin-bottom: 0.5em;
+}
+
+.tile-progress-track {
+    width: 100%;
+    height: 0.5em;
+    background: var(--bg-subtle);
+    border-radius: 0.25em;
+    overflow: hidden;
+    margin-bottom: 0.3em;
+}
+
+.tile-progress-fill {
+    height: 100%;
+    background: #2a9d2a;
+    border-radius: 0.25em;
+}
+
+.tile-stats {
+    font-size: 0.8em;
+    color: var(--text-sec);
+    margin-bottom: 0.5em;
+}
+
+.tile-donate-link {
+    display: inline-block;
+    background: #f7b731;
+    color: #000;
+    text-decoration: none;
+    padding: 0.35em 0.75em;
+    border-radius: 0.3em;
+    font-size: 0.85em;
+    font-weight: bold;
+}
+
+.tile-donate-link:hover {
+    background: #e0a520;
+}
+</style>
+
+<script>
+(function() {
+    fetch('/api/fundraiser-api.php?action=list')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            document.getElementById('projects-loading').style.display = 'none';
+            var projects = data.fundraisers || data.projects || data;
+            if (!projects || !Array.isArray(projects) || projects.length === 0) {
+                document.getElementById('projects-empty').style.display = 'block';
+                document.getElementById('projects-empty').innerHTML =
+                    '<div class="project-card"><p>No active projects found via API yet — see featured projects below.</p></div>';
+                return;
+            }
+            var grid = document.getElementById('projects-grid');
+            var html = '<div class="project-card"><h2>Active Projects</h2></div><div class="project-grid">';
+            projects.forEach(function(p) {
+                var raised = parseInt(p.current_amount) || 0;
+                var goal   = parseInt(p.goal_amount || p.target_amount) || 0;
+                var pct    = goal > 0 ? Math.min(100, Math.round(raised / goal * 100)) : 0;
+                var img    = p.image_url
+                    ? '<img src="' + p.image_url + '" alt="' + (p.title || '') + '" loading="lazy">'
+                    : '';
+                var tileUrl = 'fundraiser.html?project=' + encodeURIComponent(p.id) + '&user=' + encodeURIComponent(p.owner_user_id);
+                html += '<a href="' + tileUrl + '" class="project-tile">' + img +
+                    '<div class="project-tile-body">' +
+                    '<h3>' + (p.title || 'Untitled') + '</h3>' +
+                    '<div class="recipient">Recipient: ' + (p.recipient || p.owner_user_id || '—') + '</div>' +
+                    '<div class="tile-progress-track"><div class="tile-progress-fill" style="width:' + pct + '%"></div></div>' +
+                    '<div class="tile-stats">' + raised.toLocaleString() + ' / ' + goal.toLocaleString() + ' sats (' + pct + '%)</div>' +
+                    '</div></a>';
+            });
+            html += '</div>';
+            grid.innerHTML = html;
+            grid.style.display = 'block';
+        })
+        .catch(function() {
+            document.getElementById('projects-loading').style.display = 'none';
+        });
+})();
+</script>
+
+<!-- Verification Standards -->
+<div class="project-card">
+    <h2>🔍 Our Verification Standard</h2>
+    <p>Each project requires <strong>multi-source verification</strong>:</p>
+    <ul>
+        <li>✅ Academic or institutional credentials</li>
+        <li>✅ Independent site visits by trusted professionals</li>
+        <li>✅ Multi-year relationship with project coordinators</li>
+        <li>✅ Open accounting and transparent reporting</li>
+    </ul>
+</div>
+
+<!-- Future Projects -->
+<article class="project-card">
+    <h2>🔄 More Projects Coming</h2>
+    <div class="project-verification">Under Review • Web of Trust Verification</div>
+    
+    <p>We're carefully verifying additional projects through our Web of Trust network. <strong>Quality over quantity</strong> - we only add projects we can personally verify and stand behind.</p>
+    
+    <p class="text-small color-muted">Have a project to submit? <a href="contact.html">Contact us</a> with documentation and references.</p>
+</article>
+
+<!-- How Direct Sponsorship Works -->
+<div class="project-card">
+    <h2>💡 How Direct Sponsorship Works</h2>
+    <div class="steps-grid">
+        <div class="step">
+            <h3>1️⃣ Choose a Person</h3>
+            <p>Sponsor Evans ($80/month) or a nursery worker ($70/month) directly</p>
+        </div>
+        <div class="step">
+            <h3>2️⃣ Direct Payment</h3>
+            <p>Your money goes straight to them via Bitcoin/Lightning Network</p>
+        </div>
+        <div class="step">
+            <h3>3️⃣ Direct Communication</h3>
+            <p>Message them directly, see their progress updates, build relationships</p>
+        </div>
+        <div class="step">
+            <h3>4️⃣ Transparent Results</h3>
+            <p>Open accounting, photo updates, measurable impact</p>
+        </div>
+    </div>
+</div>
+
+<!-- END UNIQUE PAGE CONTENT -->
+
+<!-- include start social-layout-end.incl -->
+<!-- END UNIQUE PAGE CONTENT -->
+
+    </main>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="sidebar-box">
+            <h3>About DirectSponsor</h3>
+            <p>100% direct peer-to-peer donations. Every satoshi goes straight to the recipient.</p>
+            <a href="about.html">Learn more</a>
+        </div>
+
+        <div class="sidebar-box">
+            <h3>Active Projects</h3>
+            <p><a href="fundraisers.html">Browse all fundraisers →</a></p>
+        </div>
+
+        <!-- Ad slot -->
+        <div class="sidebar-box ad-slot">
+            <p class="ad-label">Advertisement</p>
+        </div>
+
+    </aside>
+
+</div>
+<!-- End layout container -->
+
+<!-- Sticky Header Script (Inline for performance) -->
+<script>
+(function() {
+    const header = document.querySelector('.site-header');
+    let lastScrollY = window.scrollY;
+    let isCondensed = false;
+    
+    function handleScroll() {
+        const currentScrollY = window.scrollY;
+        
+        // Condense when scrolled down more than 50px
+        if (currentScrollY > 50 && !isCondensed) {
+            header.classList.add('condensed');
+            isCondensed = true;
+        } 
+        // Expand when near top
+        else if (currentScrollY <= 30 && isCondensed) {
+            header.classList.remove('condensed');
+            isCondensed = false;
+        }
+        
+        lastScrollY = currentScrollY;
+    }
+    
+    // Throttled scroll listener for performance
+    let ticking = false;
+    window.addEventListener('scroll', function() {
+        if (!ticking) {
+            requestAnimationFrame(function() {
+                handleScroll();
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
+})();
+
+// Show Profile nav link if logged in
+(function() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (jwt) {
+        var el = document.getElementById('nav-profile-link');
+        if (el) el.style.display = '';
+    }
+})();
+</script>
+<!-- include end social-layout-end.incl -->
+
+<!-- include start footer.incl -->
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>💎 DirectSponsor</h3>
+                    <p>Revolutionary peer-to-peer charity eliminating middlemen and connecting sponsors directly with verified recipients.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">Twitter</a>
+                        <a href="#" class="social-link">Nostr</a>
+                        <a href="#" class="social-link">GitHub</a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>🔗 Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="fundraisers.html">Fundraisers</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="about.html#how-it-works">How It Works</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>🚀 DS-CMS</h3>
+                    <p>Zero dependencies, maximum simplicity. Perfect for shared hosting.</p>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/satoshihost/ds-cms" target="_blank">GitHub</a></li>
+                        <li><a href="#" target="_blank">Documentation</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 DS-CMS Demo Site. Built with HTML-first principles.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
+<!-- include end footer.incl -->

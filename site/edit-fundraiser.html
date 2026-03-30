@@ -1,0 +1,575 @@
+<!-- DS-CMS Built File - Edit source files in includes/ folder -->
+
+<!-- #TITLE#="Edit Project - DirectSponsor" -->
+<!-- #DESC#="Create or edit your fundraising project on DirectSponsor." -->
+<!-- #KEYWORDS#="edit project, fundraiser, recipient, directsponsor" -->
+
+<!-- include start doctype-head.incl -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>(function(){var t=localStorage.getItem('ds-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');})()</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Project - DirectSponsor</title>
+    <meta name="description" content="Create or edit your fundraising project on DirectSponsor.">
+    <meta name="keywords" content="edit project, fundraiser, recipient, directsponsor">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://directsponsor.net">
+    <meta property="og:title" content="DirectSponsor - Revolutionary Peer-to-Peer Charity">
+    <meta property="og:description" content="Eliminate charity middlemen. Send money directly to verified recipients with complete transparency.">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐫</text></svg>">
+    
+    <!-- Main Styles (New Compact Social Layout) -->
+    <link rel="preload" href="styles/directsponsor-compact.css" as="style">
+    <link rel="stylesheet" href="styles/directsponsor-compact.css">
+    
+    <!-- Optional: Add analytics, fonts, or other scripts here -->
+    <script>
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var jwt = params.get('jwt');
+        if (jwt) {
+            sessionStorage.setItem('jwt', jwt);
+            params.delete('jwt');
+            var newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+            window.history.replaceState({}, '', newUrl);
+        }
+    })();
+    </script>
+</head>
+<body>
+
+<!-- BETa RIBBON -->
+<div class="corner-ribbon top-left sticky red shadow">BETA</div>
+<!-- include end doctype-head.incl -->
+
+<style>
+.form-group {
+    margin-bottom: 1.2em;
+}
+.form-group label {
+    display: block;
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #444;
+    margin-bottom: 0.3em;
+}
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="url"],
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 0.55em 0.7em;
+    border: 1px solid #ccc;
+    border-radius: 0.3em;
+    font-size: 0.95em;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+.form-group textarea {
+    min-height: 7em;
+    resize: vertical;
+}
+.form-group .hint {
+    font-size: 0.8em;
+    color: #888;
+    margin-top: 0.2em;
+}
+.save-btn {
+    background: #f7b731;
+    color: #000;
+    border: none;
+    padding: 0.65em 1.6em;
+    border-radius: 0.3em;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+}
+.save-btn:hover { background: #e0a520; }
+.save-btn:disabled { background: #ccc; cursor: default; }
+.status-msg {
+    display: inline-block;
+    margin-left: 0.8em;
+    font-size: 0.9em;
+    color: #2a9d2a;
+}
+.status-msg.error { color: #c00; }
+#access-denied, #not-logged-in, #loading-msg { text-align: center; padding: 2em; color: #666; }
+.section-title {
+    font-size: 1.05em;
+    font-weight: bold;
+    border-bottom: 1px solid #e1e8ed;
+    padding-bottom: 0.35em;
+    margin-bottom: 0.9em;
+    color: #333;
+}
+</style>
+
+<!-- include start social-layout-start.incl -->
+<header class="site-header">
+    <div class="header-content">
+        <div class="logo">
+            <a href="index.html">💎 DirectSponsor</a>
+            <span class="tagline">Peer-to-Peer Charity</span>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html">Home</a>
+            <a href="fundraisers.html">Fundraisers</a>
+            <a href="about.html">About</a>
+            <button id="theme-toggle" onclick="dsToggleTheme()" title="Toggle dark mode" style="background:none;border:none;cursor:pointer;padding:0.25em 0.4em;font-size:1em;color:var(--link);margin-left:0.25em;vertical-align:middle;">🌙</button>
+            <div class="nav-user-menu" id="nav-user-menu" style="display:none;position:relative;">
+                <a href="#" id="nav-username-btn" onclick="toggleUserMenu(event)">👤 <span id="nav-username-label">Account</span> ▾</a>
+                <div id="nav-user-dropdown" style="display:none;position:absolute;right:0;top:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:0.3em;min-width:130px;box-shadow:0 2px 8px rgba(0,0,0,0.12);z-index:999;">
+                    <a href="profile.html" style="display:block;padding:0.5em 1em;color:var(--text);text-decoration:none;font-size:0.9em;border-bottom:1px solid var(--border);">Profile</a>
+                    <a href="#" onclick="dsLogout(); return false;" style="display:block;padding:0.5em 1em;color:#c00;text-decoration:none;font-size:0.9em;">Log out</a>
+                </div>
+            </div>
+            <a href="#" id="nav-login-link" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href.replace(/^http:/, 'https:')); return false;">Login</a>
+        </nav>
+    </div>
+</header>
+<style>
+.nav-user-menu { display:inline-block; vertical-align:middle; }
+.nav-user-menu > a { white-space:nowrap; }
+.nav-user-menu:hover #nav-user-dropdown, #nav-user-dropdown.open { display:block !important; }
+</style>
+<script>
+(function() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (jwt) {
+        try {
+            var payload = JSON.parse(atob(jwt.split('.')[1]));
+            var uname = payload.username || payload.sub || '';
+            if (uname) document.getElementById('nav-username-label').textContent = uname;
+        } catch(e) {}
+        document.getElementById('nav-user-menu').style.display = '';
+        document.getElementById('nav-login-link').style.display = 'none';
+    }
+})();
+function toggleUserMenu(e) {
+    e.preventDefault();
+    var dd = document.getElementById('nav-user-dropdown');
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+    var menu = document.getElementById('nav-user-menu');
+    if (menu && !menu.contains(e.target)) {
+        document.getElementById('nav-user-dropdown').style.display = 'none';
+    }
+});
+function dsToggleTheme() {
+    var html = document.documentElement;
+    var isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+        html.removeAttribute('data-theme');
+        localStorage.setItem('ds-theme', 'light');
+        document.getElementById('theme-toggle').textContent = '🌙';
+    } else {
+        html.setAttribute('data-theme', 'dark');
+        localStorage.setItem('ds-theme', 'dark');
+        document.getElementById('theme-toggle').textContent = '☀️';
+    }
+}
+(function() {
+    if (localStorage.getItem('ds-theme') === 'dark') {
+        var btn = document.getElementById('theme-toggle');
+        if (btn) btn.textContent = '☀️';
+    }
+})();
+function dsLogout() {
+    sessionStorage.removeItem('jwt');
+    localStorage.removeItem('jwt');
+    localStorage.removeItem('user_roles');
+    localStorage.removeItem('directsponsor_session');
+    localStorage.removeItem('username');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('combined_user_id');
+    window.location.href = 'index.html';
+}
+</script>
+
+<!-- 2-Column Layout: main content + right sidebar -->
+<div class="layout-container">
+
+    <main class="main-content">
+
+<!-- UNIQUE PAGE CONTENT GOES HERE -->
+<!-- include end social-layout-start.incl -->
+
+<div id="loading-msg" class="project-card">
+    <p>Loading...</p>
+</div>
+
+<div id="not-logged-in" class="project-card" style="display:none;">
+    <h2>Login required</h2>
+    <p>You must be logged in as a recipient to edit projects.</p>
+    <a href="#" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href.replace(/^http:/,'https:'));return false;" class="save-btn" style="text-decoration:none;display:inline-block;">Log in</a>
+</div>
+
+<div id="access-denied" class="project-card" style="display:none;">
+    <h2>⚠️ Access denied</h2>
+    <p>You need the <strong>recipient</strong> role to manage projects. Please contact an admin.</p>
+</div>
+
+<div id="edit-form-wrap" style="display:none;">
+
+    <div class="project-card">
+        <p class="section-title">✏️ <span id="form-subtitle">Edit Project</span></p>
+
+        <div class="form-group">
+            <label for="f-title">Project Title</label>
+            <input type="text" id="f-title" maxlength="100" required placeholder="A clear, descriptive title">
+        </div>
+
+        <div class="form-group">
+            <label for="f-description">Short Description</label>
+            <input type="text" id="f-description" maxlength="200" required placeholder="One sentence shown in listings">
+        </div>
+
+        <div class="form-group">
+            <label for="f-full-description">Full Description</label>
+            <textarea id="f-full-description" placeholder="Full story, goals, and impact..."></textarea>
+            <p class="hint">Plain text. Separate paragraphs with a blank line.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="f-target-amount">Funding Goal (sats)</label>
+            <input type="number" id="f-target-amount" min="1000" step="1000" required placeholder="e.g. 60000">
+        </div>
+
+        <div class="form-group">
+            <label for="f-location">Location</label>
+            <input type="text" id="f-location" maxlength="100" placeholder="e.g. Nairobi, Kenya">
+        </div>
+
+        <div class="form-group">
+            <label for="f-website-url">Website / Social Link</label>
+            <input type="url" id="f-website-url" placeholder="https://...">
+            <p class="hint">Optional</p>
+        </div>
+
+        <div class="form-group">
+            <label for="f-image-url">Project Image URL</label>
+            <input type="url" id="f-image-url" placeholder="https://i.postimg.cc/...">
+            <p class="hint">Upload to <a href="https://postimages.org" target="_blank" rel="noopener">postimages.org</a> (free), then use the <strong>Direct link</strong> — it starts with <code>https://i.postimg.cc/</code>, not the page link.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="f-coinos-api-key">Coinos API Key</label>
+            <input type="text" id="f-coinos-api-key" maxlength="200" placeholder="Your Coinos API key for receiving donations">
+            <p class="hint">Get this from your <a href="https://coinos.io" target="_blank">Coinos</a> account settings. Required to receive donations.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="f-category">Category</label>
+            <select id="f-category">
+                <option value="General">General</option>
+                <option value="Education">Education</option>
+                <option value="Technology">Technology</option>
+                <option value="Environment">Environment</option>
+                <option value="Health">Health</option>
+                <option value="Community">Community</option>
+                <option value="Agriculture">Agriculture</option>
+                <option value="Arts">Arts</option>
+            </select>
+        </div>
+
+        <div style="margin-top:1em;">
+            <button class="save-btn" id="save-btn" onclick="saveProject()">💾 Save Changes</button>
+            <span class="status-msg" id="save-status"></span>
+        </div>
+    </div>
+
+</div>
+
+<script>
+var _username = null;
+var _projectId = null;
+var _jwt = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    var params = new URLSearchParams(window.location.search);
+    _projectId = params.get('project') || null;
+
+    _jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (!_jwt) {
+        show('not-logged-in');
+        return;
+    }
+
+    // Decode JWT payload to get user_id and username
+    var _userId = null;
+    try {
+        var payload = JSON.parse(atob(_jwt.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+        _username = payload.username || payload.sub || null;
+        _userId   = payload.user_id  || payload.sub || null;
+    } catch(e) {
+        show('not-logged-in');
+        return;
+    }
+
+    if (!_username || !_userId) {
+        show('not-logged-in');
+        return;
+    }
+
+    // Check roles from profile API (JWT won't contain them)
+    fetch('/api/simple-profile.php?action=check_roles&roles=recipient&user_id='
+          + encodeURIComponent(_userId) + '&username=' + encodeURIComponent(_username))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var checks = data.role_checks || {};
+            if (!checks['recipient']) {
+                show('access-denied');
+                return;
+            }
+            // Auto-populate Coinos API key from profile
+            fetch('/api/simple-profile.php?action=profile&user_id='
+                  + encodeURIComponent(_userId) + '&username=' + encodeURIComponent(_username))
+                .then(function(r) { return r.json(); })
+                .then(function(pd) {
+                    var p = pd.profile || pd;
+                    if (p.coinos_api_key) {
+                        document.getElementById('f-coinos-api-key').value = p.coinos_api_key;
+                    }
+                }).catch(function() {});
+            loadProject();
+        })
+        .catch(function() { show('access-denied'); });
+});
+
+function show(id) {
+    document.getElementById('loading-msg').style.display = 'none';
+    ['not-logged-in','access-denied','edit-form-wrap'].forEach(function(i) {
+        document.getElementById(i).style.display = 'none';
+    });
+    document.getElementById(id).style.display = '';
+}
+
+function loadProject() {
+    fetch('/api/fundraiser-api.php?action=get&id=' + encodeURIComponent(_projectId) + '&username=' + encodeURIComponent(_username))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success && data.fundraiser) {
+                populateForm(data.fundraiser);
+            }
+            // Whether loaded or not (new project), show the form
+            document.getElementById('loading-msg').style.display = 'none';
+            document.getElementById('edit-form-wrap').style.display = '';
+        })
+        .catch(function() {
+            document.getElementById('loading-msg').style.display = 'none';
+            document.getElementById('edit-form-wrap').style.display = '';
+        });
+}
+
+function populateForm(f) {
+    document.getElementById('form-subtitle').textContent =
+        'Editing: ' + (f.title || _projectId);
+    document.getElementById('f-title').value           = f.title || '';
+    document.getElementById('f-description').value     = f.description || '';
+    document.getElementById('f-full-description').value = f.story || f.description || '';
+    document.getElementById('f-target-amount').value   = f.goal_amount || '';
+    document.getElementById('f-location').value        =
+        (f.contact_info && f.contact_info.location) ? f.contact_info.location : '';
+    document.getElementById('f-image-url').value       = f.image_url || '';
+    document.getElementById('f-website-url').value     = f.website_url || '';
+    // Set category select
+    var cat = f.category || 'General';
+    var sel = document.getElementById('f-category');
+    for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === cat) { sel.selectedIndex = i; break; }
+    }
+}
+
+function saveProject() {
+    var btn = document.getElementById('save-btn');
+    var status = document.getElementById('save-status');
+    var title = document.getElementById('f-title').value.trim();
+    var amount = document.getElementById('f-target-amount').value;
+    if (!title) { document.getElementById('save-status').textContent = 'Please enter a project title.'; return; }
+    if (!amount || parseInt(amount) < 1000) { document.getElementById('save-status').textContent = 'Please enter a funding goal (minimum 1000 sats).'; return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    status.textContent = '';
+    status.className = 'status-msg';
+
+    var body = {
+        jwt:              _jwt,
+        username:         _username,
+        project_id:       _projectId || '',
+        title:            document.getElementById('f-title').value.trim(),
+        description:      document.getElementById('f-description').value.trim(),
+        full_description: document.getElementById('f-full-description').value.trim(),
+        target_amount:    document.getElementById('f-target-amount').value,
+        recipient_name:   _username,
+        location:         document.getElementById('f-location').value.trim(),
+        website_url:      document.getElementById('f-website-url').value.trim(),
+        image_url:        document.getElementById('f-image-url').value.trim(),
+        category:         document.getElementById('f-category').value,
+        coinos_api_key:   document.getElementById('f-coinos-api-key').value.trim()
+    };
+
+    fetch('/api/save-fundraiser.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + _jwt
+        },
+        body: JSON.stringify(body)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        btn.disabled = false;
+        btn.textContent = '💾 Save Changes';
+        if (data.success) {
+            if (data.project_id) {
+                _projectId = data.project_id;
+            }
+            status.textContent = '✅ Saved! Redirecting...';
+            setTimeout(function() {
+                window.location.href = '/fundraiser.html?project=' + encodeURIComponent(_projectId) + '&user=' + encodeURIComponent(_username);
+            }, 800);
+        } else {
+            status.textContent = data.error || 'Save failed.';
+            status.className = 'status-msg error';
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.textContent = '💾 Save Changes';
+        status.textContent = 'Network error.';
+        status.className = 'status-msg error';
+    });
+}
+</script>
+
+<!-- include start social-layout-end.incl -->
+<!-- END UNIQUE PAGE CONTENT -->
+
+    </main>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="sidebar-box">
+            <h3>About DirectSponsor</h3>
+            <p>100% direct peer-to-peer donations. Every satoshi goes straight to the recipient.</p>
+            <a href="about.html">Learn more</a>
+        </div>
+
+        <div class="sidebar-box">
+            <h3>Active Projects</h3>
+            <p><a href="fundraisers.html">Browse all fundraisers →</a></p>
+        </div>
+
+        <!-- Ad slot -->
+        <div class="sidebar-box ad-slot">
+            <p class="ad-label">Advertisement</p>
+        </div>
+
+    </aside>
+
+</div>
+<!-- End layout container -->
+
+<!-- Sticky Header Script (Inline for performance) -->
+<script>
+(function() {
+    const header = document.querySelector('.site-header');
+    let lastScrollY = window.scrollY;
+    let isCondensed = false;
+    
+    function handleScroll() {
+        const currentScrollY = window.scrollY;
+        
+        // Condense when scrolled down more than 50px
+        if (currentScrollY > 50 && !isCondensed) {
+            header.classList.add('condensed');
+            isCondensed = true;
+        } 
+        // Expand when near top
+        else if (currentScrollY <= 30 && isCondensed) {
+            header.classList.remove('condensed');
+            isCondensed = false;
+        }
+        
+        lastScrollY = currentScrollY;
+    }
+    
+    // Throttled scroll listener for performance
+    let ticking = false;
+    window.addEventListener('scroll', function() {
+        if (!ticking) {
+            requestAnimationFrame(function() {
+                handleScroll();
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
+})();
+
+// Show Profile nav link if logged in
+(function() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (jwt) {
+        var el = document.getElementById('nav-profile-link');
+        if (el) el.style.display = '';
+    }
+})();
+</script>
+<!-- include end social-layout-end.incl -->
+
+<!-- include start footer.incl -->
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>💎 DirectSponsor</h3>
+                    <p>Revolutionary peer-to-peer charity eliminating middlemen and connecting sponsors directly with verified recipients.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">Twitter</a>
+                        <a href="#" class="social-link">Nostr</a>
+                        <a href="#" class="social-link">GitHub</a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>🔗 Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="fundraisers.html">Fundraisers</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="about.html#how-it-works">How It Works</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>🚀 DS-CMS</h3>
+                    <p>Zero dependencies, maximum simplicity. Perfect for shared hosting.</p>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/satoshihost/ds-cms" target="_blank">GitHub</a></li>
+                        <li><a href="#" target="_blank">Documentation</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 DS-CMS Demo Site. Built with HTML-first principles.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
+<!-- include end footer.incl -->

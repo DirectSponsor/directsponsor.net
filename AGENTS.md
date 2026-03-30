@@ -169,6 +169,7 @@ json.dump(d, open(f,'w'), indent=2)
 - **Mobile breakpoint**: `max-width: 40em` stacks the 2-column layout to single column
 - **No framework CSS**: handcrafted only — no Bootstrap, Tailwind, etc.
 - **No inline colour values** — always use CSS classes (`.color-muted`, `.color-primary`, `.color-success`) rather than `style="color:#888"`. Inline colours are invisible to global updates and cause drift. Exception: dynamic colours set by JS at runtime (e.g. progress bar widths).
+- **Use CSS custom properties for all colours** — `var(--bg-card)`, `var(--bg-page)`, `var(--text)`, `var(--text-muted)`, `var(--border)`, `var(--link)` etc. Hardcoded hex values in new CSS won't respond to dark mode. Variables are defined in `:root` and overridden in `[data-theme="dark"]` at the top of `directsponsor-compact.css`.
 
 ---
 

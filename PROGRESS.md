@@ -121,7 +121,16 @@ _Last updated: 2026-03-29 (session 3)_
 ### Future
 - Reconciliation script: periodic check that `transaction-ledger.json` and per-user `donations_made` arrays agree
 - Coin weighting for ad placement (design work needed first)
-- Project updates / blog posts per project
+- Blog / posts system — see design notes below
+- **Nostr integration** — see `nostr-integration.md` for full plan; DS as primary relay + dual web/Nostr interface + NIP-57 zaps + community relay kit
+
+### Blog / Posts design decisions
+- **Single content type** — no pages vs posts distinction in UI; call everything "posts"
+- **Two display modes, auto-detected**: if `body` field empty → full self-contained feed card; if `body` filled → feed shows intro+image as preview card with "Read more →" to full post page
+- **Fields**: title (required), intro (required, shown in feed), image_url, video_url, body (optional long-form HTML)
+- **Editor**: `wiki/cms/admin/integrated-editor.html` (2832 lines, largely complete); needs DS JWT auth wired in + `save-post.php` backend + `userdata/posts/{username}/` file structure
+- **Feed**: `posts.html` listing page; profile page lists user's own posts
+- **Static pages** (About, FAQ): handled separately, admin-only, outside the post/feed system
 
 ---
 

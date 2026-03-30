@@ -319,7 +319,7 @@
         </div>
         <nav class="main-nav">
             <a href="index.html">Home</a>
-            <a href="projects.html">Projects</a>
+            <a href="fundraisers.html">Fundraisers</a>
             <a href="about.html">About</a>
             <button id="theme-toggle" onclick="dsToggleTheme()" title="Toggle dark mode" style="background:none;border:none;cursor:pointer;padding:0.25em 0.4em;font-size:1em;color:var(--link);margin-left:0.25em;vertical-align:middle;">🌙</button>
             <div class="nav-user-menu" id="nav-user-menu" style="display:none;position:relative;">
@@ -440,8 +440,8 @@ function dsLogout() {
 
 <div id="fundraiser-notfound" class="project-card" style="display:none;text-align:center;padding:2em;">
     <h2>Project not found</h2>
-    <p>This project may have moved or been completed. <a href="projects.html">See active projects →</a></p>
-    <a href="projects.html">Browse all projects →</a>
+    <p>This project may have moved or been completed. <a href="fundraisers.html">See active fundraisers →</a></p>
+    <a href="fundraisers.html">Browse all fundraisers →</a>
 </div>
 
 <!-- Sidebar content injected by JS into the sidebar -->
@@ -505,7 +505,7 @@ function populateFundraiser(d) {
             if (loggedInUser && loggedInUser === d.owner_user_id) {
                 var params = getProjectParam();
                 var editBtn = document.createElement('a');
-                editBtn.href = '/edit-project.html?project=' + encodeURIComponent(params.id) + '&user=' + encodeURIComponent(loggedInUser);
+                editBtn.href = '/edit-fundraiser.html?project=' + encodeURIComponent(params.id) + '&user=' + encodeURIComponent(loggedInUser);
                 editBtn.textContent = '✏️ Edit this project';
                 editBtn.style.cssText = 'display:inline-block;margin-top:0.5em;font-size:0.85em;color:#4a5568;';
                 document.getElementById('fundraiser-title').insertAdjacentElement('afterend', editBtn);
@@ -793,7 +793,7 @@ function pollPayment(invoiceId) {
 
         <div class="sidebar-box">
             <h3>Active Projects</h3>
-            <p><a href="projects.html">Browse all projects →</a></p>
+            <p><a href="fundraisers.html">Browse all fundraisers →</a></p>
         </div>
 
         <!-- Ad slot -->
@@ -873,7 +873,7 @@ function pollPayment(invoiceId) {
                     <h3>🔗 Quick Links</h3>
                     <ul class="footer-links">
                         <li><a href="index.html">Home</a></li>
-                        <li><a href="projects.html">Projects</a></li>
+                        <li><a href="fundraisers.html">Fundraisers</a></li>
                         <li><a href="about.html">About</a></li>
                         <li><a href="about.html#how-it-works">How It Works</a></li>
                         <li><a href="contact.html">Contact</a></li>
