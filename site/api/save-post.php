@@ -28,15 +28,23 @@ if (preg_match('/Bearer\s+(.+)/', $authHeader, $m)) $jwt = $m[1];
 $callerUsername = null;
 $callerId = null;
 
+if (!$jwt && !empty($input['jwt'])) {
+    $jwt = $input['jwt'];
+}
+
 if ($jwt) {
     $parts = explode('.', $jwt);
     if (count($parts) === 3) {
         $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
         if ($payload) {
             $callerUsername = $payload['username'] ?? null;
-            $callerId       = $payload['sub'] ?? null;
+            $callerId       = $payload['user_id'] ?? $payload['sub'] ?? null;
         }
     }
+}
+
+if (!$callerUsername && !empty($input['username'])) {
+    $callerUsername = $input['username'];
 }
 
 if (!$callerUsername || !$callerId) {

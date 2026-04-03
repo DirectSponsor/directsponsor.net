@@ -14,11 +14,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Posts - DirectSponsor</title>
     <meta name="description" content="Updates and articles from the DirectSponsor community.">
-
+    <meta name="keywords" content="posts, blog, updates, directsponsor community">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://directsponsor.net">
+    <meta property="og:title" content="DirectSponsor - Revolutionary Peer-to-Peer Charity">
+    <meta property="og:description" content="Eliminate charity middlemen. Send money directly to verified recipients with complete transparency.">
+    
+    <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐫</text></svg>">
+    
+    <!-- Main Styles (New Compact Social Layout) -->
     <link rel="preload" href="styles/directsponsor-compact.css" as="style">
     <link rel="stylesheet" href="styles/directsponsor-compact.css">
-
+    
+    <!-- Optional: Add analytics, fonts, or other scripts here -->
     <script>
     (function() {
         var params = new URLSearchParams(window.location.search);
@@ -48,7 +59,6 @@
         <nav class="main-nav">
             <a href="index.html">Home</a>
             <a href="fundraisers.html">Fundraisers</a>
-            <a href="posts.html" class="active">Posts</a>
             <a href="about.html">About</a>
             <button id="theme-toggle" onclick="dsToggleTheme()" title="Toggle dark mode" style="background:none;border:none;cursor:pointer;padding:0.25em 0.4em;font-size:1em;color:var(--link);margin-left:0.25em;vertical-align:middle;">🌙</button>
             <div class="nav-user-menu" id="nav-user-menu" style="display:none;position:relative;">
@@ -122,8 +132,12 @@ function dsLogout() {
 }
 </script>
 
+<!-- 2-Column Layout: main content + right sidebar -->
 <div class="layout-container">
-<main class="main-content">
+
+    <main class="main-content">
+
+<!-- UNIQUE PAGE CONTENT GOES HERE -->
 <!-- include end social-layout-start.incl -->
 
 <style>
@@ -444,6 +458,8 @@ function submitPost() {
             title:     document.getElementById('post-title').value.trim(),
             body:      document.getElementById('post-body').innerHTML.trim() === '' ? '' : document.getElementById('post-body').innerHTML,
             image_url: document.getElementById('post-image-url').value,
+            jwt:       _jwt,
+            username:  _username,
         })
     })
     .then(function(r) { return r.json(); })
@@ -540,44 +556,120 @@ function escHtml(s) {
 </script>
 
 <!-- include start social-layout-end.incl -->
+<!-- END UNIQUE PAGE CONTENT -->
+
     </main>
 
-    <!-- Right Sidebar -->
+    <!-- RIGHT SIDEBAR -->
     <aside class="sidebar">
-        <div class="sidebar-widget">
-            <h3>About Posts</h3>
-            <p class="color-muted" style="font-size:0.9em;">Updates and articles from recipients and community members.</p>
+
+        <div class="sidebar-box">
+            <h3>About DirectSponsor</h3>
+            <p>100% direct peer-to-peer donations. Every satoshi goes straight to the recipient.</p>
+            <a href="about.html">Learn more</a>
         </div>
-        <div class="sidebar-widget">
-            <h3>Fundraisers</h3>
-            <p style="font-size:0.9em;"><a href="fundraisers.html">Browse active fundraisers →</a></p>
+
+        <div class="sidebar-box">
+            <h3>Active Projects</h3>
+            <p><a href="fundraisers.html">Browse all fundraisers →</a></p>
         </div>
+
+        <!-- Ad slot -->
+        <div class="sidebar-box ad-slot">
+            <p class="ad-label">Advertisement</p>
+        </div>
+
     </aside>
 
-</div><!-- end layout-container -->
+</div>
+<!-- End layout container -->
+
+<!-- Sticky Header Script (Inline for performance) -->
+<script>
+(function() {
+    const header = document.querySelector('.site-header');
+    let lastScrollY = window.scrollY;
+    let isCondensed = false;
+    
+    function handleScroll() {
+        const currentScrollY = window.scrollY;
+        
+        // Condense when scrolled down more than 50px
+        if (currentScrollY > 50 && !isCondensed) {
+            header.classList.add('condensed');
+            isCondensed = true;
+        } 
+        // Expand when near top
+        else if (currentScrollY <= 30 && isCondensed) {
+            header.classList.remove('condensed');
+            isCondensed = false;
+        }
+        
+        lastScrollY = currentScrollY;
+    }
+    
+    // Throttled scroll listener for performance
+    let ticking = false;
+    window.addEventListener('scroll', function() {
+        if (!ticking) {
+            requestAnimationFrame(function() {
+                handleScroll();
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
+})();
+
+// Show Profile nav link if logged in
+(function() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (jwt) {
+        var el = document.getElementById('nav-profile-link');
+        if (el) el.style.display = '';
+    }
+})();
+</script>
 <!-- include end social-layout-end.incl -->
 
 <!-- include start footer.incl -->
+    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
                     <h3>💎 DirectSponsor</h3>
                     <p>Revolutionary peer-to-peer charity eliminating middlemen and connecting sponsors directly with verified recipients.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">Twitter</a>
+                        <a href="#" class="social-link">Nostr</a>
+                        <a href="#" class="social-link">GitHub</a>
+                    </div>
                 </div>
+                
                 <div class="footer-section">
                     <h3>🔗 Quick Links</h3>
                     <ul class="footer-links">
                         <li><a href="index.html">Home</a></li>
                         <li><a href="fundraisers.html">Fundraisers</a></li>
-                        <li><a href="posts.html">Posts</a></li>
                         <li><a href="about.html">About</a></li>
+                        <li><a href="about.html#how-it-works">How It Works</a></li>
                         <li><a href="contact.html">Contact</a></li>
                     </ul>
                 </div>
+                
+                <div class="footer-section">
+                    <h3>🚀 DS-CMS</h3>
+                    <p>Zero dependencies, maximum simplicity. Perfect for shared hosting.</p>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/satoshihost/ds-cms" target="_blank">GitHub</a></li>
+                        <li><a href="#" target="_blank">Documentation</a></li>
+                    </ul>
+                </div>
             </div>
+            
             <div class="footer-bottom">
-                <p>&copy; 2025 DirectSponsor. Peer-to-peer charity, no middlemen.</p>
+                <p>&copy; 2025 DS-CMS Demo Site. Built with HTML-first principles.</p>
             </div>
         </div>
     </footer>
