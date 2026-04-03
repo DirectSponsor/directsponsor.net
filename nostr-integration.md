@@ -109,16 +109,15 @@ Author creates post
     ↓
 Published to DirectSponsor relay
     ↓
-┌─────────────────────────────────┐
-    ↓              ↓              ↓
-Web Interface    Community     External Nostr
-(Network users)   Relays        (Global users)
-    ↓              ↓              ↓
-Comments/ Tips   Comments/ Tips  Comments/ Tips
-    ↓              ↓              ↓
-    ←←← Same Event Store →→→→→→→→→
+┌──────────────────────────────────────────────┐
+│       ↓              ↓              ↓        │
+│  Web Interface    Community     External Nostr│
+│  (Network users)   Relays        (Global users)│
+│       ↓              ↓              ↓        │
+│  Comments/Tips  Comments/Tips  Comments/Tips │
+└──────────────────────────────────────────────┘
     ↓
-Content shared across all network relays
+All events shared via same relay event store
 ```
 
 ### Network Content Sharing
@@ -136,7 +135,9 @@ Local Users             Local Users
 
 ## Authentication Bridge
 
-javascript
+> Note: the code blocks below are pseudocode concept sketches, not working implementations.
+
+```javascript
 // Hybrid authentication system with network support
 class NostrAuthBridge {
     // For web users
@@ -229,7 +230,6 @@ Advanced Capabilities:
 ├── Nostr identity linking for existing users
 ├── Cross-relay broadcasting for wider reach
 ├── Enhanced tip features (recurring, splits)
-├── Mobile PWA or native app
 ├── Advanced moderation tools
 └── Network analytics dashboard
 ```
@@ -254,9 +254,9 @@ Advanced Capabilities:
 ## Enhanced Technical Specifications
 
 ### Primary Relay Requirements
-- **Software**: strfry (recommended) or nostream
+- **Software**: strfry (recommended for initial deployment — battle-tested, well-documented); [WISP](https://github.com/privkeyio/wisp) is a future candidate (Zig-based, claims 2x throughput / 10x lower latency vs strfry, also uses LMDB) — worth revisiting once it matures
 - **NIPs Support**: NIP-01 (basic), NIP-57 (zaps), NIP-23 (long-form)
-- **Storage**: PostgreSQL or SQLite backend
+- **Storage**: LMDB (strfry's embedded store — no separate database needed)
 - **Performance**: Optimized for network user base
 - **Network Features**: Cross-relay sharing, discovery protocol
 
@@ -279,7 +279,7 @@ directsponsor-relay-kit/
 ```
 
 ### Web Interface Requirements
-- **Framework**: Custom PHP/JS or modern framework
+- **Framework**: Custom PHP/JS (no framework)
 - **Database**: Shared with relay or separate for web features
 - **Authentication**: JWT integration with network auth
 - **Lightning**: LNbits, BTCPay, or native integration

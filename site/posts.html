@@ -1,0 +1,586 @@
+<!-- DS-CMS Built File - Edit source files in includes/ folder -->
+
+<!-- 🏷️ BBEdit-style parameters - EDIT THESE for your new page: -->
+<!-- #TITLE#="Posts - DirectSponsor" -->
+<!-- #DESC#="Updates and articles from the DirectSponsor community." -->
+<!-- #KEYWORDS#="posts, blog, updates, directsponsor community" -->
+
+<!-- include start doctype-head.incl -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>(function(){var t=localStorage.getItem('ds-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');})()</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Posts - DirectSponsor</title>
+    <meta name="description" content="Updates and articles from the DirectSponsor community.">
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐫</text></svg>">
+    <link rel="preload" href="styles/directsponsor-compact.css" as="style">
+    <link rel="stylesheet" href="styles/directsponsor-compact.css">
+
+    <script>
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var jwt = params.get('jwt');
+        if (jwt) {
+            sessionStorage.setItem('jwt', jwt);
+            params.delete('jwt');
+            var newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+            window.history.replaceState({}, '', newUrl);
+        }
+    })();
+    </script>
+</head>
+<body>
+
+<!-- BETa RIBBON -->
+<div class="corner-ribbon top-left sticky red shadow">BETA</div>
+<!-- include end doctype-head.incl -->
+
+<!-- include start social-layout-start.incl -->
+<header class="site-header">
+    <div class="header-content">
+        <div class="logo">
+            <a href="index.html">💎 DirectSponsor</a>
+            <span class="tagline">Peer-to-Peer Charity</span>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html">Home</a>
+            <a href="fundraisers.html">Fundraisers</a>
+            <a href="posts.html" class="active">Posts</a>
+            <a href="about.html">About</a>
+            <button id="theme-toggle" onclick="dsToggleTheme()" title="Toggle dark mode" style="background:none;border:none;cursor:pointer;padding:0.25em 0.4em;font-size:1em;color:var(--link);margin-left:0.25em;vertical-align:middle;">🌙</button>
+            <div class="nav-user-menu" id="nav-user-menu" style="display:none;position:relative;">
+                <a href="#" id="nav-username-btn" onclick="toggleUserMenu(event)">👤 <span id="nav-username-label">Account</span> ▾</a>
+                <div id="nav-user-dropdown" style="display:none;position:absolute;right:0;top:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:0.3em;min-width:130px;box-shadow:0 2px 8px rgba(0,0,0,0.12);z-index:999;">
+                    <a href="profile.html" style="display:block;padding:0.5em 1em;color:var(--text);text-decoration:none;font-size:0.9em;border-bottom:1px solid var(--border);">Profile</a>
+                    <a href="#" onclick="dsLogout(); return false;" style="display:block;padding:0.5em 1em;color:#c00;text-decoration:none;font-size:0.9em;">Log out</a>
+                </div>
+            </div>
+            <a href="#" id="nav-login-link" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href.replace(/^http:/, 'https:')); return false;">Login</a>
+        </nav>
+    </div>
+</header>
+<style>
+.nav-user-menu { display:inline-block; vertical-align:middle; }
+.nav-user-menu > a { white-space:nowrap; }
+.nav-user-menu:hover #nav-user-dropdown, #nav-user-dropdown.open { display:block !important; }
+</style>
+<script>
+(function() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (jwt) {
+        try {
+            var payload = JSON.parse(atob(jwt.split('.')[1]));
+            var uname = payload.username || payload.sub || '';
+            if (uname) document.getElementById('nav-username-label').textContent = uname;
+        } catch(e) {}
+        document.getElementById('nav-user-menu').style.display = '';
+        document.getElementById('nav-login-link').style.display = 'none';
+    }
+})();
+function toggleUserMenu(e) {
+    e.preventDefault();
+    var dd = document.getElementById('nav-user-dropdown');
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+    var menu = document.getElementById('nav-user-menu');
+    if (menu && !menu.contains(e.target)) {
+        document.getElementById('nav-user-dropdown').style.display = 'none';
+    }
+});
+function dsToggleTheme() {
+    var html = document.documentElement;
+    var isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+        html.removeAttribute('data-theme');
+        localStorage.setItem('ds-theme', 'light');
+        document.getElementById('theme-toggle').textContent = '🌙';
+    } else {
+        html.setAttribute('data-theme', 'dark');
+        localStorage.setItem('ds-theme', 'dark');
+        document.getElementById('theme-toggle').textContent = '☀️';
+    }
+}
+(function() {
+    if (localStorage.getItem('ds-theme') === 'dark') {
+        var btn = document.getElementById('theme-toggle');
+        if (btn) btn.textContent = '☀️';
+    }
+})();
+function dsLogout() {
+    sessionStorage.removeItem('jwt');
+    localStorage.removeItem('jwt');
+    localStorage.removeItem('user_roles');
+    localStorage.removeItem('directsponsor_session');
+    localStorage.removeItem('username');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('combined_user_id');
+    window.location.href = 'index.html';
+}
+</script>
+
+<div class="layout-container">
+<main class="main-content">
+<!-- include end social-layout-start.incl -->
+
+<style>
+/* Write box */
+.write-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 0.4em;
+    padding: 1em;
+    margin-bottom: 1.2em;
+}
+.write-box textarea {
+    width: 100%;
+    min-height: 4em;
+    padding: 0.6em;
+    border: 1px solid var(--border);
+    border-radius: 0.3em;
+    background: var(--bg-page);
+    color: var(--text);
+    font-size: 1em;
+    font-family: inherit;
+    resize: vertical;
+    box-sizing: border-box;
+}
+.write-box textarea:focus { outline: none; border-color: var(--link); }
+.write-box-actions {
+    margin-top: 0.6em;
+    display: table;
+    width: 100%;
+}
+.write-box-actions-left  { display: table-cell; vertical-align: middle; }
+.write-box-actions-right { display: table-cell; vertical-align: middle; text-align: right; }
+.write-box input[type="text"] {
+    width: 100%;
+    padding: 0.5em 0.6em;
+    border: 1px solid var(--border);
+    border-radius: 0.3em;
+    background: var(--bg-page);
+    color: var(--text);
+    font-size: 1em;
+    font-family: inherit;
+    box-sizing: border-box;
+    margin-bottom: 0.5em;
+}
+.write-box input[type="text"]:focus { outline: none; border-color: var(--link); }
+
+/* WYSIWYG toolbar */
+.wysiwyg-toolbar {
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 0.3em 0.3em 0 0;
+    padding: 0.3em 0.4em;
+    background: var(--bg-page);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2em;
+}
+.wysiwyg-toolbar button {
+    padding: 0.2em 0.5em;
+    border: 1px solid var(--border);
+    border-radius: 0.2em;
+    background: var(--bg-card);
+    color: var(--text);
+    font-size: 0.85em;
+    cursor: pointer;
+    font-family: inherit;
+}
+.wysiwyg-toolbar button:hover { background: var(--link); color: #fff; border-color: var(--link); }
+.wysiwyg-toolbar .sep { width: 1px; background: var(--border); margin: 0.1em 0.2em; }
+.wysiwyg-body {
+    min-height: 10em;
+    padding: 0.7em;
+    border: 1px solid var(--border);
+    border-radius: 0 0 0.3em 0.3em;
+    background: var(--bg-page);
+    color: var(--text);
+    font-size: 1em;
+    font-family: inherit;
+    line-height: 1.6;
+    outline: none;
+}
+.wysiwyg-body:focus { border-color: var(--link); }
+.wysiwyg-body h2 { font-size: 1.3em; margin: 0.6em 0 0.3em; }
+.wysiwyg-body h3 { font-size: 1.1em; margin: 0.5em 0 0.2em; }
+
+/* Article expander */
+.article-toggle {
+    background: none;
+    border: none;
+    color: var(--link);
+    cursor: pointer;
+    font-size: 0.9em;
+    padding: 0;
+    text-decoration: underline;
+}
+.article-fields { display: none; margin-top: 0.8em; }
+.article-fields.open { display: block; }
+
+/* Feed cards */
+.post-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 0.4em;
+    padding: 1em;
+    margin-bottom: 0.8em;
+}
+.post-card-meta {
+    font-size: 0.82em;
+    color: var(--text-muted);
+    margin-bottom: 0.4em;
+}
+.post-card-meta a { color: var(--link); text-decoration: none; }
+.post-card-meta a:hover { text-decoration: underline; }
+.post-card h2 { margin: 0 0 0.4em; font-size: 1.15em; }
+.post-card h2 a { color: var(--text); text-decoration: none; }
+.post-card h2 a:hover { color: var(--link); }
+.post-card .post-intro { margin: 0 0 0.6em; line-height: 1.55; }
+.post-card .post-image { margin-bottom: 0.6em; }
+.post-card .post-image img { max-width: 100%; border-radius: 0.3em; display: block; }
+.post-card .read-more { font-size: 0.9em; }
+.feed-loading { text-align: center; padding: 2em; color: var(--text-muted); }
+.btn-post {
+    padding: 0.45em 1.1em;
+    background: var(--link);
+    color: #fff;
+    border: none;
+    border-radius: 0.3em;
+    cursor: pointer;
+    font-size: 0.95em;
+    font-family: inherit;
+}
+.btn-post:disabled { opacity: 0.6; cursor: default; }
+.btn-post:hover:not(:disabled) { opacity: 0.85; }
+.post-status { font-size: 0.85em; margin-top: 0.4em; color: var(--text-muted); }
+
+/* Full post view */
+.post-full { background: var(--bg-card); border: 1px solid var(--border); border-radius: 0.4em; padding: 1.2em; margin-bottom: 1em; }
+.post-full h1 { margin: 0 0 0.3em; font-size: 1.5em; }
+.post-full .post-body { margin-top: 0.8em; line-height: 1.7; }
+.post-full .post-body h2 { font-size: 1.2em; }
+.post-full .post-body h3 { font-size: 1.05em; }
+.back-link { margin-bottom: 0.8em; display: block; }
+</style>
+
+<!-- Write box (logged-in users only) -->
+<div id="write-box-wrap" style="display:none;">
+    <div class="write-box">
+        <textarea id="post-intro" placeholder="What's on your mind?" rows="3"></textarea>
+        <div id="image-row" style="margin-top:0.4em;">
+            <input type="file" id="post-image-file" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;">
+            <input type="hidden" id="post-image-url">
+            <span id="image-preview-wrap" style="display:none;">
+                <img id="image-preview-thumb" src="" alt="" style="max-height:60px;border-radius:0.3em;vertical-align:middle;">
+                <button onclick="clearImage()" style="background:none;border:none;color:#c00;cursor:pointer;font-size:0.9em;margin-left:0.3em;">✕</button>
+            </span>
+        </div>
+        <div class="write-box-actions">
+            <div class="write-box-actions-left">
+                <button class="article-toggle" onclick="toggleArticle()" id="article-toggle-btn">✏️ Write an article ▾</button>
+                &nbsp;
+                <button onclick="document.getElementById('post-image-file').click()" style="background:none;border:none;color:var(--link);cursor:pointer;font-size:0.9em;padding:0;">📷 Add image</button>
+            </div>
+            <div class="write-box-actions-right">
+                <button class="btn-post" id="post-submit-btn" onclick="submitPost()">Post</button>
+            </div>
+        </div>
+        <div id="post-status" class="post-status"></div>
+
+        <!-- Article fields (hidden by default) -->
+        <div class="article-fields" id="article-fields">
+            <input type="text" id="post-title" placeholder="Article title">
+            <div class="wysiwyg-toolbar" id="wysiwyg-toolbar">
+                <button onclick="fmt('bold')" title="Bold"><b>B</b></button>
+                <button onclick="fmt('italic')" title="Italic"><i>I</i></button>
+                <div class="sep"></div>
+                <button onclick="fmt('formatBlock','<h2>')" title="Heading">H2</button>
+                <button onclick="fmt('formatBlock','<h3>')" title="Subheading">H3</button>
+                <div class="sep"></div>
+                <button onclick="fmt('insertUnorderedList')" title="Bullet list">• List</button>
+                <button onclick="fmt('insertOrderedList')" title="Numbered list">1. List</button>
+                <div class="sep"></div>
+                <button onclick="insertLink()" title="Insert link">🔗 Link</button>
+            </div>
+            <div class="wysiwyg-body" id="post-body" contenteditable="true" data-placeholder="Write your article here..."></div>
+        </div>
+    </div>
+</div>
+
+<!-- Feed or single post view -->
+<div id="feed-wrap">
+    <div id="feed-loading" class="feed-loading">Loading posts...</div>
+    <div id="feed-list"></div>
+    <div id="feed-empty" style="display:none;" class="post-card">
+        <p style="color:var(--text-muted);text-align:center;margin:0;">No posts yet. Be the first to share something!</p>
+    </div>
+    <div id="load-more-wrap" style="display:none;text-align:center;margin:1em 0;">
+        <button class="btn-post" onclick="loadFeed(true)">Load more</button>
+    </div>
+</div>
+
+<!-- Single post full view -->
+<div id="single-post-wrap" style="display:none;"></div>
+
+<script>
+var _jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+var _username = null, _userId = null;
+
+if (_jwt) {
+    try {
+        var _p = JSON.parse(atob(_jwt.split('.')[1]));
+        _username = _p.username || null;
+        _userId   = _p.sub || null;
+    } catch(e) {}
+    if (_username) {
+        document.getElementById('write-box-wrap').style.display = '';
+    }
+}
+
+// Check if viewing a single post
+var _params = new URLSearchParams(window.location.search);
+var _viewUser   = _params.get('user');
+var _viewPostId = _params.get('post_id');
+
+if (_viewUser && _viewPostId) {
+    loadSinglePost(_viewUser, _viewPostId);
+} else {
+    loadFeed(false);
+}
+
+// Image upload
+document.getElementById('post-image-file').addEventListener('change', function() {
+    var file = this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('image-preview-thumb').src = e.target.result;
+        document.getElementById('image-preview-wrap').style.display = '';
+    };
+    reader.readAsDataURL(file);
+    var fd = new FormData();
+    fd.append('image', file);
+    fd.append('project_id', 'post-' + Date.now());
+    fd.append('username', _username);
+    fetch('/api/upload-project-image.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.success) {
+                document.getElementById('post-image-url').value = d.image_url;
+            } else {
+                setStatus('Image upload failed: ' + (d.error || 'Unknown error'), true);
+                clearImage();
+            }
+        });
+});
+
+function clearImage() {
+    document.getElementById('post-image-url').value = '';
+    document.getElementById('post-image-file').value = '';
+    document.getElementById('image-preview-thumb').src = '';
+    document.getElementById('image-preview-wrap').style.display = 'none';
+}
+
+function toggleArticle() {
+    var fields = document.getElementById('article-fields');
+    var btn    = document.getElementById('article-toggle-btn');
+    var open   = fields.classList.contains('open');
+    if (open) {
+        fields.classList.remove('open');
+        btn.textContent = '✏️ Write an article ▾';
+        document.getElementById('post-submit-btn').textContent = 'Post';
+    } else {
+        fields.classList.add('open');
+        btn.textContent = '✏️ Short post ▴';
+        document.getElementById('post-body').focus();
+        document.getElementById('post-submit-btn').textContent = 'Publish';
+    }
+}
+
+function fmt(cmd, val) {
+    document.getElementById('post-body').focus();
+    document.execCommand(cmd, false, val || null);
+}
+
+function insertLink() {
+    var url = prompt('Enter URL:');
+    if (url) {
+        document.getElementById('post-body').focus();
+        document.execCommand('createLink', false, url);
+    }
+}
+
+// Placeholder behaviour for contenteditable
+(function() {
+    var body = document.getElementById('post-body');
+    body.addEventListener('focus', function() { if (body.textContent === '') body.innerHTML = ''; });
+    body.addEventListener('blur', function() {
+        if (body.textContent.trim() === '') body.innerHTML = '';
+    });
+})();
+
+function setStatus(msg, isErr) {
+    var el = document.getElementById('post-status');
+    el.textContent = msg;
+    el.style.color = isErr ? '#c00' : 'var(--text-muted)';
+}
+
+function submitPost() {
+    var intro = document.getElementById('post-intro').value.trim();
+    if (!intro) { setStatus('Please write something first.', true); return; }
+    var btn = document.getElementById('post-submit-btn');
+    btn.disabled = true;
+    setStatus('Posting...');
+    fetch('/api/save-post.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _jwt },
+        body: JSON.stringify({
+            intro:     intro,
+            title:     document.getElementById('post-title').value.trim(),
+            body:      document.getElementById('post-body').innerHTML.trim() === '' ? '' : document.getElementById('post-body').innerHTML,
+            image_url: document.getElementById('post-image-url').value,
+        })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        btn.disabled = false;
+        if (d.success) {
+            document.getElementById('post-intro').value = '';
+            document.getElementById('post-title').value = '';
+            document.getElementById('post-body').innerHTML = '';
+            clearImage();
+            if (document.getElementById('article-fields').classList.contains('open')) toggleArticle();
+            setStatus('');
+            loadFeed(false);
+        } else {
+            setStatus(d.error || 'Failed to post.', true);
+        }
+    })
+    .catch(function() { btn.disabled = false; setStatus('Network error. Try again.', true); });
+}
+
+var _feedOffset = 0;
+var _feedTotal  = 0;
+
+function loadFeed(append) {
+    if (!append) {
+        _feedOffset = 0;
+        document.getElementById('feed-list').innerHTML = '';
+        document.getElementById('feed-loading').style.display = '';
+        document.getElementById('feed-empty').style.display = 'none';
+        document.getElementById('load-more-wrap').style.display = 'none';
+    }
+    fetch('/api/posts-api.php?action=feed&limit=10&offset=' + _feedOffset)
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            document.getElementById('feed-loading').style.display = 'none';
+            if (!d.success || !d.posts) return;
+            _feedTotal = d.total || 0;
+            if (d.posts.length === 0 && !append) {
+                document.getElementById('feed-empty').style.display = '';
+                return;
+            }
+            var list = document.getElementById('feed-list');
+            d.posts.forEach(function(p) { list.appendChild(buildCard(p)); });
+            _feedOffset += d.posts.length;
+            document.getElementById('load-more-wrap').style.display = _feedOffset < _feedTotal ? '' : 'none';
+        })
+        .catch(function() { document.getElementById('feed-loading').style.display = 'none'; });
+}
+
+function buildCard(p) {
+    var div = document.createElement('div');
+    div.className = 'post-card';
+    var date = new Date(p.created * 1000).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'});
+    var html = '<div class="post-card-meta">By <a href="profile.html?user=' + esc(p.username) + '">' + esc(p.username) + '</a> &middot; ' + date + '</div>';
+    if (p.title) html += '<h2><a href="posts.html?user=' + esc(p.username) + '&post_id=' + esc(p.post_id) + '">' + esc(p.title) + '</a></h2>';
+    if (p.image_url) html += '<div class="post-image"><img src="' + esc(p.image_url) + '" alt="" loading="lazy"></div>';
+    html += '<p class="post-intro">' + escHtml(p.intro) + '</p>';
+    if (p.has_body) html += '<div class="read-more"><a href="posts.html?user=' + esc(p.username) + '&post_id=' + esc(p.post_id) + '">Read more →</a></div>';
+    div.innerHTML = html;
+    return div;
+}
+
+function loadSinglePost(username, postId) {
+    document.getElementById('feed-wrap').style.display = 'none';
+    var wrap = document.getElementById('single-post-wrap');
+    wrap.style.display = '';
+    wrap.innerHTML = '<div class="feed-loading">Loading...</div>';
+    fetch('/api/posts-api.php?action=post&username=' + encodeURIComponent(username) + '&post_id=' + encodeURIComponent(postId))
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (!d.success || !d.post) { wrap.innerHTML = '<p>Post not found.</p>'; return; }
+            var p = d.post;
+            var date = new Date(p.created * 1000).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'});
+            var html = '<a href="posts.html" class="back-link color-muted">← All posts</a>';
+            html += '<div class="post-full">';
+            if (p.title) html += '<h1>' + esc(p.title) + '</h1>';
+            html += '<div class="post-card-meta">By <a href="profile.html?user=' + esc(p.username) + '">' + esc(p.username) + '</a> &middot; ' + date + '</div>';
+            if (p.image_url) html += '<div class="post-image" style="margin:0.6em 0;"><img src="' + esc(p.image_url) + '" alt="" style="max-width:100%;border-radius:0.3em;"></div>';
+            html += '<p class="post-intro">' + escHtml(p.intro) + '</p>';
+            if (p.body) html += '<div class="post-body">' + p.body + '</div>';
+            html += '</div>';
+            wrap.innerHTML = html;
+            if (p.title) document.title = p.title + ' - DirectSponsor';
+        })
+        .catch(function() { wrap.innerHTML = '<p>Could not load post.</p>'; });
+}
+
+function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+</script>
+
+<!-- include start social-layout-end.incl -->
+    </main>
+
+    <!-- Right Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-widget">
+            <h3>About Posts</h3>
+            <p class="color-muted" style="font-size:0.9em;">Updates and articles from recipients and community members.</p>
+        </div>
+        <div class="sidebar-widget">
+            <h3>Fundraisers</h3>
+            <p style="font-size:0.9em;"><a href="fundraisers.html">Browse active fundraisers →</a></p>
+        </div>
+    </aside>
+
+</div><!-- end layout-container -->
+<!-- include end social-layout-end.incl -->
+
+<!-- include start footer.incl -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>💎 DirectSponsor</h3>
+                    <p>Revolutionary peer-to-peer charity eliminating middlemen and connecting sponsors directly with verified recipients.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>🔗 Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="fundraisers.html">Fundraisers</a></li>
+                        <li><a href="posts.html">Posts</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 DirectSponsor. Peer-to-peer charity, no middlemen.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
