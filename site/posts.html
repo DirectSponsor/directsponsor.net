@@ -307,9 +307,17 @@ function fmt(cmd, val) {
 
 function insertLink() {
     var url = prompt('Enter URL:');
-    if (url) {
-        document.getElementById('post-body').focus();
-        document.execCommand('createLink', false, url);
+    if (!url) return;
+    document.getElementById('post-body').focus();
+    document.execCommand('createLink', false, url);
+    var isExternal = /^https?:\/\//i.test(url) && url.indexOf(window.location.hostname) === -1;
+    if (isExternal) {
+        var sel = window.getSelection();
+        if (sel && sel.anchorNode) {
+            var a = sel.anchorNode.parentElement;
+            if (!a || a.tagName !== 'A') a = sel.anchorNode.parentElement.closest('a');
+            if (a) { a.target = '_blank'; a.rel = 'noopener'; }
+        }
     }
 }
 
