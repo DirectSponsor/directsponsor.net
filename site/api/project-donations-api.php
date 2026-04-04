@@ -67,7 +67,12 @@ function createProjectInvoice($project_id, $amount, $donor_name = '', $message =
     }
 
     if (!$configFile) {
-        // Fallback: search all user directories
+        if ($recipient_username) {
+            // Username was supplied but no config found — fail loudly rather than risk the wrong wallet
+            logProjectPayment("ERROR: No config found for user '$recipient_username', project $project_id", 'ERROR');
+            return ['success' => false, 'error' => "No payment config found for user '$recipient_username' (project $project_id)"];
+        }
+        // No username supplied: fallback scan (legacy, no username in request)
         $userDirs = glob(PROJECTS_DIR . '/*', GLOB_ONLYDIR);
         logProjectPayment("DEBUG: Fallback scan user directories: " . json_encode($userDirs), 'DEBUG');
         foreach ($userDirs as $userDir) {
