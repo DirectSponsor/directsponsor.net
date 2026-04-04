@@ -357,6 +357,14 @@ ul li {
     margin-top: 0.4em;
 }
 
+.donate-btn-completed {
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    cursor: default;
+    pointer-events: none;
+}
+
 /* Project images (data-efficient) */
 .project-image {
     width: 100%;

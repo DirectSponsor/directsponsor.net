@@ -565,7 +565,7 @@ function populateFundraiser(d) {
             overEl.className = 'overpayment-note';
             document.getElementById('progress-bar').parentNode.parentNode.appendChild(overEl);
         }
-        overEl.textContent = over.toLocaleString() + ' sats donated beyond the goal — thank you! Feel free to donate more, the target is not a hard limit.';
+        overEl.textContent = over.toLocaleString() + ' sats donated beyond the goal — thank you!';
     }
 
     if (d.verified) document.getElementById('verified-badge').style.display = 'inline-block';
@@ -590,6 +590,16 @@ function populateFundraiser(d) {
     var params = getProjectParam();
     window._currentProject = d.id || params.id;
     window._currentUsername = d.owner_user_id || params.user;
+
+    if (d.status === 'completed') {
+        var btn = document.getElementById('sidebar-donate-box') && document.getElementById('sidebar-donate-box').querySelector('.donate-btn');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = '✅ Fundraiser complete';
+            btn.classList.add('donate-btn-completed');
+        }
+        document.getElementById('donate-modal-overlay').style.display = 'none';
+    }
 }
 
 function openDonateModal() {

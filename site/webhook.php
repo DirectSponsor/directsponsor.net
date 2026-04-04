@@ -358,6 +358,16 @@ function processProjectDonation($donation, $foundIndex, $webhookData) {
         $completedDest = $completedDir . '/' . $completedId . '.html';
         if (rename($projectInfo['file'], $completedDest)) {
             logWebhook("Moved $completedId.html to completed/ for $username");
+            // Mark status as completed inside the file so the fundraiser page disables donations
+            $completedHtml = file_get_contents($completedDest);
+            if ($completedHtml !== false) {
+                $completedHtml = preg_replace(
+                    '/<!-- status -->.*?<!-- end status -->/s',
+                    '<!-- status -->completed<!-- end status -->',
+                    $completedHtml
+                );
+                file_put_contents($completedDest, $completedHtml);
+            }
         } else {
             logWebhook("Failed to move $completedId.html to completed/", 'ERROR');
         }
