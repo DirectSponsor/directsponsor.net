@@ -68,30 +68,11 @@ function createProjectInvoice($project_id, $amount, $donor_name = '', $message =
 
     if (!$configFile) {
         if ($recipient_username) {
-            // Username was supplied but no config found — fail loudly rather than risk the wrong wallet
             logProjectPayment("ERROR: No config found for user '$recipient_username', project $project_id", 'ERROR');
             return ['success' => false, 'error' => "No payment config found for user '$recipient_username' (project $project_id)"];
         }
-        // No username supplied: fallback scan (legacy, no username in request)
-        $userDirs = glob(PROJECTS_DIR . '/*', GLOB_ONLYDIR);
-        logProjectPayment("DEBUG: Fallback scan user directories: " . json_encode($userDirs), 'DEBUG');
-        foreach ($userDirs as $userDir) {
-            $testConfig = $userDir . '/' . $project_id . '-config.json';
-            $testHtml   = $userDir . '/active/' . $project_id . '.html';
-            logProjectPayment("DEBUG: Testing config: $testConfig", 'DEBUG');
-            if (file_exists($testConfig) && file_exists($testHtml)) {
-                $configFile    = $testConfig;
-                $htmlFile      = $testHtml;
-                $foundUsername = basename($userDir);
-                logProjectPayment("DEBUG: Found config at $configFile (username: $foundUsername)", 'DEBUG');
-                break;
-            }
-        }
-    }
-    
-    if (!$configFile || !$htmlFile) {
-        logProjectPayment("DEBUG: Config or HTML file not found", 'ERROR');
-        return ['success' => false, 'error' => 'Project not found'];
+        logProjectPayment("ERROR: No recipient username provided for project $project_id", 'ERROR');
+        return ['success' => false, 'error' => 'No recipient username provided — cannot create invoice'];
     }
     
     // Load config (just API key)
@@ -100,8 +81,8 @@ function createProjectInvoice($project_id, $amount, $donor_name = '', $message =
     
     $config = json_decode($configContents, true);
     if (!$config || !isset($config['recipient_wallet']['api_key'])) {
-        logProjectPayment("DEBUG: Config parse failed or API key missing", 'ERROR');
-        return ['success' => false, 'error' => 'Project configuration invalid'];
+        logProjectPayment("ERROR: Config parse failed or API key missing for user '$recipient_username', project $project_id", 'ERROR');
+        return ['success' => false, 'error' => "No payment key configured for user '$recipient_username' (project $project_id)"];
     }
     
     if ($config['recipient_wallet']['type'] !== 'coinos') {
