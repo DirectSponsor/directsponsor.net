@@ -1,34 +1,40 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-03-29 (session 3)_
+_Last updated: 2026-04-03 (session 5)_
 
 ## What's done and live
 
 ### Infrastructure
-- PHP 8.4 on RN1, Apache vhost for `directsponsor.net`
+- PHP 8.4-fpm on RN1, Apache vhost for `directsponsor.net`
+- **HTTP/2 enabled** (2026-04-03): swapped mpm_prefork → mpm_event + php8.4-fpm; `Protocols h2 http/1.1` in SSL vhost
 - File-based storage under `/var/www/directsponsor.net/userdata/`
 - Build system: `build.sh site` compiles includes, `deploy.sh --auto` rsyncs to RN1
 - JWT auth shared with ROFLFaucet (`roflfaucet_session` in localStorage)
 - Profile files named `{userId}-{username}.txt` under `userdata/profiles/`
-- Nav includes username dropdown with Profile + Logout links (all pages via `social-layout-start.incl`)
+- Nav: logo = home link; links are Fundraisers, Posts, About (all pages via `social-layout-start.incl`)
 - Login links force `https://` in `redirect_uri` even when page visited over HTTP
+- **Backups** (2026-04-03): `/root/backup-rn1-directsponsor.sh` runs every 6h → servarica1 + dr4; monitored by `verify-all-backups.sh` on ES3 with Telegram alerts
 
 ### Pages (all live on directsponsor.net)
 - `index.html` — homepage
-- `projects.html` — lists all active projects from `fundraiser-api.php?action=list`
-- `fundraiser.html?project=ID&user=USERNAME` — individual project page with donate modal
+- `fundraisers.html` — lists all active fundraisers from `fundraiser-api.php?action=list`
+- `fundraiser.html?project=ID&user=USERNAME` — individual fundraiser page with donate modal
+- `posts.html` — blog/post feed; write box for logged-in users; single post view via `?user=X&post_id=Y`
 - `profile.html` — own profile (edit mode) or public profile (`?user=USERNAME`, read-only)
-- `edit-project.html` — recipient creates/edits project (no `?project=` = new project, auto-assigned ID)
-- `edit-project.html?project=ID` — edit existing project; redirects to fundraiser page on save
+- `edit-fundraiser.html` — recipient creates/edits fundraiser (no `?project=` = new, auto-assigned ID)
+- `edit-fundraiser.html?project=ID` — edit existing fundraiser; redirects to fundraiser page on save
 - `admin.html` — admin role management UI (search users, add/remove roles)
 - `about.html`, `contact.html`
 
 ### APIs (all under `/api/`)
-- `fundraiser-api.php` — `action=list` / `action=get&id=X&username=Y` / `action=user_projects&username=Y`; returns `image_url`, `website_url`, `location`, `full_description`, `recent_donations`
+- `fundraiser-api.php` — `action=list` / `action=get&id=X&username=Y` / `action=user_projects&username=Y`
 - `project-donations-api.php` — creates Coinos invoice; passes `donor_username` through to pending entry
-- `webhook.php` — payment confirmation, updates `current-amount`, auto-advances queue; writes `donations_made` directly to donor's profile file; logs to `transaction-ledger.json`
-- `save-project.php` — saves project HTML comment-tags + writes `{id}-config.json`; falls back to profile's Coinos API key if not in form
+- `webhook.php` — payment confirmation, updates `current-amount`, auto-advances queue; writes `donations_made` to donor's profile; logs to `transaction-ledger.json`
+- `save-fundraiser.php` — saves fundraiser HTML comment-tags + writes `{id}-config.json`; falls back to profile's Coinos API key
 - `simple-profile.php` — profile CRUD + role management; `action=my_donations` reads `donations_made` from profile file
 - `auth-proxy.php` — proxies JWT validation to auth server
+- `save-post.php` — saves posts as JSON to `userdata/posts/{username}/{timestamp}-{slug}.json`; JWT auth with body fallback
+- `posts-api.php` — `action=feed` (all posts, paginated) / `action=post&username=X&post_id=Y` (full post) / `action=user_posts&username=X`
+- `upload-project-image.php` — image upload; returns `image_url`
 
 ### Donation flow (fully tested with real payments)
 1. Donor opens modal → name field auto-filled from JWT (editable); guests can type a name or leave blank
@@ -77,12 +83,12 @@ _Last updated: 2026-03-29 (session 3)_
 - `roflfaucet.com/fundraisers.html` → redirects to `directsponsor.net/projects.html`
 - `roflfaucet.com/fundraiser.html` → redirects to `directsponsor.net/projects.html`
 
-### Live projects (as of 2026-03-29)
-- `lightninglova/001.html` — Bitcoin4Ghana Internet Connectivity (active, rebuilt with new system)
-- `andytest2/001.html`, `002.html`, `003.html` — completed test projects
-- `andytest2/004.html` — current active test project (partially funded)
-- Old ROFLFaucet-era project file archived at `userdata/projects/lightninglova/archive/001-old-roflfaucet.html`
-- Evans (Badilisha Food Forest) + Grant & Annegret (Desert Farm): info archived in `archive/old-projects-hardcoded.md`, recreate when ready
+### Live fundraisers (as of 2026-04-03)
+- `lightninglova/001.html` — Bitcoin4Ghana Internet Connectivity (active)
+- `evans/001.html` — Badilisha Food Forest (active; Coinos API key confirmed working 2026-04-03)
+- `andytest2/001-003.html` — completed test fundraisers
+- `andytest2/004.html` — active test fundraiser (partially funded)
+- Grant & Annegret (Desert Farm): recreate when ready
 
 ---
 
@@ -114,23 +120,26 @@ _Last updated: 2026-03-29 (session 3)_
 ## Pending / next priorities
 
 ### Soon
-- Evans (Badilisha Food Forest): get Coinos account + API key, recreate project via `edit-project.html`
-- Grant & Annegret (Desert Farm): same when ready
-- Accounts / transaction history overview (aggregate totals per user, pull from profile + ledger)
+- Grant & Annegret (Desert Farm): create fundraiser stub when ready
+- Reconciliation script: cross-check `transaction-ledger.json` vs per-user `donations_made` arrays
 
 ### Future
-- Reconciliation script: periodic check that `transaction-ledger.json` and per-user `donations_made` arrays agree
-- Coin weighting for ad placement (design work needed first)
-- Blog / posts system — see design notes below
-- **Nostr integration** — see `nostr-integration.md` for full plan; DS as primary relay + dual web/Nostr interface + NIP-57 zaps + community relay kit
+- **Nostr integration** — see `nostr-integration.md` for full plan
+- Auth server post-verification screen: update to show all 3 sites
+- `delete-user.sh`: add clickforcharity.net cleanup step
 
-### Blog / Posts design decisions
-- **Single content type** — no pages vs posts distinction in UI; call everything "posts"
-- **Two display modes, auto-detected**: if `body` field empty → full self-contained feed card; if `body` filled → feed shows intro+image as preview card with "Read more →" to full post page
-- **Fields**: title (required), intro (required, shown in feed), image_url, video_url, body (optional long-form HTML)
-- **Editor**: `wiki/cms/admin/integrated-editor.html` (2832 lines, largely complete); needs DS JWT auth wired in + `save-post.php` backend + `userdata/posts/{username}/` file structure
-- **Feed**: `posts.html` listing page; profile page lists user's own posts
-- **Static pages** (About, FAQ): handled separately, admin-only, outside the post/feed system
+### Posts / Blog system (live as of 2026-04-03)
+- **Single content type** — everything is a "post"
+- **Two display modes**: if `body` empty → full feed card; if `body` filled → intro+image preview with "Read more →"
+- **Fields**: title, intro (required, 500 char soft limit), image_url, body (optional WYSIWYG HTML)
+- **Editor**: inline on `posts.html` — progressive disclosure (short post by default, ✏️ Write an article expands WYSIWYG)
+- **WYSIWYG toolbar**: Bold, Italic, H2, H3, Bullet list, Numbered list, Link (external links auto-get `target=_blank`)
+- **Sticky toolbar**: `position: sticky; top: 3.2em` so toolbar follows user while writing long articles
+- **Character counter**: intro field shows X/500, warns orange >400, red >500, hints to use article section
+- **Image upload**: reuses `upload-project-image.php`, stored in `userdata/projects/{username}/images/`
+- **Feed**: loads intro-only for performance; "Load more" pagination
+- **Storage**: `userdata/posts/{username}/{timestamp}-{slug}.json`
+- **JWT auth**: Authorization header with body fallback (Apache strips headers)
 
 ---
 
@@ -141,22 +150,29 @@ _Last updated: 2026-03-29 (session 3)_
 - **`donor_name` defaulted to Anonymous** — now falls back to `donor_username` in `storePendingProjectDonation`; even cleaner via explicit name field in modal
 - **lightninglova invoice failing with `user not provided`** — old ROFLFaucet-era project HTML had no comment tags; API key was also stale (6 months old). Fix: archive old file, recreate project stub on server, get fresh Coinos API key from lightninglova
 - **RN1 SSH broken after single-key migration** — `IdentityFile` line was missing from RN1 entry in `~/.ssh/config`; fixed by adding `IdentityFile ~/.ssh/id_rsa`. Also needed to add `id_rsa.pub` to RN1's `authorized_keys` via web panel
+- **CSS list styling** — global `ul { list-style: none }` was overriding bullets in WYSIWYG/post body. Fixed (2026-04-03): removed the global reset; content-page emoji lists use `class="plain-list"` instead; `.wysiwyg-body ul/ol` and `.post-body ul/ol` explicitly set `list-style: disc/decimal`. All post/wysiwyg styles now live in `directsponsor-compact.css`, no page-level `<style>` blocks.
+- **Apache strips Authorization header** — JWT from `Authorization: Bearer ...` header is dropped by Apache. Workaround: send JWT in request body as `jwt` field; `save-post.php` and `save-fundraiser.php` both check body as fallback.
 
 ---
 
 ## Key files
 | File | Purpose |
 |------|---------|
-| `site/fundraiser.html` | Project page + donate modal |
-| `site/projects.html` | Project listing |
-| `site/edit-project.html` | Recipient project create/edit form |
+| `site/fundraiser.html` | Fundraiser page + donate modal |
+| `site/fundraisers.html` | Fundraiser listing |
+| `site/posts.html` | Post feed + write box + single post view |
+| `site/edit-fundraiser.html` | Recipient fundraiser create/edit form |
 | `site/profile.html` | User profile (own + public view) + donations made |
 | `site/admin.html` | Admin role management |
 | `site/api/project-donations-api.php` | Coinos invoice creation |
 | `site/api/webhook.php` | Payment webhook + queue advance + profile write |
-| `site/api/fundraiser-api.php` | Project data reader |
-| `site/api/save-project.php` | Project save endpoint |
+| `site/api/fundraiser-api.php` | Fundraiser data reader |
+| `site/api/save-fundraiser.php` | Fundraiser save endpoint |
+| `site/api/save-post.php` | Post save endpoint |
+| `site/api/posts-api.php` | Post feed / single post / user posts reader |
+| `site/api/upload-project-image.php` | Image upload (fundraisers + posts) |
 | `site/api/simple-profile.php` | Profile CRUD + role management + my_donations |
-| `site/cms/includes/social-layout-start.incl` | Shared nav (login link, user menu) |
+| `site/styles/directsponsor-compact.css` | Single stylesheet (all styles incl. posts/wysiwyg) |
+| `site/cms/includes/social-layout-start.incl` | Shared nav (logo=home, Fundraisers, Posts, About) |
 | `build.sh` | Build includes |
 | `deploy.sh` | Rsync to RN1 |

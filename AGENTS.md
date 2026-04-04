@@ -168,13 +168,15 @@ json.dump(d, open(f,'w'), indent=2)
 
 ## CSS & Layout Conventions
 
+- **Single stylesheet**: `site/styles/directsponsor-compact.css` — all styles including posts/wysiwyg. No page-level `<style>` blocks.
 - **Layout**: CSS table layout (`display: table` / `table-cell`) — no flexbox, no float hacks, no `@supports`
-- **Units**: `em` and `%` throughout; `1px` borders are the only exception (scaling borders with font size makes no sense)
+- **Units**: `em` and `%` throughout; `1px` borders are the only exception
 - **Target viewport**: 390px minimum (covers iPhone 14/15 and most modern Android). 320px not supported unless someone reports it.
 - **Mobile breakpoint**: `max-width: 40em` stacks the 2-column layout to single column
 - **No framework CSS**: handcrafted only — no Bootstrap, Tailwind, etc.
-- **No inline colour values** — always use CSS classes (`.color-muted`, `.color-primary`, `.color-success`) rather than `style="color:#888"`. Inline colours are invisible to global updates and cause drift. Exception: dynamic colours set by JS at runtime (e.g. progress bar widths).
-- **Use CSS custom properties for all colours** — `var(--bg-card)`, `var(--bg-page)`, `var(--text)`, `var(--text-muted)`, `var(--border)`, `var(--link)` etc. Hardcoded hex values in new CSS won't respond to dark mode. Variables are defined in `:root` and overridden in `[data-theme="dark"]` at the top of `directsponsor-compact.css`.
+- **No inline colour values** — always use CSS classes rather than `style="color:#888"`. Exception: dynamic colours set by JS at runtime.
+- **CSS custom properties for all colours** — `var(--bg-card)`, `var(--bg-page)`, `var(--text)`, `var(--text-muted)`, `var(--border)`, `var(--link)`. Defined in `:root`, overridden in `[data-theme="dark"]`.
+- **Lists**: no global `ul` reset. Use `class="plain-list"` for emoji/nav lists that don't need markers. Real content lists (in WYSIWYG/post body) get proper `list-style` via scoped CSS classes.
 
 ---
 
@@ -186,28 +188,31 @@ json.dump(d, open(f,'w'), indent=2)
 - **Coinos API key format** — Bearer JWT. Keys can expire; if invoice creation returns `user not provided`, the key needs regenerating from Coinos account settings
 - **RN1 SSH config** — `IdentityFile ~/.ssh/id_rsa` must be present in the RN1 entry in `~/.ssh/config`; `id_rsa.pub` must be in RN1's `authorized_keys`
 - **`donor_name` fallback** — if no explicit name given, falls back to `donor_username`, then `Anonymous`
+- **Apache strips Authorization header** — JWT sent as `Authorization: Bearer ...` is dropped. Both `save-post.php` and `save-fundraiser.php` check `$input['jwt']` as fallback; frontend sends JWT in request body too
+- **CSS list reset** — global `ul { list-style: none }` was removed (2026-04-03). Emoji/nav lists that need markers stripped must use `class="plain-list"`. WYSIWYG and post body lists use explicit `list-style: disc/decimal` in `directsponsor-compact.css`
 
 ---
 
-## Live Fundraisers (as of 2026-03-30)
+## Live Fundraisers (as of 2026-04-03)
 
 | Username | Project | Status |
 |----------|---------|--------|
 | `lightninglova` | Bitcoin4Ghana Internet Connectivity | Active |
+| `evans` | Badilisha Food Forest | Active (Coinos key confirmed working) |
 | `andytest2` | Test Four (004) | Active (test) |
 | `andytest2` | 001, 002, 003 | Completed (test) |
 
-**Pending recreation** (info in `archive/old-projects-hardcoded.md`):
-- Evans — Badilisha Food Forest stub created (`evans/active/001.html`); needs Coinos API key in `001-config.json`
+**Pending**:
 - Grant & Annegret — Desert Farm (when ready)
 
 ---
 
 ## Pending Tasks
 
-- Evans: add Coinos API key to `userdata/projects/evans/001-config.json` (stub already created); then Evans can edit via `edit-fundraiser.html`
-- Grant & Annegret: same when ready — create stub then they edit via `edit-fundraiser.html`
-- Reconciliation script (backend only, no UI): cross-check `transaction-ledger.json` against per-user `donations_made` arrays — the ledger is the horizontal audit trail (all payments in sequence), the profile arrays are the vertical view (per user). If they diverge, a webhook write was missed. Run via SSH or cron; alert on mismatch.
+- Grant & Annegret: create fundraiser stub when ready, then they edit via `edit-fundraiser.html`
+- Reconciliation script (backend only, no UI): cross-check `transaction-ledger.json` against per-user `donations_made` arrays
+- Auth server post-verification screen: update to show all 3 sites
+- `delete-user.sh`: add clickforcharity.net cleanup step
 
 ## User Account Deletion
 

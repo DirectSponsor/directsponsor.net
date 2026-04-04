@@ -41,7 +41,7 @@ function logProjectPayment($message, $level = 'INFO') {
         "[$timestamp] [$level] $message\n", FILE_APPEND | LOCK_EX);
 }
 
-function createProjectInvoice($project_id, $amount, $donor_name = '', $message = '', $donor_username = null) {
+function createProjectInvoice($project_id, $amount, $donor_name = '', $message = '', $donor_username = null, $recipient_username = null) {
     // PROJECT DONATIONS API: Only handle projects 001+, reject site income
     if ($project_id === '000' || $project_id === 'site-income') {
         return ['success' => false, 'error' => 'Site income donations must use site-income-api.php'];
@@ -53,22 +53,34 @@ function createProjectInvoice($project_id, $amount, $donor_name = '', $message =
     $configFile = null;
     $htmlFile = null;
     $foundUsername = null;
-    $userDirs = glob(PROJECTS_DIR . '/*', GLOB_ONLYDIR);
-    
-    logProjectPayment("DEBUG: Found user directories: " . json_encode($userDirs), 'DEBUG');
-    
-    foreach ($userDirs as $userDir) {
-        $testConfig = $userDir . '/' . $project_id . '-config.json';
-        $testHtml = $userDir . '/active/' . $project_id . '.html';
-        
-        logProjectPayment("DEBUG: Testing config: $testConfig", 'DEBUG');
-        
+
+    if ($recipient_username) {
+        // Direct lookup — avoids alphabetical glob picking the wrong user
+        $testConfig = PROJECTS_DIR . '/' . $recipient_username . '/' . $project_id . '-config.json';
+        $testHtml   = PROJECTS_DIR . '/' . $recipient_username . '/active/' . $project_id . '.html';
         if (file_exists($testConfig) && file_exists($testHtml)) {
-            $configFile = $testConfig;
-            $htmlFile = $testHtml;
-            $foundUsername = basename($userDir);
-            logProjectPayment("DEBUG: Found config and HTML files at $configFile (username: $foundUsername)", 'DEBUG');
-            break;
+            $configFile    = $testConfig;
+            $htmlFile      = $testHtml;
+            $foundUsername = $recipient_username;
+            logProjectPayment("DEBUG: Direct lookup found config at $configFile (username: $foundUsername)", 'DEBUG');
+        }
+    }
+
+    if (!$configFile) {
+        // Fallback: search all user directories
+        $userDirs = glob(PROJECTS_DIR . '/*', GLOB_ONLYDIR);
+        logProjectPayment("DEBUG: Fallback scan user directories: " . json_encode($userDirs), 'DEBUG');
+        foreach ($userDirs as $userDir) {
+            $testConfig = $userDir . '/' . $project_id . '-config.json';
+            $testHtml   = $userDir . '/active/' . $project_id . '.html';
+            logProjectPayment("DEBUG: Testing config: $testConfig", 'DEBUG');
+            if (file_exists($testConfig) && file_exists($testHtml)) {
+                $configFile    = $testConfig;
+                $htmlFile      = $testHtml;
+                $foundUsername = basename($userDir);
+                logProjectPayment("DEBUG: Found config at $configFile (username: $foundUsername)", 'DEBUG');
+                break;
+            }
         }
     }
     
@@ -311,7 +323,8 @@ try {
                     (int)$input['amount'],
                     $input['donor_name'] ?? '',
                     $input['message'] ?? '',
-                    $input['donor_username'] ?? null
+                    $input['donor_username'] ?? null,
+                    $input['username'] ?? null
                 );
                 echo json_encode($result);
                 break;
