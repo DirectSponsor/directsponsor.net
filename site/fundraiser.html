@@ -807,18 +807,24 @@ function pollPayment(invoiceId) {
 <button id="chat-float-btn" class="chat-float-btn" onclick="dsToggleChat()" aria-label="Close chat">✕</button>
 <script>
 (function() {
-    var open = true;
-    window.dsToggleChat = function() {
-        open = !open;
+    var CLOSE_KEY = 'ds-chat-closed';
+    var CLOSE_TTL = 60 * 60 * 1000; // 60 minutes
+
+    var closedAt = parseInt(localStorage.getItem(CLOSE_KEY) || '0', 10);
+    var open = !closedAt || (Date.now() - closedAt) > CLOSE_TTL;
+    var iframeLoaded = false;
+
+    function applyState() {
         var panel = document.getElementById('chat-float-panel');
         var btn   = document.getElementById('chat-float-btn');
         panel.classList.toggle('open', open);
         panel.setAttribute('aria-hidden', open ? 'false' : 'true');
         btn.textContent = open ? '✕' : '💬';
         btn.setAttribute('aria-label', open ? 'Close chat' : 'Open chat');
-    };
-    // Load iframe on page load (chat is open by default)
-    document.addEventListener('DOMContentLoaded', function() {
+    }
+
+    function loadIframe() {
+        if (iframeLoaded) return;
         var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
         var frame = document.getElementById('chat-float-frame');
         var login = document.getElementById('chat-float-login');
@@ -828,7 +834,27 @@ function pollPayment(invoiceId) {
             frame.style.display = 'none';
             login.style.display = 'block';
         }
-    });
+        iframeLoaded = true;
+    }
+
+    window.dsToggleChat = function() {
+        open = !open;
+        if (open) {
+            localStorage.removeItem(CLOSE_KEY);
+            loadIframe();
+        } else {
+            localStorage.setItem(CLOSE_KEY, Date.now());
+        }
+        applyState();
+    };
+
+    // Apply initial state immediately (script runs after panel elements)
+    applyState();
+
+    // Load iframe only if starting open; otherwise defer until user opens chat
+    if (open) {
+        document.addEventListener('DOMContentLoaded', loadIframe);
+    }
 })();
 </script>
 
