@@ -1057,9 +1057,10 @@ ul li {
 .wysiwyg-body:focus { border-color: var(--link); }
 .wysiwyg-body h2 { font-size: 1.3em; margin: 0.6em 0 0.3em; }
 .wysiwyg-body h3 { font-size: 1.1em; margin: 0.5em 0 0.2em; }
-.wysiwyg-body ul, .wysiwyg-body ol { padding-left: 1.8em; margin: 0.3em 0; }
-.wysiwyg-body ul { list-style: disc; }
-.wysiwyg-body ol { list-style: decimal; }
+.wysiwyg-body ul, .wysiwyg-body ol,
+#pub-bio ul, #pub-bio ol { padding-left: 1.8em; margin: 0.3em 0; }
+.wysiwyg-body ul, #pub-bio ul { list-style: disc; }
+.wysiwyg-body ol, #pub-bio ol { list-style: decimal; }
 
 .article-toggle {
     background: none;
