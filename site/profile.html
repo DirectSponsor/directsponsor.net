@@ -663,7 +663,7 @@ function saveProfile() {
 <!-- End layout container -->
 
 <!-- Floating Chat Button + Panel -->
-<div id="chat-float-panel" class="chat-float-panel" aria-hidden="true">
+<div id="chat-float-panel" class="chat-float-panel open" aria-hidden="false">
     <div class="chat-float-panel-inner">
         <div class="chat-float-panel-header">
             <span>💬 Community Chat</span>
@@ -677,11 +677,10 @@ function saveProfile() {
         </div>
     </div>
 </div>
-<button id="chat-float-btn" class="chat-float-btn" onclick="dsToggleChat()" aria-label="Open chat">💬</button>
+<button id="chat-float-btn" class="chat-float-btn" onclick="dsToggleChat()" aria-label="Close chat">✕</button>
 <script>
 (function() {
-    var open = false;
-    var loaded = false;
+    var open = true;
     window.dsToggleChat = function() {
         open = !open;
         var panel = document.getElementById('chat-float-panel');
@@ -689,19 +688,20 @@ function saveProfile() {
         panel.classList.toggle('open', open);
         panel.setAttribute('aria-hidden', open ? 'false' : 'true');
         btn.textContent = open ? '✕' : '💬';
-        if (open && !loaded) {
-            loaded = true;
-            var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
-            var frame = document.getElementById('chat-float-frame');
-            var login = document.getElementById('chat-float-login');
-            if (jwt) {
-                frame.src = 'https://roflfaucet.com/chat-widget-frame.php?jwt=' + encodeURIComponent(jwt);
-            } else {
-                frame.style.display = 'none';
-                login.style.display = 'block';
-            }
-        }
+        btn.setAttribute('aria-label', open ? 'Close chat' : 'Open chat');
     };
+    // Load iframe on page load (chat is open by default)
+    document.addEventListener('DOMContentLoaded', function() {
+        var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+        var frame = document.getElementById('chat-float-frame');
+        var login = document.getElementById('chat-float-login');
+        if (jwt) {
+            frame.src = 'https://roflfaucet.com/chat-widget-frame.php?jwt=' + encodeURIComponent(jwt);
+        } else {
+            frame.style.display = 'none';
+            login.style.display = 'block';
+        }
+    });
 })();
 </script>
 
