@@ -455,23 +455,12 @@ function escHtml(s) {
     <!-- RIGHT SIDEBAR -->
     <aside class="sidebar">
 
-        <div class="sidebar-box">
-            <h3>About DirectSponsor</h3>
-            <p>100% direct peer-to-peer donations. Every satoshi goes straight to the recipient.</p>
-            <a href="about.html">Learn more</a>
-        </div>
-
-        <div class="sidebar-box">
-            <h3>Active Projects</h3>
-            <p><a href="fundraisers.html">Browse all fundraisers →</a></p>
-        </div>
-
         <!-- Community Chat (served from roflfaucet.com) -->
         <div class="sidebar-box sidebar-chat-box">
             <h3>💬 Community Chat</h3>
             <p class="sidebar-chat-source">via <a href="https://roflfaucet.com/chat.html" target="_blank" rel="noopener">roflfaucet.com ↗</a></p>
             <div id="sidebar-chat-frame-wrap">
-                <iframe id="sidebar-chat-frame" src="" width="100%" height="350" frameborder="0" allowtransparency="true"></iframe>
+                <iframe id="sidebar-chat-frame" src="" width="100%" height="450" frameborder="0" allowtransparency="true"></iframe>
             </div>
             <p id="sidebar-chat-login" class="sidebar-chat-login-msg">
                 <a href="#" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href.replace(/^http:/,'https:')); return false;">Log in to join the chat</a>
@@ -491,6 +480,11 @@ function escHtml(s) {
             }
         })();
         </script>
+
+        <div class="sidebar-box">
+            <h3>Active Projects</h3>
+            <p><a href="fundraisers.html">Browse all fundraisers →</a></p>
+        </div>
 
         <!-- Ad slot -->
         <div class="sidebar-box ad-slot">

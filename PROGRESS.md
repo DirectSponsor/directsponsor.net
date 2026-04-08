@@ -127,6 +127,14 @@ _Last updated: 2026-04-08 (session 6)_
 - **Nostr integration** — see `nostr-integration.md` for full plan
 - Auth server post-verification screen: update to show all 3 sites
 - `delete-user.sh`: add clickforcharity.net cleanup step
+- **Lightning explainer + donor onboarding page** — need a dedicated page (e.g. `how-to-donate.html` or similar) covering:
+  - Why we use Bitcoin Lightning *only*: it's the only payment method that lets us see exactly when a specific payment arrives and credit it automatically, without the platform taking custody of funds
+  - Why traditional banking doesn't work: fees are unreasonable for small international amounts, payments aren't direct (go through intermediaries), and there's no reliable way to match a payment to a specific fundraiser without building a full merchant system
+  - How donors can get started easily:
+    1. Open a free [Coinos](https://coinos.io) account (no KYC, instant)
+    2. Fund it for free via faucets: **litebits.io** and **satsman** (small amounts but enough to test/start)
+    3. Or buy sats with a bank transfer via **Mt Pelerin** exchange — no KYC for small amounts, straightforward bill-payment setup
+  - A step-by-step tutorial (video or illustrated walkthrough) will need to be produced at some point covering the above flow end-to-end
 
 ### Posts / Blog system (live as of 2026-04-03)
 - **Single content type** — everything is a "post"
