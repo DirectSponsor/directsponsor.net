@@ -144,7 +144,7 @@ function dsLogout() {
 <!-- Write box (logged-in users only) -->
 <div id="write-box-wrap" style="display:none;">
     <div class="write-box">
-        <textarea id="post-intro" placeholder="What's on your mind?" rows="3"></textarea>
+        <textarea id="post-intro" placeholder="What's on your mind? (required — shown in the feed)" rows="3"></textarea>
         <div id="intro-counter" style="font-size:0.8em;text-align:right;color:var(--text-muted);margin-top:0.2em;">0 / 500</div>
         <div id="intro-hint" style="display:none;font-size:0.82em;color:var(--link);margin-top:0.2em;">Got more to say? Use <button class="article-toggle" onclick="toggleArticle()" style="font-size:1em;">✏️ Write an article</button> below.</div>
         <div id="image-row" style="margin-top:0.4em;">
@@ -340,7 +340,7 @@ function setStatus(msg, isErr) {
 
 function submitPost() {
     var intro = document.getElementById('post-intro').value.trim();
-    if (!intro) { setStatus('Please write something first.', true); return; }
+    if (!intro) { setStatus('Please add a summary in the text box above — it\'s required and shown in the feed.', true); document.getElementById('post-intro').focus(); return; }
     var btn = document.getElementById('post-submit-btn');
     btn.disabled = true;
     setStatus(_editingPostId ? 'Updating...' : 'Posting...');
