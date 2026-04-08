@@ -162,6 +162,7 @@ function dsLogout() {
                 <button onclick="document.getElementById('post-image-file').click()" style="background:none;border:none;color:var(--link);cursor:pointer;font-size:0.9em;padding:0;">📷 Add image</button>
             </div>
             <div class="write-box-actions-right">
+                <button id="cancel-edit-btn" onclick="cancelEdit()" style="display:none;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.9em;margin-right:0.5em;">✕ Cancel</button>
                 <button class="btn-post" id="post-submit-btn" onclick="submitPost()">Post</button>
             </div>
         </div>
@@ -205,6 +206,7 @@ function dsLogout() {
 <script>
 var _jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
 var _username = null, _userId = null;
+var _editingPostId = null;
 
 if (_jwt) {
     try {
@@ -341,7 +343,7 @@ function submitPost() {
     if (!intro) { setStatus('Please write something first.', true); return; }
     var btn = document.getElementById('post-submit-btn');
     btn.disabled = true;
-    setStatus('Posting...');
+    setStatus(_editingPostId ? 'Updating...' : 'Posting...');
     fetch('/api/save-post.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _jwt },
@@ -350,6 +352,7 @@ function submitPost() {
             title:     document.getElementById('post-title').value.trim(),
             body:      document.getElementById('post-body').innerHTML.trim() === '' ? '' : document.getElementById('post-body').innerHTML,
             image_url: document.getElementById('post-image-url').value,
+            post_id:   _editingPostId || '',
             jwt:       _jwt,
             username:  _username,
         })
@@ -364,12 +367,50 @@ function submitPost() {
             clearImage();
             if (document.getElementById('article-fields').classList.contains('open')) toggleArticle();
             setStatus('');
+            _editingPostId = null;
+            document.getElementById('post-submit-btn').textContent = 'Post';
+            document.getElementById('cancel-edit-btn').style.display = 'none';
             loadFeed(false);
         } else {
             setStatus(d.error || 'Failed to post.', true);
         }
     })
     .catch(function() { btn.disabled = false; setStatus('Network error. Try again.', true); });
+}
+
+function editPost(postId, username) {
+    fetch('/api/posts-api.php?action=post&username=' + encodeURIComponent(username) + '&post_id=' + encodeURIComponent(postId))
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (!d.success || !d.post) { alert('Could not load post for editing.'); return; }
+            var p = d.post;
+            document.getElementById('write-box-wrap').style.display = '';
+            document.getElementById('post-intro').value = p.intro || '';
+            document.getElementById('post-title').value = p.title || '';
+            document.getElementById('post-body').innerHTML = p.body || '';
+            if ((p.title || p.body) && !document.getElementById('article-fields').classList.contains('open')) {
+                toggleArticle();
+            }
+            _editingPostId = postId;
+            document.getElementById('post-submit-btn').textContent = 'Update';
+            document.getElementById('cancel-edit-btn').style.display = '';
+            document.getElementById('feed-wrap').style.display = '';
+            document.getElementById('single-post-wrap').style.display = 'none';
+            document.getElementById('write-box-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        })
+        .catch(function() { alert('Network error. Could not load post.'); });
+}
+
+function cancelEdit() {
+    _editingPostId = null;
+    document.getElementById('post-intro').value = '';
+    document.getElementById('post-title').value = '';
+    document.getElementById('post-body').innerHTML = '';
+    clearImage();
+    if (document.getElementById('article-fields').classList.contains('open')) toggleArticle();
+    document.getElementById('post-submit-btn').textContent = 'Post';
+    document.getElementById('cancel-edit-btn').style.display = 'none';
+    setStatus('');
 }
 
 var _feedOffset = 0;
@@ -411,6 +452,13 @@ function buildCard(p) {
     html += '<p class="post-intro">' + escHtml(p.intro) + '</p>';
     if (p.has_body) html += '<div class="read-more"><a href="posts.html?user=' + esc(p.username) + '&post_id=' + esc(p.post_id) + '">Read more →</a></div>';
     div.innerHTML = html;
+    if (_username && p.username === _username) {
+        var editBtn = document.createElement('button');
+        editBtn.textContent = '✏️ Edit';
+        editBtn.style.cssText = 'background:none;border:none;color:var(--link);cursor:pointer;font-size:0.85em;padding:0.2em 0;display:block;margin-top:0.3em;';
+        editBtn.onclick = function() { editPost(p.post_id, p.username); };
+        div.appendChild(editBtn);
+    }
     return div;
 }
 
@@ -432,6 +480,9 @@ function loadSinglePost(username, postId) {
             if (p.image_url) html += '<div class="post-image" style="margin:0.6em 0;"><img src="' + esc(p.image_url) + '" alt="" style="max-width:100%;border-radius:0.3em;"></div>';
             html += '<p class="post-intro">' + escHtml(p.intro) + '</p>';
             if (p.body) html += '<div class="post-body">' + p.body + '</div>';
+            if (_username && p.username === _username) {
+                html += '<div style="margin-top:0.8em;"><button onclick="editPost(\'' + esc(p.post_id) + '\',\'' + esc(p.username) + '\')" style="background:none;border:none;color:var(--link);cursor:pointer;font-size:0.9em;padding:0;text-decoration:underline;">✏️ Edit this post</button></div>';
+            }
             html += '</div>';
             wrap.innerHTML = html;
             if (p.title) document.title = p.title + ' - DirectSponsor';
