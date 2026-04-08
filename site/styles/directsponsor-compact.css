@@ -67,7 +67,7 @@ ul li {
 /* === SINGLE-COLUMN LAYOUT === */
 .layout-container {
     width: 100%;
-    max-width: 72em;
+    max-width: 52em;
     margin: 0 auto;
     padding: 0.75em 0.5em;
 }

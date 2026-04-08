@@ -792,49 +792,51 @@ function pollPayment(invoiceId) {
 
     </main>
 
-    <!-- RIGHT SIDEBAR -->
-    <aside class="sidebar">
-
-        <!-- Community Chat (served from roflfaucet.com) -->
-        <div class="sidebar-box sidebar-chat-box">
-            <h3>💬 Community Chat</h3>
-            <p class="sidebar-chat-source">via <a href="https://roflfaucet.com/chat.html" target="_blank" rel="noopener">roflfaucet.com ↗</a></p>
-            <div id="sidebar-chat-frame-wrap">
-                <iframe id="sidebar-chat-frame" src="" width="100%" height="450" frameborder="0" allowtransparency="true"></iframe>
-            </div>
-            <p id="sidebar-chat-login" class="sidebar-chat-login-msg">
-                <a href="#" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href.replace(/^http:/,'https:')); return false;">Log in to join the chat</a>
-            </p>
-            <a href="https://roflfaucet.com/chat.html" target="_blank" rel="noopener" class="sidebar-chat-fulllink">Open full chat →</a>
-        </div>
-        <script>
-        (function() {
-            var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
-            var frame = document.getElementById('sidebar-chat-frame');
-            var loginMsg = document.getElementById('sidebar-chat-login');
-            if (jwt) {
-                frame.src = 'https://roflfaucet.com/chat-widget-frame.php?jwt=' + encodeURIComponent(jwt);
-                loginMsg.style.display = 'none';
-            } else {
-                frame.style.display = 'none';
-            }
-        })();
-        </script>
-
-        <div class="sidebar-box">
-            <h3>Active Projects</h3>
-            <p><a href="fundraisers.html">Browse all fundraisers →</a></p>
-        </div>
-
-        <!-- Ad slot -->
-        <div class="sidebar-box ad-slot">
-            <p class="ad-label">Advertisement</p>
-        </div>
-
-    </aside>
-
 </div>
 <!-- End layout container -->
+
+<!-- Floating Chat Button + Panel -->
+<div id="chat-float-panel" class="chat-float-panel" aria-hidden="true">
+    <div class="chat-float-panel-inner">
+        <div class="chat-float-panel-header">
+            <span>💬 Community Chat</span>
+            <span class="chat-float-source">via <a href="https://roflfaucet.com/chat.html" target="_blank" rel="noopener">roflfaucet.com ↗</a></span>
+        </div>
+        <div class="chat-float-frame-wrap">
+            <iframe id="chat-float-frame" src="" width="100%" height="100%" frameborder="0" allowtransparency="true"></iframe>
+        </div>
+        <div id="chat-float-login" class="chat-float-login" style="display:none;">
+            <a href="#" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href.replace(/^http:/,'https:')); return false;">Log in to join the chat</a>
+        </div>
+    </div>
+</div>
+<button id="chat-float-btn" class="chat-float-btn" onclick="dsToggleChat()" aria-label="Open chat">💬</button>
+<script>
+(function() {
+    var open = false;
+    var loaded = false;
+    window.dsToggleChat = function() {
+        open = !open;
+        var panel = document.getElementById('chat-float-panel');
+        var btn   = document.getElementById('chat-float-btn');
+        panel.classList.toggle('open', open);
+        panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+        btn.textContent = open ? '✕' : '💬';
+        if (open && !loaded) {
+            loaded = true;
+            var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+            var frame = document.getElementById('chat-float-frame');
+            var login = document.getElementById('chat-float-login');
+            if (jwt) {
+                frame.src = 'https://roflfaucet.com/chat-widget-frame.php?jwt=' + encodeURIComponent(jwt);
+            } else {
+                frame.style.display = 'none';
+                login.style.display = 'block';
+            }
+        }
+    };
+})();
+</script>
 
 <!-- Sticky Header Script (Inline for performance) -->
 <script>
