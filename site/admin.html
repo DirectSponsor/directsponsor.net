@@ -48,52 +48,6 @@
 <div class="corner-ribbon top-left sticky red shadow">BETA</div>
 <!-- include end doctype-head.incl -->
 
-<style>
-.admin-section { margin-bottom: 1.5em; }
-.admin-section h2 { font-size: 1.1em; border-bottom: 1px solid #e1e8ed; padding-bottom: 0.4em; margin-bottom: 0.8em; color: #333; }
-
-.search-row { display: flex; gap: 0.5em; align-items: center; }
-.search-row input { flex: 1; padding: 0.5em; border: 1px solid #ccc; border-radius: 0.3em; font-size: 0.95em; }
-.search-row button { padding: 0.5em 1em; background: #555; color: #fff; border: none; border-radius: 0.3em; cursor: pointer; font-size: 0.9em; }
-.search-row button:hover { background: #333; }
-
-.user-result {
-    border: 1px solid #e1e8ed;
-    border-radius: 0.4em;
-    padding: 0.75em;
-    margin-bottom: 0.6em;
-}
-.user-result-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.4em; }
-.user-result-name { font-weight: bold; font-size: 0.95em; }
-.user-result-id { font-size: 0.8em; color: #999; }
-
-.roles-row { display: flex; gap: 0.4em; flex-wrap: wrap; align-items: center; }
-.role-badge {
-    background: #e8f4e8; border: 1px solid #aad4aa; color: #2a6a2a;
-    font-size: 0.8em; padding: 0.2em 0.5em; border-radius: 1em;
-    display: inline-flex; align-items: center; gap: 0.3em;
-}
-.role-badge.recipient { background: #fff3cd; border-color: #f7b731; color: #7a5a00; }
-.role-badge.admin { background: #fde8e8; border-color: #e88; color: #700; }
-.role-badge button {
-    background: none; border: none; cursor: pointer; color: inherit;
-    font-size: 0.9em; padding: 0; line-height: 1;
-}
-.role-badge button:hover { opacity: 0.7; }
-
-.add-role-row { display: flex; gap: 0.4em; margin-top: 0.5em; align-items: center; }
-.add-role-row select { padding: 0.3em 0.5em; border: 1px solid #ccc; border-radius: 0.3em; font-size: 0.85em; }
-.add-role-row button { padding: 0.3em 0.75em; background: #f7b731; color: #000; border: none; border-radius: 0.3em; cursor: pointer; font-size: 0.85em; font-weight: bold; }
-.add-role-row button:hover { background: #e0a520; }
-
-.msg { font-size: 0.85em; margin-left: 0.5em; }
-.msg.ok { color: #2a9d2a; }
-.msg.err { color: #c00; }
-
-#access-denied, #not-logged-in { display: none; text-align: center; padding: 3em; }
-#admin-panel { display: none; }
-#loading { text-align: center; padding: 2em; color: #666; }
-</style>
 
 <!-- include start social-layout-start.incl -->
 <header class="site-header">
@@ -204,18 +158,18 @@ function dsLogout() {
 
     <div class="project-card admin-section">
         <h2>🔑 Role Management</h2>
-        <p style="font-size:0.9em;color:#666;margin-bottom:0.75em;">Search for a user by username, then add or remove roles.</p>
+        <p class="color-dim" style="font-size:0.9em;margin-bottom:0.75em;">Search for a user by username, then add or remove roles.</p>
         <div class="search-row">
             <input type="text" id="search-input" placeholder="Search username…" onkeydown="if(event.key==='Enter')searchUsers()">
             <button onclick="searchUsers()">Search</button>
         </div>
-        <div id="search-status" style="font-size:0.85em;color:#888;margin-top:0.4em;"></div>
+        <div id="search-status" class="color-muted" style="font-size:0.85em;margin-top:0.4em;"></div>
         <div id="search-results" style="margin-top:0.75em;"></div>
     </div>
 
     <div class="project-card admin-section">
         <h2>ℹ️ Available Roles</h2>
-        <ul style="font-size:0.9em;color:#555;margin:0;padding-left:1.2em;line-height:1.8em;">
+        <ul class="color-dim" style="font-size:0.9em;margin:0;padding-left:1.2em;line-height:1.8em;">
             <li><strong>member</strong> — default for all users, cannot be removed</li>
             <li><strong>recipient</strong> — can receive donations; unlocks Coinos username field and My Fundraisers section</li>
             <li><strong>admin</strong> — full admin access including this panel</li>
