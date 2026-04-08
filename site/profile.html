@@ -64,7 +64,7 @@
             <div class="nav-user-menu" id="nav-user-menu" style="display:none;position:relative;">
                 <a href="#" id="nav-username-btn" onclick="toggleUserMenu(event)">👤 <span id="nav-username-label">Account</span> ▾</a>
                 <div id="nav-user-dropdown" style="display:none;position:absolute;right:0;top:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:0.3em;min-width:130px;box-shadow:0 2px 8px rgba(0,0,0,0.12);z-index:999;">
-                    <a href="profile.html" style="display:block;padding:0.5em 1em;color:var(--text);text-decoration:none;font-size:0.9em;border-bottom:1px solid var(--border);">Profile</a>
+                    <a href="profile.html" id="nav-profile-link" style="display:block;padding:0.5em 1em;color:var(--text);text-decoration:none;font-size:0.9em;border-bottom:1px solid var(--border);">Profile</a>
                     <a href="#" onclick="dsLogout(); return false;" class="nav-logout" style="display:block;padding:0.5em 1em;text-decoration:none;font-size:0.9em;">Log out</a>
                 </div>
             </div>
@@ -84,7 +84,10 @@
         try {
             var payload = JSON.parse(atob(jwt.split('.')[1]));
             var uname = payload.username || payload.sub || '';
-            if (uname) document.getElementById('nav-username-label').textContent = uname;
+            if (uname) {
+                document.getElementById('nav-username-label').textContent = uname;
+                document.getElementById('nav-profile-link').href = 'profile.html?user=' + encodeURIComponent(uname);
+            }
         } catch(e) {}
         document.getElementById('nav-user-menu').style.display = '';
         document.getElementById('nav-login-link').style.display = 'none';
@@ -159,7 +162,10 @@ function dsLogout() {
 <!-- PUBLIC VIEW (read-only, shown when ?user=USERNAME) -->
 <div id="profile-public" style="display:none;">
     <div class="project-card profile-section">
-        <h2 id="pub-heading">👤 Profile</h2>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:0.5em;">
+            <h2 id="pub-heading" style="margin:0;">👤 Profile</h2>
+            <a id="pub-edit-btn" href="profile.html" class="save-btn" style="display:none;text-decoration:none;font-size:0.85em;">✏️ Edit Profile</a>
+        </div>
         <p id="pub-roles"></p>
         <div id="pub-bio" style="margin-top:0.5em;"></div>
         <p id="pub-location" class="color-dim text-small"></p>
@@ -309,6 +315,18 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadPublicProfile(username) {
+    try {
+        var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+        if (jwt) {
+            var pl = JSON.parse(atob(jwt.split('.')[1]));
+            var me = pl.username || '';
+            if (me && me === username) {
+                var btn = document.getElementById('pub-edit-btn');
+                btn.style.display = '';
+                btn.href = 'profile.html';
+            }
+        }
+    } catch(e) {}
     fetch('/api/simple-profile.php?action=public_profile&username=' + encodeURIComponent(username))
         .then(function(r) { return r.json(); })
         .then(function(data) {
