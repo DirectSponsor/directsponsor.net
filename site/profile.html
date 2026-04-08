@@ -204,7 +204,7 @@ function dsLogout() {
                 <div class="sep"></div>
                 <button onclick="insertBioLink()" title="Insert link">&#128279; Link</button>
                 <div class="sep"></div>
-                <button onclick="document.getElementById('bio-image-file').click()" title="Add image">&#128247;</button>
+                <button id="bio-image-btn" onclick="document.getElementById('bio-image-file').click()" title="Add image">&#128247;</button>
             </div>
             <div class="wysiwyg-body" id="bio" contenteditable="true" data-placeholder="A short description of yourself or your work" style="min-height:5em;"></div>
             <input type="file" id="bio-image-file" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;">
@@ -561,6 +561,7 @@ function insertBioLink() {
                     document.execCommand('insertHTML', false,
                         '<img src="' + d.image_url + '" style="max-width:100%;border-radius:0.3em;margin:0.3em 0;display:block;">');
                     statusEl.textContent = '';
+                    document.getElementById('bio-image-btn').disabled = true;
                 } else {
                     statusEl.textContent = 'Upload failed: ' + (d.error || 'Unknown');
                 }
