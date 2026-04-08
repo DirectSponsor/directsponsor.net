@@ -340,10 +340,10 @@ function loadPublicProjects(username) {
                 noneEl.style.display = 'block';
                 return;
             }
-            active.forEach(function(p) { activeEl.appendChild(renderProjectCard(p, true)); });
+            active.forEach(function(p, i) { activeEl.appendChild(renderProjectCard(p, i === 0 ? 'active' : 'queued')); });
             if (completed.length > 0) {
                 compWrap.style.display = 'block';
-                completed.forEach(function(p) { compEl.appendChild(renderProjectCard(p, false)); });
+                completed.forEach(function(p) { compEl.appendChild(renderProjectCard(p, 'completed')); });
             }
         })
         .catch(function() {});
