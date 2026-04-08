@@ -549,6 +549,11 @@ function insertBioLink() {
         var file = this.files[0];
         if (!file) return;
         var statusEl = document.getElementById('bio-image-status');
+        if (file.size > 2 * 1024 * 1024) {
+            statusEl.textContent = 'File too large — maximum 2MB. Please resize the image and try again.';
+            document.getElementById('bio-image-file').value = '';
+            return;
+        }
         statusEl.textContent = 'Uploading...';
         var fd = new FormData();
         fd.append('image', file);

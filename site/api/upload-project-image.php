@@ -34,7 +34,16 @@ $uploadedFile = $_FILES['image'];
 
 // Validate upload
 if ($uploadedFile['error'] !== UPLOAD_ERR_OK) {
-    echo json_encode(['success' => false, 'error' => 'Upload failed: ' . $uploadedFile['error']]);
+    $phpErrors = [
+        UPLOAD_ERR_INI_SIZE   => 'File too large (exceeds server limit of 2MB).',
+        UPLOAD_ERR_FORM_SIZE  => 'File too large (exceeds form limit).',
+        UPLOAD_ERR_PARTIAL    => 'Upload incomplete. Please try again.',
+        UPLOAD_ERR_NO_FILE    => 'No file received.',
+        UPLOAD_ERR_NO_TMP_DIR => 'Server configuration error (no temp dir).',
+        UPLOAD_ERR_CANT_WRITE => 'Server could not save the file.',
+    ];
+    $msg = $phpErrors[$uploadedFile['error']] ?? 'Upload failed (error ' . $uploadedFile['error'] . ').';
+    echo json_encode(['success' => false, 'error' => $msg]);
     exit;
 }
 
