@@ -59,6 +59,23 @@ userdata/
     webhook.log
 ```
 
+### Fundraiser Queue System
+
+A recipient can have multiple fundraiser files in `active/`. The **lowest-numbered file is the current active fundraiser**; all others are queued (next in line).
+
+- `active/001.html` → currently live, accepting donations
+- `active/002.html` → queued (shown as "○ Queued" on profile page, edit link visible to recipient)
+- `completed/001.html` → moved here by webhook when `current-amount >= target-amount`
+
+**Advancement:** when the webhook confirms a payment that completes a fundraiser, it moves the completed file to `completed/` automatically. The next lowest-numbered file in `active/` then becomes the active one — no manual action needed.
+
+**Partial balances:** a queued fundraiser can already have a non-zero `current-amount` (e.g. from early donations). This is fine — the balance carries through when it becomes active.
+
+**Public display rules:**
+- `fundraisers.html` listing — only shows the single lowest-numbered active file per recipient
+- Profile page — shows all files in `active/`, labelled Active (first) or Queued (rest); completed files shown in a separate section
+- Donors *can* navigate to and donate to a queued fundraiser — this is intentional; no blocking code added (YAGNI)
+
 ### Project HTML format
 All project data is stored in HTML comment tags:
 ```html

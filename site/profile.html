@@ -161,7 +161,7 @@ function dsLogout() {
     <div class="project-card profile-section">
         <h2 id="pub-heading">👤 Profile</h2>
         <p id="pub-roles"></p>
-        <p id="pub-bio" style="margin-top:0.5em;"></p>
+        <div id="pub-bio" style="margin-top:0.5em;"></div>
         <p id="pub-location" class="color-dim text-small"></p>
         <p id="pub-website" style="font-size:0.9em;"></p>
     </div>
@@ -193,8 +193,22 @@ function dsLogout() {
             <input type="text" id="display-name" placeholder="How you appear to other users">
         </div>
         <div class="form-row">
-            <label for="bio">Bio</label>
-            <textarea id="bio" placeholder="A short description of yourself or your work"></textarea>
+            <label>Bio</label>
+            <div class="wysiwyg-toolbar" id="bio-toolbar">
+                <button onclick="fmtBio('bold')" title="Bold"><b>B</b></button>
+                <button onclick="fmtBio('italic')" title="Italic"><i>I</i></button>
+                <div class="sep"></div>
+                <button onclick="fmtBio('formatBlock','&lt;h3&gt;')" title="Heading">H3</button>
+                <div class="sep"></div>
+                <button onclick="fmtBio('insertUnorderedList')" title="Bullet list">&bull; List</button>
+                <div class="sep"></div>
+                <button onclick="insertBioLink()" title="Insert link">&#128279; Link</button>
+                <div class="sep"></div>
+                <button onclick="document.getElementById('bio-image-file').click()" title="Add image">&#128247;</button>
+            </div>
+            <div class="wysiwyg-body" id="bio" contenteditable="true" data-placeholder="A short description of yourself or your work" style="min-height:5em;"></div>
+            <input type="file" id="bio-image-file" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;">
+            <div id="bio-image-status" class="field-hint"></div>
         </div>
         <div class="form-row">
             <label for="location">Location</label>
@@ -309,7 +323,7 @@ function loadPublicProfile(username) {
             document.getElementById('pub-roles').innerHTML = roles.map(function(r) {
                 return '<span class="role-badge ' + (r === 'recipient' ? 'recipient' : '') + '">' + r + '</span>';
             }).join(' ');
-            if (p.bio)      document.getElementById('pub-bio').textContent      = p.bio;
+            if (p.bio)      document.getElementById('pub-bio').innerHTML        = p.bio;
             if (p.location) document.getElementById('pub-location').textContent = '📍 ' + p.location;
             if (p.website)  document.getElementById('pub-website').innerHTML    =
                 '🔗 <a href="' + escHtml(p.website) + '" rel="noopener" target="_blank">' + escHtml(p.website) + '</a>';
@@ -382,7 +396,7 @@ function populateForm(p) {
 
     // Public info fields
     document.getElementById('display-name').value = p.display_name || '';
-    document.getElementById('bio').value           = p.bio || '';
+    document.getElementById('bio').innerHTML       = p.bio || '';
     document.getElementById('location').value      = p.location || '';
     document.getElementById('website').value       = p.website || '';
 
@@ -505,6 +519,57 @@ function escHtml(s) {
     });
 }
 
+function fmtBio(cmd, val) {
+    document.getElementById('bio').focus();
+    document.execCommand(cmd, false, val || null);
+}
+
+function insertBioLink() {
+    var url = prompt('Enter URL:');
+    if (!url) return;
+    document.getElementById('bio').focus();
+    document.execCommand('createLink', false, url);
+    var sel = window.getSelection();
+    if (sel && sel.anchorNode) {
+        var a = sel.anchorNode.parentElement;
+        if (!a || a.tagName !== 'A') a = sel.anchorNode.parentElement.closest('a');
+        if (a && /^https?:\/\//i.test(url) && url.indexOf(window.location.hostname) === -1) {
+            a.target = '_blank'; a.rel = 'noopener';
+        }
+    }
+}
+
+(function() {
+    var bio = document.getElementById('bio');
+    if (!bio) return;
+    bio.addEventListener('focus', function() { if (bio.textContent === '') bio.innerHTML = ''; });
+    bio.addEventListener('blur',  function() { if (bio.textContent.trim() === '') bio.innerHTML = ''; });
+    document.getElementById('bio-image-file').addEventListener('change', function() {
+        var file = this.files[0];
+        if (!file) return;
+        var statusEl = document.getElementById('bio-image-status');
+        statusEl.textContent = 'Uploading...';
+        var fd = new FormData();
+        fd.append('image', file);
+        fd.append('project_id', 'profile-bio');
+        fd.append('username', _username || 'unknown');
+        fetch('/api/upload-project-image.php', { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.success) {
+                    bio.focus();
+                    document.execCommand('insertHTML', false,
+                        '<img src="' + d.image_url + '" style="max-width:100%;border-radius:0.3em;margin:0.3em 0;display:block;">');
+                    statusEl.textContent = '';
+                } else {
+                    statusEl.textContent = 'Upload failed: ' + (d.error || 'Unknown');
+                }
+                document.getElementById('bio-image-file').value = '';
+            })
+            .catch(function() { statusEl.textContent = 'Upload failed.'; });
+    });
+})();
+
 function saveProfile() {
     var btn = document.getElementById('save-btn');
     var status = document.getElementById('save-status');
@@ -516,7 +581,7 @@ function saveProfile() {
     var update = {
         user_id:          _userId,
         display_name:     document.getElementById('display-name').value.trim(),
-        bio:              document.getElementById('bio').value.trim(),
+        bio:              document.getElementById('bio').innerHTML.trim() === '' ? '' : document.getElementById('bio').innerHTML,
         location:         document.getElementById('location').value.trim(),
         website:          document.getElementById('website').value.trim(),
         coinos_username:  document.getElementById('coinos-username').value.trim(),
