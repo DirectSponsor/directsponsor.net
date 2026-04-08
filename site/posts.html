@@ -184,6 +184,12 @@ function dsLogout() {
                 <button onclick="insertLink()" title="Insert link">🔗 Link</button>
             </div>
             <div class="wysiwyg-body" id="post-body" contenteditable="true" data-placeholder="Write your article here..."></div>
+            <div class="write-box-actions" style="margin-top:0.5em;">
+                <div class="write-box-actions-right">
+                    <button id="cancel-edit-btn-2" onclick="cancelEdit()" style="display:none;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.9em;margin-right:0.5em;">✕ Cancel</button>
+                    <button class="btn-post" id="post-submit-btn-2" onclick="submitPost()">Publish</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -300,6 +306,7 @@ function toggleArticle() {
         document.getElementById('post-body').focus();
         document.getElementById('post-submit-btn').textContent = 'Publish';
     }
+    syncBtn2();
 }
 
 function fmt(cmd, val) {
@@ -338,11 +345,22 @@ function setStatus(msg, isErr) {
     el.style.color = isErr ? '#c00' : 'var(--text-muted)';
 }
 
+function syncBtn2() {
+    var b1 = document.getElementById('post-submit-btn');
+    var b2 = document.getElementById('post-submit-btn-2');
+    var c1 = document.getElementById('cancel-edit-btn');
+    var c2 = document.getElementById('cancel-edit-btn-2');
+    b2.textContent   = b1.textContent;
+    b2.disabled      = b1.disabled;
+    c2.style.display = c1.style.display;
+}
+
 function submitPost() {
     var intro = document.getElementById('post-intro').value.trim();
     if (!intro) { setStatus('Please add a summary in the text box above — it\'s required and shown in the feed.', true); document.getElementById('post-intro').focus(); return; }
     var btn = document.getElementById('post-submit-btn');
     btn.disabled = true;
+    syncBtn2();
     setStatus(_editingPostId ? 'Updating...' : 'Posting...');
     fetch('/api/save-post.php', {
         method: 'POST',
@@ -370,12 +388,15 @@ function submitPost() {
             _editingPostId = null;
             document.getElementById('post-submit-btn').textContent = 'Post';
             document.getElementById('cancel-edit-btn').style.display = 'none';
+            syncBtn2();
             loadFeed(false);
         } else {
+            btn.disabled = false;
+            syncBtn2();
             setStatus(d.error || 'Failed to post.', true);
         }
     })
-    .catch(function() { btn.disabled = false; setStatus('Network error. Try again.', true); });
+    .catch(function() { btn.disabled = false; syncBtn2(); setStatus('Network error. Try again.', true); });
 }
 
 function editPost(postId, username) {
@@ -394,6 +415,7 @@ function editPost(postId, username) {
             _editingPostId = postId;
             document.getElementById('post-submit-btn').textContent = 'Update';
             document.getElementById('cancel-edit-btn').style.display = '';
+            syncBtn2();
             document.getElementById('feed-wrap').style.display = '';
             document.getElementById('single-post-wrap').style.display = 'none';
             document.getElementById('write-box-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -410,6 +432,7 @@ function cancelEdit() {
     if (document.getElementById('article-fields').classList.contains('open')) toggleArticle();
     document.getElementById('post-submit-btn').textContent = 'Post';
     document.getElementById('cancel-edit-btn').style.display = 'none';
+    syncBtn2();
     setStatus('');
 }
 
