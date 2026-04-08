@@ -428,6 +428,12 @@ function dsLogout() {
         </div>
     </div>
 
+    <div class="donate-box project-card" id="sidebar-donate-box">
+        <div class="amount-raised" id="sidebar-amount-raised">—</div>
+        <div class="goal-label">sats raised of <span id="sidebar-goal">—</span> goal</div>
+        <button class="donate-btn" onclick="openDonateModal()">⚡ Donate via Lightning</button>
+    </div>
+
     <div class="project-card fundraiser-story" id="fundraiser-story">
     </div>
 
@@ -444,20 +450,8 @@ function dsLogout() {
     <a href="fundraisers.html">Browse all fundraisers →</a>
 </div>
 
-<!-- Sidebar content injected by JS into the sidebar -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Inject donate box into sidebar
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar) {
-        const donateBox = document.createElement('div');
-        donateBox.className = 'donate-box sidebar-box';
-        donateBox.id = 'sidebar-donate-box';
-        donateBox.innerHTML = '<div class="amount-raised" id="sidebar-amount-raised">—</div>' +
-            '<div class="goal-label">sats raised of <span id="sidebar-goal">—</span> goal</div>' +
-            '<button class="donate-btn" onclick="openDonateModal()">⚡ Donate via Lightning</button>';
-        sidebar.insertBefore(donateBox, sidebar.firstChild);
-    }
     loadFundraiser();
 });
 
