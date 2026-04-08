@@ -123,6 +123,37 @@ ul li {
     letter-spacing: 0.05em;
 }
 
+.sidebar-chat-box iframe {
+    display: block;
+    border: none;
+    border-radius: 0.3em;
+}
+
+.sidebar-chat-source {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-bottom: 0.5em;
+}
+
+.sidebar-chat-login-msg {
+    font-size: 0.85em;
+    text-align: center;
+    padding: 1em 0;
+}
+
+.sidebar-chat-fulllink {
+    display: block;
+    text-align: center;
+    margin-top: 0.5em;
+    font-size: 0.85em;
+    color: var(--link);
+    text-decoration: none;
+}
+
+.sidebar-chat-fulllink:hover {
+    text-decoration: underline;
+}
+
 /* Narrow screens: stack to single column */
 @media (max-width: 40em) {
     .layout-container {

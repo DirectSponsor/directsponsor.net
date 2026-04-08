@@ -1,5 +1,5 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-04-03 (session 5)_
+_Last updated: 2026-04-08 (session 6)_
 
 ## What's done and live
 
@@ -121,9 +121,9 @@ _Last updated: 2026-04-03 (session 5)_
 
 ### Soon
 - Grant & Annegret (Desert Farm): create fundraiser stub when ready
-- Reconciliation script: cross-check `transaction-ledger.json` vs per-user `donations_made` arrays
 
 ### Future
+- **Reconciliation script** (done — see session 6 notes): re-run periodically with `ssh RN1 python3 /root/scripts/reconcile.py`
 - **Nostr integration** — see `nostr-integration.md` for full plan
 - Auth server post-verification screen: update to show all 3 sites
 - `delete-user.sh`: add clickforcharity.net cleanup step
@@ -152,6 +152,13 @@ _Last updated: 2026-04-03 (session 5)_
 - **RN1 SSH broken after single-key migration** — `IdentityFile` line was missing from RN1 entry in `~/.ssh/config`; fixed by adding `IdentityFile ~/.ssh/id_rsa`. Also needed to add `id_rsa.pub` to RN1's `authorized_keys` via web panel
 - **CSS list styling** — global `ul { list-style: none }` was overriding bullets in WYSIWYG/post body. Fixed (2026-04-03): removed the global reset; content-page emoji lists use `class="plain-list"` instead; `.wysiwyg-body ul/ol` and `.post-body ul/ol` explicitly set `list-style: disc/decimal`. All post/wysiwyg styles now live in `directsponsor-compact.css`, no page-level `<style>` blocks.
 - **Apache strips Authorization header** — JWT from `Authorization: Bearer ...` header is dropped by Apache. Workaround: send JWT in request body as `jwt` field; `save-post.php` and `save-fundraiser.php` both check body as fallback.
+- **Ledger stored recipient as donor_username** (fixed 2026-04-08): `webhook.php` line 412 used `$donation['username']` (= recipient) instead of `$donation['donor_username']` (= actual donor) when writing the ledger entry. Fixed to `$donation['donor_username']`. Historical entries where donor==recipient in the ledger are flagged as "suspect" by the reconcile script — they are pre-fix test/self-donations lost to the glob bug, not a financial integrity issue.
+
+### Session 6 — Reconciliation (2026-04-08)
+- Built `scripts/reconcile.py` (deployed to `/root/scripts/reconcile.py` on RN1)
+- Three checks: (1) ledger entries missing from donor profiles, (2) profile `donations_made` missing from ledger, (3) project HTML `current-amount` vs ledger sum
+- Found and fixed the `donor_username` ledger bug above
+- Reconciliation result: **0 genuine discrepancies**. 17 historical suspect entries (pre-fix test payments, all explainable). 1 HTML amount mismatch on `andytest2/004` (+100 sats, test data, not a concern).
 
 ---
 
