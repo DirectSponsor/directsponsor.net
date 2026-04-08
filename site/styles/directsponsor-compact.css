@@ -795,7 +795,9 @@ ul li {
 .project-mini-title:hover { text-decoration: underline; }
 .project-mini-edit   { font-size: 0.75em; color: var(--text-muted); text-decoration: none; margin-left: 0.4em; }
 .project-mini-status-active { font-size: 0.8em; color: #2a9d2a; white-space: nowrap; }
+.project-mini-status-queued { font-size: 0.8em; color: #b07800; white-space: nowrap; }
 .project-mini-status-done   { font-size: 0.8em; color: var(--text-muted); white-space: nowrap; }
+[data-theme="dark"] .project-mini-status-queued { color: #f0c040; }
 .project-mini-bar  { margin-top: 0.4em; background: var(--border); border-radius: 2em; height: 6px; }
 .project-mini-fill { background: #f7b731; height: 6px; border-radius: 2em; }
 .project-mini-stats { font-size: 0.8em; color: var(--text-dim); margin-top: 0.3em; }

@@ -458,30 +458,30 @@ function loadUserProjects(username) {
             if (active.length === 0) {
                 activeEl.innerHTML = '<p style="margin:0 0 0.75em;"><a href="edit-fundraiser.html" class="badge-create">+ Create a fundraiser</a></p>';
             } else {
-                active.forEach(function(p) {
-                    activeEl.appendChild(renderProjectCard(p, true));
+                active.forEach(function(p, i) {
+                    activeEl.appendChild(renderProjectCard(p, i === 0 ? 'active' : 'queued'));
                 });
             }
 
             if (completed.length > 0) {
                 compWrap.style.display = 'block';
                 completed.forEach(function(p) {
-                    compEl.appendChild(renderProjectCard(p, false));
+                    compEl.appendChild(renderProjectCard(p, 'completed'));
                 });
             }
         })
         .catch(function() {});
 }
 
-function renderProjectCard(p, isActive) {
+function renderProjectCard(p, status) {
     var pct = p.goal_amount > 0 ? Math.min(100, Math.round(p.current_amount / p.goal_amount * 100)) : 0;
     var div = document.createElement('div');
-    div.className = 'project-mini-card' + (isActive ? ' is-active' : ' is-done');
-    var editLink = isActive
+    div.className = 'project-mini-card' + (status === 'active' ? ' is-active' : status === 'queued' ? ' is-queued' : ' is-done');
+    var editLink = (status === 'active' || status === 'queued')
         ? ' &nbsp;<a href="edit-fundraiser.html?project=' + encodeURIComponent(p.id) + '" class="project-mini-edit">✏️ Edit</a>'
         : '';
-    var statusClass = isActive ? 'project-mini-status-active' : 'project-mini-status-done';
-    var statusText  = isActive ? '● Active' : '✓ Completed';
+    var statusClass = status === 'active' ? 'project-mini-status-active' : status === 'queued' ? 'project-mini-status-queued' : 'project-mini-status-done';
+    var statusText  = status === 'active' ? '● Active' : status === 'queued' ? '○ Queued' : '✓ Completed';
     div.innerHTML =
         '<div class="project-mini-header">'
             + '<strong><a href="fundraiser.html?project=' + encodeURIComponent(p.id)
