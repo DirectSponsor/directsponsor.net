@@ -155,7 +155,15 @@ if ($html === false) {
 
 // --- Helper: replace a comment-tag value ---
 function replaceTag($html, $tag, $value) {
-    $escaped = htmlspecialchars(strip_tags($value), ENT_QUOTES, 'UTF-8');
+    if ($tag === 'full-description') {
+        $allowed = '<p><br><b><i><strong><em><h2><h3><ul><ol><li><a>';
+        $sanitized = strip_tags($value, $allowed);
+        // Strip javascript: from href/src attributes to prevent XSS
+        $sanitized = preg_replace('/\s(href|src)\s*=\s*(["\']?)\s*javascript:[^"\'>\s]*/i', '', $sanitized);
+        $escaped = $sanitized;
+    } else {
+        $escaped = htmlspecialchars(strip_tags($value), ENT_QUOTES, 'UTF-8');
+    }
     $pattern = '/<!-- ' . preg_quote($tag, '/') . ' -->.*?<!-- end ' . preg_quote($tag, '/') . ' -->/s';
     $replacement = '<!-- ' . $tag . ' -->' . $escaped . '<!-- end ' . $tag . ' -->';
     $new = preg_replace($pattern, $replacement, $html);

@@ -233,9 +233,21 @@ function dsLogout() {
         </div>
 
         <div class="form-group">
-            <label for="f-full-description">Full Description</label>
-            <textarea id="f-full-description" placeholder="Full story, goals, and impact..."></textarea>
-            <p class="hint">Plain text. Separate paragraphs with a blank line.</p>
+            <label>Full Description</label>
+            <div class="wysiwyg-toolbar">
+                <button type="button" onclick="fmt('bold')" title="Bold"><b>B</b></button>
+                <button type="button" onclick="fmt('italic')" title="Italic"><i>I</i></button>
+                <div class="sep"></div>
+                <button type="button" onclick="fmt('formatBlock','&lt;h2&gt;')" title="Heading">H2</button>
+                <button type="button" onclick="fmt('formatBlock','&lt;h3&gt;')" title="Subheading">H3</button>
+                <div class="sep"></div>
+                <button type="button" onclick="fmt('insertUnorderedList')" title="Bullet list">&bull; List</button>
+                <button type="button" onclick="fmt('insertOrderedList')" title="Numbered list">1. List</button>
+                <div class="sep"></div>
+                <button type="button" onclick="insertLink()" title="Insert link">&#128279; Link</button>
+            </div>
+            <div class="wysiwyg-body" id="f-full-description" contenteditable="true" data-placeholder="Full story, goals, and impact..."></div>
+            <p class="hint">Rich text. Use the toolbar to format headings, lists, and links.</p>
         </div>
 
         <div class="form-group">
@@ -374,7 +386,7 @@ function populateForm(f) {
         'Editing: ' + (f.title || _projectId);
     document.getElementById('f-title').value           = f.title || '';
     document.getElementById('f-description').value     = f.description || '';
-    document.getElementById('f-full-description').value = f.story || f.description || '';
+    document.getElementById('f-full-description').innerHTML = f.story || f.description || '';
     document.getElementById('f-target-amount').value   = f.goal_amount || '';
     document.getElementById('f-location').value        =
         (f.contact_info && f.contact_info.location) ? f.contact_info.location : '';
@@ -438,6 +450,27 @@ document.getElementById('f-image-upload').addEventListener('change', function(e)
     });
 });
 
+function fmt(cmd, val) {
+    document.getElementById('f-full-description').focus();
+    document.execCommand(cmd, false, val || null);
+}
+
+function insertLink() {
+    var url = prompt('Enter URL:');
+    if (!url) return;
+    document.getElementById('f-full-description').focus();
+    document.execCommand('createLink', false, url);
+    var isExternal = /^https?:\/\//i.test(url) && url.indexOf(window.location.hostname) === -1;
+    if (isExternal) {
+        var sel = window.getSelection();
+        if (sel && sel.anchorNode) {
+            var a = sel.anchorNode.parentElement;
+            if (!a || a.tagName !== 'A') a = sel.anchorNode.parentElement.closest('a');
+            if (a) { a.target = '_blank'; a.rel = 'noopener'; }
+        }
+    }
+}
+
 function saveProject() {
     var btn = document.getElementById('save-btn');
     var status = document.getElementById('save-status');
@@ -457,7 +490,7 @@ function saveProject() {
         project_id:       _projectId || '',
         title:            document.getElementById('f-title').value.trim(),
         description:      document.getElementById('f-description').value.trim(),
-        full_description: document.getElementById('f-full-description').value.trim(),
+        full_description: document.getElementById('f-full-description').innerHTML,
         target_amount:    document.getElementById('f-target-amount').value,
         recipient_name:   _username,
         location:         document.getElementById('f-location').value.trim(),
