@@ -266,18 +266,18 @@ function dsLogout() {
         <h2 id="pub-heading">👤 Profile</h2>
         <p id="pub-roles"></p>
         <p id="pub-bio" style="margin-top:0.5em;"></p>
-        <p id="pub-location" style="font-size:0.9em;color:#666;"></p>
+        <p id="pub-location" class="color-dim text-small"></p>
         <p id="pub-website" style="font-size:0.9em;"></p>
     </div>
     <div class="project-card profile-section" id="pub-projects-section" style="display:none;">
         <h2>📋 Projects</h2>
         <div id="pub-projects-active"></div>
         <div id="pub-projects-completed" style="display:none;">
-            <h3 style="font-size:1em;color:#666;margin-top:1em;border-top:1px solid #e1e8ed;padding-top:0.75em;">Completed</h3>
+            <h3 class="section-divider-heading">Completed</h3>
             <div id="pub-projects-completed-list"></div>
         </div>
         <div id="pub-projects-none" style="display:none;">
-            <p style="color:#4a5568;font-size:0.9em;">No projects yet.</p>
+            <p class="color-muted text-small">No projects yet.</p>
         </div>
     </div>
 </div>
@@ -286,7 +286,7 @@ function dsLogout() {
 
     <div class="project-card profile-section">
         <h2>👤 Your Profile</h2>
-        <p id="profile-username-display" style="color:#666;font-size:0.95em;margin-bottom:0.75em;"></p>
+        <p id="profile-username-display" class="color-dim" style="font-size:0.95em;margin-bottom:0.75em;"></p>
         <div class="roles-list" id="roles-list"></div>
     </div>
 
@@ -312,7 +312,7 @@ function dsLogout() {
 
     <div class="project-card profile-section" id="recipient-section" style="display:none;">
         <h2>⚡ Recipient Payment Settings</h2>
-        <p style="font-size:0.85em;color:#666;margin-bottom:0.75em;">These settings are used when donors send Lightning payments to your projects.</p>
+        <p class="hint-text">These settings are used when donors send Lightning payments to your projects.</p>
         <div class="form-row">
             <label for="coinos-username">Coinos Username</label>
             <input type="text" id="coinos-username" placeholder="your-coinos-username">
@@ -336,21 +336,21 @@ function dsLogout() {
     </div>
 
     <div class="project-card profile-section" id="my-projects-section" style="display:none;">
-        <h2>📋 My Fundraisers &nbsp;<a href="edit-fundraiser.html" style="font-size:0.7em;font-weight:normal;background:#f7b731;color:#000;padding:0.25em 0.75em;border-radius:0.3em;text-decoration:none;">+ New</a></h2>
+        <h2>📋 My Fundraisers &nbsp;<a href="edit-fundraiser.html" class="badge-new">+ New</a></h2>
         <div id="my-projects-active"></div>
         <div id="my-projects-completed" style="display:none;">
-            <h3 style="font-size:1em;color:#666;margin-top:1em;border-top:1px solid #e1e8ed;padding-top:0.75em;">Completed</h3>
+            <h3 class="section-divider-heading">Completed</h3>
             <div id="my-projects-completed-list"></div>
         </div>
         <div id="my-projects-none" style="display:none;">
-            <p style="color:#4a5568;font-size:0.9em;">No projects yet.</p>
+            <p class="color-muted text-small">No projects yet.</p>
         </div>
     </div>
 
     <div class="project-card profile-section" id="my-donations-section" style="display:none;">
         <h2>⚡ Donations I've Made</h2>
         <ul id="my-donations-list" class="plain-list" style="margin:0;"></ul>
-        <p id="my-donations-none" style="color:#4a5568;font-size:0.9em;display:none;">No donations recorded yet.</p>
+        <p id="my-donations-none" class="color-muted text-small" style="display:none;">No donations recorded yet.</p>
     </div>
 
 </div>
@@ -528,10 +528,10 @@ function loadMyDonations() {
         var list = document.getElementById('my-donations-list');
         donations.forEach(function(d) {
             var li = document.createElement('li');
-            li.style.cssText = 'padding:0.5em 0;border-bottom:1px solid #f0f0f0;font-size:0.9em;';
+            li.className = 'donation-item';
             var date = d.timestamp ? d.timestamp.split(' ')[0] : '';
             var recipient = d.recipient ? ' → <a href="fundraiser.html?project=' + encodeURIComponent(d.project_id) + '&user=' + encodeURIComponent(d.recipient) + '">' + d.recipient + ' #' + d.project_id + '</a>' : ' project #' + d.project_id;
-            li.innerHTML = '<strong>' + parseInt(d.amount_sats).toLocaleString() + ' sats</strong>' + recipient + (date ? ' <span style="color:#4a5568;">(' + date + ')</span>' : '');
+            li.innerHTML = '<strong>' + parseInt(d.amount_sats).toLocaleString() + ' sats</strong>' + recipient + (date ? ' <span class="color-muted">(' + date + ')</span>' : '');
             list.appendChild(li);
         });
     })
@@ -560,7 +560,7 @@ function loadUserProjects(username) {
             }
 
             if (active.length === 0) {
-                activeEl.innerHTML = '<p style="margin:0 0 0.75em;"><a href="edit-fundraiser.html" style="background:#f7b731;color:#000;padding:0.4em 1em;border-radius:0.3em;text-decoration:none;font-weight:bold;font-size:0.9em;">+ Create a fundraiser</a></p>';
+                activeEl.innerHTML = '<p style="margin:0 0 0.75em;"><a href="edit-fundraiser.html" class="badge-create">+ Create a fundraiser</a></p>';
             } else {
                 active.forEach(function(p) {
                     activeEl.appendChild(renderProjectCard(p, true));
@@ -580,26 +580,26 @@ function loadUserProjects(username) {
 function renderProjectCard(p, isActive) {
     var pct = p.goal_amount > 0 ? Math.min(100, Math.round(p.current_amount / p.goal_amount * 100)) : 0;
     var div = document.createElement('div');
-    div.style.cssText = 'border:1px solid #e1e8ed;border-radius:0.4em;padding:0.75em;margin-bottom:0.6em;' +
-        (isActive ? 'border-left:3px solid #f7b731;' : 'opacity:0.8;');
+    div.className = 'project-mini-card' + (isActive ? ' is-active' : ' is-done');
     var editLink = isActive
-        ? ' &nbsp;<a href="edit-fundraiser.html?project=' + encodeURIComponent(p.id) + '" style="font-size:0.75em;color:#4a5568;text-decoration:none;">✏️ Edit</a>'
+        ? ' &nbsp;<a href="edit-fundraiser.html?project=' + encodeURIComponent(p.id) + '" class="project-mini-edit">✏️ Edit</a>'
         : '';
+    var statusClass = isActive ? 'project-mini-status-active' : 'project-mini-status-done';
+    var statusText  = isActive ? '● Active' : '✓ Completed';
     div.innerHTML =
-        '<div style="display:flex;justify-content:space-between;align-items:baseline;">' +
-            '<strong><a href="fundraiser.html?project=' + encodeURIComponent(p.id) +
-                '&user=' + encodeURIComponent(p.owner_user_id || '') + '" style="color:#333;">' +
-                escHtml(p.title) + '</a>' + editLink + '</strong>' +
-            '<span style="font-size:0.8em;color:' + (isActive ? '#2a9d2a' : '#4a5568') + ';">' +
-                (isActive ? '● Active' : '✓ Completed') + '</span>' +
-        '</div>' +
-        '<div style="margin-top:0.4em;background:#f0f0f0;border-radius:2em;height:6px;">' +
-            '<div style="width:' + pct + '%;background:#f7b731;height:6px;border-radius:2em;"></div>' +
-        '</div>' +
-        '<div style="font-size:0.8em;color:#666;margin-top:0.3em;">' +
-            pct + '% &nbsp;·&nbsp; ' + p.current_amount.toLocaleString() + ' / ' +
-            p.goal_amount.toLocaleString() + ' sats' +
-        '</div>';
+        '<div class="project-mini-header">'
+            + '<strong><a href="fundraiser.html?project=' + encodeURIComponent(p.id)
+                + '&user=' + encodeURIComponent(p.owner_user_id || '') + '" class="project-mini-title">'
+                + escHtml(p.title) + '</a>' + editLink + '</strong>'
+            + '<span class="' + statusClass + '">' + statusText + '</span>'
+        + '</div>'
+        + '<div class="project-mini-bar">'
+            + '<div class="project-mini-fill" style="width:' + pct + '%;"></div>'
+        + '</div>'
+        + '<div class="project-mini-stats">'
+            + pct + '% &nbsp;·&nbsp; ' + p.current_amount.toLocaleString() + ' / '
+            + p.goal_amount.toLocaleString() + ' sats'
+        + '</div>';
     return div;
 }
 
