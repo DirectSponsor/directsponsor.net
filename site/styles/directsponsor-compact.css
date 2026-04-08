@@ -1130,7 +1130,7 @@ ul li {
 .user-result-name { font-weight: bold; font-size: 0.95em; }
 .user-result-id { font-size: 0.8em; color: var(--text-muted); }
 .roles-row { display: flex; gap: 0.4em; flex-wrap: wrap; align-items: center; }
-.role-badge { background: #e8f4e8; border: 1px solid #aad4aa; color: #2a6a2a; font-size: 0.8em; padding: 0.2em 0.5em; border-radius: 1em; display: inline-flex; align-items: center; gap: 0.3em; }
+.role-badge { background: #e8f4e8; border: 1px solid #aad4aa; color: #2a6a2a; font-size: 0.8em; padding: 0.2em 0.6em; border-radius: 1em; display: inline-flex; align-items: center; gap: 0.3em; }
 .role-badge.recipient { background: #fff3cd; border-color: #f7b731; color: #7a5a00; }
 .role-badge.admin     { background: #fde8e8; border-color: #e88;    color: #700; }
 .role-badge button { background: none; border: none; cursor: pointer; color: inherit; font-size: 0.9em; padding: 0; line-height: 1; }
@@ -1145,9 +1145,9 @@ ul li {
 .msg { font-size: 0.85em; margin-left: 0.5em; }
 .msg.ok  { color: #2a9d2a; }
 .msg.err { color: #c00; }
-#access-denied, #not-logged-in { display: none; text-align: center; padding: 3em; }
+#access-denied, #not-logged-in { display: none; text-align: center; padding: 2em; color: var(--text-dim); }
 #admin-panel { display: none; }
-#loading { text-align: center; padding: 2em; color: var(--text-dim); }
+#loading, #loading-msg { text-align: center; padding: 2em; color: var(--text-dim); }
 
 /* Ghost/secondary button (modal close, copy-invoice, etc.) */
 .btn-ghost { background: var(--bg-subtle); color: var(--text); border: 1px solid var(--border); padding: 0.4em 1em; border-radius: 0.3em; cursor: pointer; font-size: 0.9em; }
@@ -1155,3 +1155,39 @@ ul li {
 
 /* Nav dropdown logout */
 .nav-logout { color: #c00; }
+
+/* === PROFILE PAGE STYLES === */
+.profile-section { margin-bottom: 1.5em; }
+.profile-section h2 { font-size: 1.1em; border-bottom: 1px solid var(--border); padding-bottom: 0.4em; margin-bottom: 0.8em; color: var(--link); }
+.roles-list { display: flex; gap: 0.4em; flex-wrap: wrap; }
+#profile-loading { text-align: center; padding: 2em; color: var(--text-dim); }
+#profile-not-logged-in { display: none; text-align: center; padding: 2em; }
+
+/* === SHARED FORM STYLES (profile.html + edit-fundraiser.html) === */
+.form-row { margin-bottom: 0.75em; }
+.form-row label { display: block; font-size: 0.9em; color: var(--text-sec); margin-bottom: 0.25em; font-weight: bold; }
+.form-row input[type="text"],
+.form-row input[type="url"],
+.form-row input[type="password"],
+.form-row textarea { width: 100%; padding: 0.5em; border: 1px solid var(--border); border-radius: 0.3em; font-size: 0.95em; box-sizing: border-box; background: var(--bg-card); color: var(--text); }
+.form-row textarea { height: 5em; resize: vertical; }
+.form-row .field-hint { font-size: 0.8em; color: var(--text-muted); margin-top: 0.2em; }
+
+.form-group { margin-bottom: 1.2em; }
+.form-group label { display: block; font-weight: bold; font-size: 0.9em; color: var(--text-sec); margin-bottom: 0.3em; }
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="url"],
+.form-group textarea,
+.form-group select { width: 100%; padding: 0.55em 0.7em; border: 1px solid var(--border); border-radius: 0.3em; font-size: 0.95em; box-sizing: border-box; font-family: inherit; background: var(--bg-card); color: var(--text); }
+.form-group textarea { min-height: 7em; resize: vertical; }
+.form-group .hint { font-size: 0.8em; color: var(--text-muted); margin-top: 0.2em; }
+
+.save-btn { background: #f7b731; color: #000; border: none; padding: 0.65em 1.6em; border-radius: 0.3em; font-size: 1em; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+.save-btn:hover { background: #e0a520; }
+.save-btn:disabled { background: var(--border); color: var(--text-muted); cursor: default; }
+
+.status-msg { display: inline-block; margin-left: 0.75em; font-size: 0.9em; color: #2a9d2a; }
+.status-msg.error { color: #c00; }
+
+.section-title { font-size: 1.05em; font-weight: bold; border-bottom: 1px solid var(--border); padding-bottom: 0.35em; margin-bottom: 0.9em; color: var(--link); }

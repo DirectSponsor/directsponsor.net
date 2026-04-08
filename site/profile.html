@@ -48,110 +48,6 @@
 <div class="corner-ribbon top-left sticky red shadow">BETA</div>
 <!-- include end doctype-head.incl -->
 
-<style>
-.profile-section {
-    margin-bottom: 1.5em;
-}
-
-.profile-section h2 {
-    font-size: 1.1em;
-    border-bottom: 1px solid #e1e8ed;
-    padding-bottom: 0.4em;
-    margin-bottom: 0.8em;
-    color: #333;
-}
-
-.form-row {
-    margin-bottom: 0.75em;
-}
-
-.form-row label {
-    display: block;
-    font-size: 0.9em;
-    color: #555;
-    margin-bottom: 0.25em;
-    font-weight: bold;
-}
-
-.form-row input[type="text"],
-.form-row input[type="url"],
-.form-row textarea {
-    width: 100%;
-    padding: 0.5em;
-    border: 1px solid #ccc;
-    border-radius: 0.3em;
-    font-size: 0.95em;
-    box-sizing: border-box;
-}
-
-.form-row textarea {
-    height: 5em;
-    resize: vertical;
-}
-
-.form-row .field-hint {
-    font-size: 0.8em;
-    color: #888;
-    margin-top: 0.2em;
-}
-
-.save-btn {
-    background: #f7b731;
-    color: #000;
-    border: none;
-    padding: 0.6em 1.5em;
-    border-radius: 0.3em;
-    font-size: 1em;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.save-btn:hover { background: #e0a520; }
-.save-btn:disabled { background: #ccc; cursor: default; }
-
-.status-msg {
-    display: inline-block;
-    margin-left: 0.75em;
-    font-size: 0.9em;
-    color: #2a9d2a;
-}
-
-.status-msg.error { color: #c00; }
-
-.roles-list {
-    display: flex;
-    gap: 0.4em;
-    flex-wrap: wrap;
-}
-
-.role-badge {
-    background: #e8f4e8;
-    border: 1px solid #aad4aa;
-    color: #2a6a2a;
-    font-size: 0.8em;
-    padding: 0.2em 0.6em;
-    border-radius: 1em;
-}
-
-.role-badge.recipient {
-    background: #fff3cd;
-    border-color: #f7b731;
-    color: #7a5a00;
-}
-
-#profile-loading {
-    text-align: center;
-    padding: 2em;
-    color: #666;
-}
-
-#profile-not-logged-in {
-    display: none;
-    text-align: center;
-    padding: 2em;
-}
-</style>
 
 <!-- include start social-layout-start.incl -->
 <header class="site-header">
@@ -169,7 +65,7 @@
                 <a href="#" id="nav-username-btn" onclick="toggleUserMenu(event)">👤 <span id="nav-username-label">Account</span> ▾</a>
                 <div id="nav-user-dropdown" style="display:none;position:absolute;right:0;top:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:0.3em;min-width:130px;box-shadow:0 2px 8px rgba(0,0,0,0.12);z-index:999;">
                     <a href="profile.html" style="display:block;padding:0.5em 1em;color:var(--text);text-decoration:none;font-size:0.9em;border-bottom:1px solid var(--border);">Profile</a>
-                    <a href="#" onclick="dsLogout(); return false;" style="display:block;padding:0.5em 1em;color:#c00;text-decoration:none;font-size:0.9em;">Log out</a>
+                    <a href="#" onclick="dsLogout(); return false;" class="nav-logout" style="display:block;padding:0.5em 1em;text-decoration:none;font-size:0.9em;">Log out</a>
                 </div>
             </div>
             <a href="#" id="nav-login-link" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href.replace(/^http:/, 'https:')); return false;">Login</a>

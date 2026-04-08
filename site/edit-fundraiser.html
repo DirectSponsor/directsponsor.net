@@ -48,68 +48,6 @@
 <div class="corner-ribbon top-left sticky red shadow">BETA</div>
 <!-- include end doctype-head.incl -->
 
-<style>
-.form-group {
-    margin-bottom: 1.2em;
-}
-.form-group label {
-    display: block;
-    font-weight: bold;
-    font-size: 0.9em;
-    color: #444;
-    margin-bottom: 0.3em;
-}
-.form-group input[type="text"],
-.form-group input[type="number"],
-.form-group input[type="url"],
-.form-group textarea,
-.form-group select {
-    width: 100%;
-    padding: 0.55em 0.7em;
-    border: 1px solid #ccc;
-    border-radius: 0.3em;
-    font-size: 0.95em;
-    box-sizing: border-box;
-    font-family: inherit;
-}
-.form-group textarea {
-    min-height: 7em;
-    resize: vertical;
-}
-.form-group .hint {
-    font-size: 0.8em;
-    color: #888;
-    margin-top: 0.2em;
-}
-.save-btn {
-    background: #f7b731;
-    color: #000;
-    border: none;
-    padding: 0.65em 1.6em;
-    border-radius: 0.3em;
-    font-size: 1em;
-    font-weight: bold;
-    cursor: pointer;
-}
-.save-btn:hover { background: #e0a520; }
-.save-btn:disabled { background: #ccc; cursor: default; }
-.status-msg {
-    display: inline-block;
-    margin-left: 0.8em;
-    font-size: 0.9em;
-    color: #2a9d2a;
-}
-.status-msg.error { color: #c00; }
-#access-denied, #not-logged-in, #loading-msg { text-align: center; padding: 2em; color: #666; }
-.section-title {
-    font-size: 1.05em;
-    font-weight: bold;
-    border-bottom: 1px solid #e1e8ed;
-    padding-bottom: 0.35em;
-    margin-bottom: 0.9em;
-    color: #333;
-}
-</style>
 
 <!-- include start social-layout-start.incl -->
 <header class="site-header">
@@ -127,7 +65,7 @@
                 <a href="#" id="nav-username-btn" onclick="toggleUserMenu(event)">👤 <span id="nav-username-label">Account</span> ▾</a>
                 <div id="nav-user-dropdown" style="display:none;position:absolute;right:0;top:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:0.3em;min-width:130px;box-shadow:0 2px 8px rgba(0,0,0,0.12);z-index:999;">
                     <a href="profile.html" style="display:block;padding:0.5em 1em;color:var(--text);text-decoration:none;font-size:0.9em;border-bottom:1px solid var(--border);">Profile</a>
-                    <a href="#" onclick="dsLogout(); return false;" style="display:block;padding:0.5em 1em;color:#c00;text-decoration:none;font-size:0.9em;">Log out</a>
+                    <a href="#" onclick="dsLogout(); return false;" class="nav-logout" style="display:block;padding:0.5em 1em;text-decoration:none;font-size:0.9em;">Log out</a>
                 </div>
             </div>
             <a href="#" id="nav-login-link" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href.replace(/^http:/, 'https:')); return false;">Login</a>
