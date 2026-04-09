@@ -1,5 +1,9 @@
 # DirectSponsor.net - Main Charity Platform
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/DirectSponsor/directsponsor.net)
+
+**Live site: [directsponsor.net](https://directsponsor.net/)**
+
 ## 🎯 Purpose
 The primary DirectSponsor platform - a charity website built with DS-CMS that showcases peer-to-peer sponsorship of verified projects. Acts as a bridge between a normal website log-in and the nostr network enabling existing nostr users to join as well as those who have never heard of nostr.
 
