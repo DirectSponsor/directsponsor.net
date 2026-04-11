@@ -561,8 +561,18 @@ function insertBioLink() {
 (function() {
     var bio = document.getElementById('bio');
     if (!bio) return;
-    bio.addEventListener('focus', function() { if (bio.textContent === '') bio.innerHTML = ''; });
+    document.execCommand('defaultParagraphSeparator', false, 'p');
+    bio.addEventListener('focus', function() {
+        document.execCommand('defaultParagraphSeparator', false, 'p');
+        if (bio.textContent === '') bio.innerHTML = '';
+    });
     bio.addEventListener('blur',  function() { if (bio.textContent.trim() === '') bio.innerHTML = ''; });
+    bio.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            document.execCommand('insertParagraph', false, null);
+        }
+    });
     document.getElementById('bio-image-file').addEventListener('change', function() {
         var file = this.files[0];
         if (!file) return;
