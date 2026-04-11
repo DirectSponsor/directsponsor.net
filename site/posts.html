@@ -333,12 +333,23 @@ function insertLink() {
     }
 }
 
-// Placeholder behaviour for contenteditable
+// Placeholder behaviour + paragraph handling for contenteditable
 (function() {
     var body = document.getElementById('post-body');
-    body.addEventListener('focus', function() { if (body.textContent === '') body.innerHTML = ''; });
+    document.execCommand('defaultParagraphSeparator', false, 'p');
+    body.addEventListener('focus', function() {
+        document.execCommand('defaultParagraphSeparator', false, 'p');
+        if (body.textContent === '') body.innerHTML = '';
+    });
     body.addEventListener('blur', function() {
         if (body.textContent.trim() === '') body.innerHTML = '';
+    });
+    body.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            document.execCommand('formatBlock', false, 'p');
+            document.execCommand('insertParagraph', false, null);
+        }
     });
 })();
 
@@ -371,7 +382,7 @@ function submitPost() {
         body: JSON.stringify({
             intro:     intro,
             title:     document.getElementById('post-title').value.trim(),
-            body:      document.getElementById('post-body').innerHTML.trim() === '' ? '' : document.getElementById('post-body').innerHTML,
+            body:      (function(){ var h = document.getElementById('post-body').innerHTML.trim(); return h === '' ? '' : h.replace(/<div>/gi,'<p>').replace(/<\/div>/gi,'</p>'); })(),
             image_url: document.getElementById('post-image-url').value,
             post_id:   _editingPostId || '',
             jwt:       _jwt,
