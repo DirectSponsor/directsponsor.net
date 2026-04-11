@@ -585,8 +585,7 @@ function escHtml(s) {
         if (jwt) {
             frame.src = 'https://roflfaucet.com/chat-widget-frame.php?jwt=' + encodeURIComponent(jwt);
         } else {
-            frame.style.display = 'none';
-            login.style.display = 'block';
+            frame.src = 'https://roflfaucet.com/chat-widget-frame.php';
         }
         iframeLoaded = true;
     }
