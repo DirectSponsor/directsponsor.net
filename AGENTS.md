@@ -256,6 +256,18 @@ To completely delete a user from the ecosystem (for GDPR compliance or user requ
 **Scripts Location**: Stored in auth-server project at `/scripts/` directory
 **Important**: Always delete site data BEFORE auth data to avoid foreign key issues
 
+## Changelog — AI Agent Reminder
+
+After completing **significant work** on this project, update the public changelog.
+
+- **File**: `site/changelog.html` — prepend a new `<li>` inside the `<!-- EMBED:changelog -->` block
+- **Instructions**: `CHANGELOG-INSTRUCTIONS.md` — full format, categories, and rules
+- **Format**: `<li><strong>YYYY-MM-DD</strong> · <strong>DirectSponsor</strong> — <span class="feature">Category</span> One-line plain-English summary.</li>`
+- **When**: new features, bug fixes with user impact, auth/payment changes, deployment changes
+- **Skip**: typos, refactors, style tweaks, WIP
+
+---
+
 ## Deliberate Design Decisions
 
 - **No accounts/transaction overview page** — all money flows directly peer-to-peer; nothing passes through the platform. Donor accountability is covered by: (1) the donor's own profile page listing all their contributions, and (2) each project's fundraiser page listing all donations received. A separate accounts UI would imply platform-level financial responsibility that doesn't exist and would make DS look like a traditional charity org.
