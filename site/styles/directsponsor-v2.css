@@ -1126,6 +1126,7 @@ ul li {
 .post-full { background: var(--bg-card); border: 1px solid var(--border); border-radius: 0.4em; padding: 1.2em; margin-bottom: 1em; }
 .post-full h1 { margin: 0 0 0.3em; font-size: 1.5em; }
 .post-full .post-body { margin-top: 0.8em; line-height: 1.7; }
+.post-body p, .post-body div { margin-bottom: 1.2em; outline: 2px dashed red; } /* TEMP TEST */
 .post-full .post-body h2 { font-size: 1.2em; }
 .post-full .post-body h3 { font-size: 1.05em; }
 .post-body ul, .post-body ol { padding-left: 1.8em; margin: 0.4em 0; }
