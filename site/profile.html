@@ -611,10 +611,14 @@ function saveProfile() {
     status.textContent = '';
     status.className = 'status-msg';
 
+    var rawBio = document.getElementById('bio').innerHTML.trim();
+    var normBio = rawBio === '' ? '' : rawBio
+        .replace(/<div>/gi, '<p>').replace(/<\/div>/gi, '</p>');
+
     var update = {
         user_id:          _userId,
         display_name:     document.getElementById('display-name').value.trim(),
-        bio:              document.getElementById('bio').innerHTML.trim() === '' ? '' : document.getElementById('bio').innerHTML,
+        bio:              normBio,
         location:         document.getElementById('location').value.trim(),
         website:          document.getElementById('website').value.trim(),
         coinos_username:  document.getElementById('coinos-username').value.trim(),
