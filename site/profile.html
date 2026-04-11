@@ -570,6 +570,7 @@ function insertBioLink() {
     bio.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
+            document.execCommand('formatBlock', false, 'p');
             document.execCommand('insertParagraph', false, null);
         }
     });
