@@ -220,13 +220,13 @@ json.dump(d, open(f,'w'), indent=2)
 | `andytest2` | 001, 002, 003 | Completed (test) |
 
 **Pending**:
-- Grant & Annegret — Desert Farm (when ready)
+- Grant & Annegret — Desert Farm (on hold — Bitcoin not viable in Namibia; may revisit with a third-party runner + bank transfers later)
 
 ---
 
 ## Pending Tasks
 
-- Grant & Annegret: create fundraiser stub when ready, then they edit via `edit-fundraiser.html`
+- Grant & Annegret: on hold — Bitcoin not viable in Namibia. Project page archived to `archive/grant-annegret-project.html`. May revisit if a third-party runner is found who can handle bank transfers.
 - Reconciliation script (backend only, no UI): cross-check `transaction-ledger.json` against per-user `donations_made` arrays
 - Auth server post-verification screen: update to show all 3 sites
 - `delete-user.sh`: add clickforcharity.net cleanup step
@@ -265,6 +265,7 @@ After completing **significant work** on this project, update the public changel
 - **Format**: `<li><strong>YYYY-MM-DD</strong> · <strong>DirectSponsor</strong> — <span class="feature">Category</span> One-line plain-English summary.</li>`
 - **When**: new features, bug fixes with user impact, auth/payment changes, deployment changes
 - **Skip**: typos, refactors, style tweaks, WIP
+- **Then deploy**: `bash /home/andy/work/projects/directsponsor.net/deploy.sh --auto`
 
 ---
 

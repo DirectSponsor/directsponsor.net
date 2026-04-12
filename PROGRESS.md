@@ -88,7 +88,7 @@ _Last updated: 2026-04-08 (session 6)_
 - `evans/001.html` — Badilisha Food Forest (active; Coinos API key confirmed working 2026-04-03)
 - `andytest2/001-003.html` — completed test fundraisers
 - `andytest2/004.html` — active test fundraiser (partially funded)
-- Grant & Annegret (Desert Farm): recreate when ready
+- Grant & Annegret (Desert Farm): on hold — Bitcoin not viable in Namibia. Project page archived to `archive/grant-annegret-project.html`. May revisit if a third-party runner is found.
 
 ---
 
@@ -120,7 +120,7 @@ _Last updated: 2026-04-08 (session 6)_
 ## Pending / next priorities
 
 ### Soon
-- Grant & Annegret (Desert Farm): create fundraiser stub when ready
+- Grant & Annegret (Desert Farm): on hold — see above
 
 ### Future
 - **Reconciliation script** (done — see session 6 notes): re-run periodically with `ssh RN1 python3 /root/scripts/reconcile.py`
