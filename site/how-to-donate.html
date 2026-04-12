@@ -1,0 +1,462 @@
+<!-- DS-CMS Built File - Edit source files in includes/ folder -->
+
+<!-- 🏷️ Page parameters - EDIT THESE for your new page: -->
+<!-- #TITLE#="How to Donate with Bitcoin Lightning - DirectSponsor" -->
+<!-- #DESC#="New to Bitcoin Lightning? This guide walks you through getting set up and making your first donation — even if you've never used cryptocurrency before." -->
+<!-- #KEYWORDS#="how to donate, bitcoin lightning, coinos, directsponsor, crypto donation guide" -->
+
+<!-- include start doctype-head.incl -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>(function(){var t=localStorage.getItem('ds-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');})()</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Donate with Bitcoin Lightning - DirectSponsor</title>
+    <meta name="description" content="New to Bitcoin Lightning? This guide walks you through getting set up and making your first donation — even if you've never used cryptocurrency before.">
+    <meta name="keywords" content="how to donate, bitcoin lightning, coinos, directsponsor, crypto donation guide">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://directsponsor.net">
+    <meta property="og:title" content="DirectSponsor - Revolutionary Peer-to-Peer Charity">
+    <meta property="og:description" content="Eliminate charity middlemen. Send money directly to verified recipients with complete transparency.">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐫</text></svg>">
+    
+    <!-- Main Styles (New Compact Social Layout) -->
+    <link rel="preload" href="styles/directsponsor-v2.css" as="style">
+    <link rel="stylesheet" href="styles/directsponsor-v2.css">
+    
+    <!-- Optional: Add analytics, fonts, or other scripts here -->
+    <script>
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var jwt = params.get('jwt');
+        if (jwt) {
+            sessionStorage.setItem('jwt', jwt);
+            params.delete('jwt');
+            var newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+            window.history.replaceState({}, '', newUrl);
+        }
+    })();
+    </script>
+</head>
+<body>
+
+<!-- BETa RIBBON -->
+<div class="corner-ribbon top-left sticky red shadow">BETA</div>
+<!-- include end doctype-head.incl -->
+
+<!-- include start social-layout-start.incl -->
+<header class="site-header">
+    <div class="header-content">
+        <div class="logo">
+            <a href="index.html">💎 DirectSponsor</a>
+            <span class="tagline">Peer-to-Peer Charity</span>
+        </div>
+        <nav class="main-nav">
+            <a href="fundraisers.html">Fundraisers</a>
+            <a href="posts.html">Posts</a>
+            <a href="about.html">About</a>
+            <button id="theme-toggle" onclick="dsToggleTheme()" title="Toggle dark mode" style="background:none;border:none;cursor:pointer;padding:0.25em 0.4em;font-size:1em;color:var(--link);margin-left:0.25em;vertical-align:middle;">🌙</button>
+            <div class="nav-user-menu" id="nav-user-menu" style="display:none;position:relative;">
+                <a href="#" id="nav-username-btn" onclick="toggleUserMenu(event)">👤 <span id="nav-username-label">Account</span> ▾</a>
+                <div id="nav-user-dropdown" style="display:none;position:absolute;right:0;top:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:0.3em;min-width:130px;box-shadow:0 2px 8px rgba(0,0,0,0.12);z-index:999;">
+                    <a href="profile.html" id="nav-profile-link" style="display:block;padding:0.5em 1em;color:var(--text);text-decoration:none;font-size:0.9em;border-bottom:1px solid var(--border);">Profile</a>
+                    <a href="#" onclick="dsLogout(); return false;" class="nav-logout" style="display:block;padding:0.5em 1em;text-decoration:none;font-size:0.9em;">Log out</a>
+                </div>
+            </div>
+            <a href="#" id="nav-login-link" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href.replace(/^http:/, 'https:')); return false;">Login</a>
+        </nav>
+    </div>
+</header>
+<style>
+.nav-user-menu { display:inline-block; vertical-align:middle; }
+.nav-user-menu > a { white-space:nowrap; }
+.nav-user-menu:hover #nav-user-dropdown, #nav-user-dropdown.open { display:block !important; }
+</style>
+<script>
+(function() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (jwt) {
+        try {
+            var payload = JSON.parse(atob(jwt.split('.')[1]));
+            var uname = payload.username || payload.sub || '';
+            if (uname) {
+                document.getElementById('nav-username-label').textContent = uname;
+                document.getElementById('nav-profile-link').href = 'profile.html?user=' + encodeURIComponent(uname);
+            }
+        } catch(e) {}
+        document.getElementById('nav-user-menu').style.display = '';
+        document.getElementById('nav-login-link').style.display = 'none';
+    }
+})();
+function toggleUserMenu(e) {
+    e.preventDefault();
+    var dd = document.getElementById('nav-user-dropdown');
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+    var menu = document.getElementById('nav-user-menu');
+    if (menu && !menu.contains(e.target)) {
+        document.getElementById('nav-user-dropdown').style.display = 'none';
+    }
+});
+function dsToggleTheme() {
+    var html = document.documentElement;
+    var isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+        html.removeAttribute('data-theme');
+        localStorage.setItem('ds-theme', 'light');
+        document.getElementById('theme-toggle').textContent = '🌙';
+    } else {
+        html.setAttribute('data-theme', 'dark');
+        localStorage.setItem('ds-theme', 'dark');
+        document.getElementById('theme-toggle').textContent = '☀️';
+    }
+}
+(function() {
+    if (localStorage.getItem('ds-theme') === 'dark') {
+        var btn = document.getElementById('theme-toggle');
+        if (btn) btn.textContent = '☀️';
+    }
+})();
+function dsLogout() {
+    sessionStorage.removeItem('jwt');
+    localStorage.removeItem('jwt');
+    localStorage.removeItem('user_roles');
+    localStorage.removeItem('directsponsor_session');
+    localStorage.removeItem('username');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('combined_user_id');
+    window.location.href = 'index.html';
+}
+</script>
+
+<!-- 2-Column Layout: main content + right sidebar -->
+<div class="layout-container">
+
+    <main class="main-content">
+
+<!-- UNIQUE PAGE CONTENT GOES HERE -->
+<!-- include end social-layout-start.incl -->
+
+<!-- UNIQUE PAGE CONTENT GOES HERE -->
+
+<!-- Intro -->
+<div class="project-card">
+    <h1>⚡ How to Donate with Bitcoin Lightning</h1>
+    <p class="project-location">A plain-English guide — no crypto experience needed</p>
+
+    <p>DirectSponsor uses Bitcoin Lightning for all donations. This page explains why, and walks you through getting set up so you can send your first donation in minutes.</p>
+</div>
+
+<!-- Why Lightning? -->
+<div class="project-card">
+    <h2>❓ Why Bitcoin Lightning?</h2>
+
+    <p>Lightning is the only payment method that lets us do all of the following at once:</p>
+
+    <ul>
+        <li><strong>Instant confirmation</strong> — we know the moment your payment arrives, so we can credit it to the right fundraiser automatically</li>
+        <li><strong>No intermediary</strong> — your money goes directly to the recipient's wallet, not through our accounts</li>
+        <li><strong>No platform custody</strong> — DirectSponsor never holds your money at any point</li>
+        <li><strong>Works internationally</strong> — same process whether you're in the UK or Kenya, no bank-transfer friction</li>
+        <li><strong>Tiny fees</strong> — typically a fraction of a penny, compared to 3–5% for card payments</li>
+    </ul>
+</div>
+
+<!-- Why not bank transfers? -->
+<div class="project-card">
+    <h2>🏦 Why Not Bank Transfers?</h2>
+
+    <p>Bank transfers sound simple but create serious problems for a platform like this:</p>
+
+    <ul>
+        <li><strong>No reliable matching</strong> — there's no standard way to link an incoming bank payment to a specific fundraiser without building a full merchant system</li>
+        <li><strong>International fees are brutal</strong> — sending $20 from Europe to Kenya via SWIFT can lose $5–10 in fees alone</li>
+        <li><strong>Intermediaries</strong> — money passes through correspondent banks, currency exchanges, and sometimes payment processors before reaching the recipient</li>
+        <li><strong>Delays</strong> — international transfers can take 2–5 business days; Lightning settles in seconds</li>
+    </ul>
+
+    <p>We may revisit bank transfers for specific regions in future if a trusted third-party runner can bridge the gap — but Lightning remains the default.</p>
+</div>
+
+<!-- Getting started -->
+<div class="project-card">
+    <h2>🚀 Getting Started — Choose Your Path</h2>
+
+    <p>Pick whichever suits you:</p>
+
+    <div class="steps-grid">
+        <div class="step">
+            <h3>🆓 Path A: Free Start</h3>
+            <p>Get a small amount of free sats from faucets — enough to test a donation. Good for first-timers who want to try before spending anything.</p>
+            <p><a href="#path-a">→ Start here</a></p>
+        </div>
+        <div class="step">
+            <h3>💳 Path B: Buy Sats</h3>
+            <p>Buy Bitcoin Lightning with a regular bank transfer via Mt Pelerin — no KYC for small amounts, straightforward process.</p>
+            <p><a href="#path-b">→ Start here</a></p>
+        </div>
+        <div class="step">
+            <h3>⚡ Path C: Already Have a Wallet</h3>
+            <p>Already using a Lightning wallet (Phoenix, Wallet of Satoshi, Muun, etc.)? Skip straight to donating.</p>
+            <p><a href="#path-c">→ Start here</a></p>
+        </div>
+    </div>
+</div>
+
+<!-- Path A -->
+<div class="project-card" id="path-a">
+    <h2>🆓 Path A: Get Free Sats to Start</h2>
+
+    <h3>Step 1 — Create a free Coinos wallet</h3>
+    <p><a href="https://coinos.io" target="_blank" rel="noopener">Coinos.io</a> is a free, browser-based Lightning wallet with no KYC (no ID required). It takes about 60 seconds to sign up.</p>
+    <p><em>[TODO: Add screenshot of Coinos signup screen]</em></p>
+
+    <h3>Step 2 — Get free sats from a faucet</h3>
+    <p>These faucets give out small amounts of Lightning sats for free — enough to make a real test donation:</p>
+    <ul>
+        <li><a href="https://litebits.io" target="_blank" rel="noopener">litebits.io</a> — <em>[TODO: describe how much, how often, any requirements]</em></li>
+        <li><strong>satsman</strong> — <em>[TODO: add URL and describe how much, how often, any requirements]</em></li>
+        <li><a href="https://roflfaucet.com" target="_blank" rel="noopener">ROFLFaucet</a> — our own faucet, earn coins by playing games</li>
+    </ul>
+    <p><em>[TODO: Add step-by-step screenshots or a short video walkthrough of claiming from a faucet into Coinos]</em></p>
+
+    <h3>Step 3 — Donate</h3>
+    <p>Once your Coinos wallet has sats, head to any <a href="fundraisers.html">fundraiser page</a>, click Donate, and scan or paste the Lightning invoice. Done.</p>
+</div>
+
+<!-- Path B -->
+<div class="project-card" id="path-b">
+    <h2>💳 Path B: Buy Sats with a Bank Transfer</h2>
+
+    <p><a href="https://www.mtpelerin.com" target="_blank" rel="noopener">Mt Pelerin</a> is a Swiss exchange that lets you buy Bitcoin with a regular bank transfer. No KYC is required for small amounts.</p>
+
+    <h3>Step 1 — Create a Coinos wallet</h3>
+    <p>If you haven't already, <a href="https://coinos.io" target="_blank" rel="noopener">create a free Coinos account</a> and copy your Lightning address (it looks like <code>yourname@coinos.io</code>).</p>
+
+    <h3>Step 2 — Buy sats via Mt Pelerin</h3>
+    <p><em>[TODO: Walk through Mt Pelerin step by step — amounts, fees, how to set the destination Lightning address, how long it takes. Include screenshots if possible.]</em></p>
+
+    <h3>Step 3 — Donate</h3>
+    <p>Once your Coinos wallet shows a balance, go to any <a href="fundraisers.html">fundraiser</a> and click Donate.</p>
+</div>
+
+<!-- Path C -->
+<div class="project-card" id="path-c">
+    <h2>⚡ Path C: Already Have a Lightning Wallet</h2>
+
+    <p>Any Lightning-compatible wallet will work — Phoenix, Wallet of Satoshi, Breez, Muun, Zeus, and others. Just:</p>
+
+    <ol>
+        <li>Go to any <a href="fundraisers.html">fundraiser page</a></li>
+        <li>Click the <strong>Donate</strong> button and pick an amount</li>
+        <li>Scan the QR code, or copy the Lightning invoice and paste it into your wallet</li>
+        <li>Confirm the payment in your wallet</li>
+    </ol>
+
+    <p>The fundraiser page will update automatically within a few seconds once payment is confirmed.</p>
+</div>
+
+<!-- FAQ -->
+<div class="project-card">
+    <h2>🙋 Common Questions</h2>
+
+    <p><strong>Is it safe?</strong><br>
+    Yes. Coinos is non-custodial for on-chain funds and well-established. Lightning payments are final and can't be reversed, so double-check the amount before confirming.</p>
+
+    <p><strong>What's the minimum donation?</strong><br>
+    There's no platform minimum — Lightning can send tiny amounts (even a few pence). The practical minimum depends on your wallet's fee settings.</p>
+
+    <p><strong>Can I get a refund?</strong><br>
+    Lightning payments are irreversible by design — this is also what makes them trustworthy for recipients. Please only donate what you intend to give.</p>
+
+    <p><strong>What currency do recipients receive?</strong><br>
+    They receive Bitcoin (sats). Recipients with a Coinos wallet can convert to local currency if needed. <em>[TODO: add more detail here once you know how lightninglova and evans actually cash out]</em></p>
+
+    <p><strong>I'm stuck — who can I ask?</strong><br>
+    <a href="contact.html">Contact us</a> and we'll help you through it.</p>
+</div>
+
+<!-- CTA -->
+<div class="project-card" style="text-align:center;">
+    <h2>Ready to donate?</h2>
+    <p>Browse our active fundraisers and pick a project to support.</p>
+    <a href="fundraisers.html" class="button-primary">View Fundraisers →</a>
+</div>
+
+<!-- END UNIQUE PAGE CONTENT -->
+
+<!-- include start social-layout-end.incl -->
+<!-- END UNIQUE PAGE CONTENT -->
+
+    </main>
+
+</div>
+<!-- End layout container -->
+
+<!-- Floating Chat Button + Panel -->
+<div id="chat-float-panel" class="chat-float-panel open" aria-hidden="false">
+    <div class="chat-float-panel-inner">
+        <div class="chat-float-panel-header">
+            <span>💬 Community Chat</span>
+            <span class="chat-float-source">via <a href="https://roflfaucet.com/chat.html" target="_blank" rel="noopener">roflfaucet.com ↗</a></span>
+        </div>
+        <div class="chat-float-frame-wrap">
+            <iframe id="chat-float-frame" src="" width="100%" height="100%" frameborder="0" allowtransparency="true"></iframe>
+        </div>
+        <div id="chat-float-login" class="chat-float-login" style="display:none;">
+            <a href="#" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href.replace(/^http:/,'https:')); return false;">Log in to join the chat</a>
+        </div>
+    </div>
+</div>
+<button id="chat-float-btn" class="chat-float-btn" onclick="dsToggleChat()" aria-label="Close chat">✕</button>
+<script>
+(function() {
+    var CLOSE_KEY = 'ds-chat-closed';
+    var CLOSE_TTL = 60 * 60 * 1000; // 60 minutes
+
+    var closedAt = parseInt(localStorage.getItem(CLOSE_KEY) || '0', 10);
+    var open = !closedAt || (Date.now() - closedAt) > CLOSE_TTL;
+    var iframeLoaded = false;
+
+    function applyState() {
+        var panel = document.getElementById('chat-float-panel');
+        var btn   = document.getElementById('chat-float-btn');
+        panel.classList.toggle('open', open);
+        panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+        btn.textContent = open ? '✕' : '💬';
+        btn.setAttribute('aria-label', open ? 'Close chat' : 'Open chat');
+    }
+
+    function loadIframe() {
+        if (iframeLoaded) return;
+        var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+        var frame = document.getElementById('chat-float-frame');
+        var login = document.getElementById('chat-float-login');
+        if (jwt) {
+            frame.src = 'https://roflfaucet.com/chat-widget-frame.php?jwt=' + encodeURIComponent(jwt);
+        } else {
+            frame.src = 'https://roflfaucet.com/chat-widget-frame.php';
+        }
+        iframeLoaded = true;
+    }
+
+    window.dsToggleChat = function() {
+        open = !open;
+        if (open) {
+            localStorage.removeItem(CLOSE_KEY);
+            loadIframe();
+        } else {
+            localStorage.setItem(CLOSE_KEY, Date.now());
+        }
+        applyState();
+    };
+
+    // Apply initial state immediately (script runs after panel elements)
+    applyState();
+
+    // Load iframe only if starting open; otherwise defer until user opens chat
+    if (open) {
+        document.addEventListener('DOMContentLoaded', loadIframe);
+    }
+})();
+</script>
+
+<!-- Sticky Header Script (Inline for performance) -->
+<script>
+(function() {
+    const header = document.querySelector('.site-header');
+    let lastScrollY = window.scrollY;
+    let isCondensed = false;
+    
+    function handleScroll() {
+        const currentScrollY = window.scrollY;
+        
+        // Condense when scrolled down more than 50px
+        if (currentScrollY > 50 && !isCondensed) {
+            header.classList.add('condensed');
+            isCondensed = true;
+        } 
+        // Expand when near top
+        else if (currentScrollY <= 30 && isCondensed) {
+            header.classList.remove('condensed');
+            isCondensed = false;
+        }
+        
+        lastScrollY = currentScrollY;
+    }
+    
+    // Throttled scroll listener for performance
+    let ticking = false;
+    window.addEventListener('scroll', function() {
+        if (!ticking) {
+            requestAnimationFrame(function() {
+                handleScroll();
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
+})();
+
+// Show Profile nav link if logged in
+(function() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (jwt) {
+        var el = document.getElementById('nav-profile-link');
+        if (el) el.style.display = '';
+    }
+})();
+</script>
+<!-- include end social-layout-end.incl -->
+
+<!-- include start footer.incl -->
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>💎 DirectSponsor</h3>
+                    <p>Revolutionary peer-to-peer charity eliminating middlemen and connecting sponsors directly with verified recipients.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">Twitter</a>
+                        <a href="#" class="social-link">Nostr</a>
+                        <a href="#" class="social-link">GitHub</a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>🔗 Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="fundraisers.html">Fundraisers</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="about.html#how-it-works">How It Works</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>🚀 DS-CMS</h3>
+                    <p>Zero dependencies, maximum simplicity. Perfect for shared hosting.</p>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/satoshihost/ds-cms" target="_blank">GitHub</a></li>
+                        <li><a href="#" target="_blank">Documentation</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 DS-CMS Demo Site. Built with HTML-first principles.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
+<!-- include end footer.incl -->
