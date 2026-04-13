@@ -13,6 +13,34 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 define('USERDATA_DIR', '/var/www/directsponsor.net/userdata');
 
+function nostr_publish_ws($event_json, $host, $port) {
+    $sock = @stream_socket_client("tcp://$host:$port", $errno, $errstr, 5);
+    if (!$sock) return false;
+    $key = base64_encode(random_bytes(16));
+    $handshake = "GET / HTTP/1.1\r\nHost: $host:$port\r\nUpgrade: websocket\r\n"
+        . "Connection: Upgrade\r\nSec-WebSocket-Key: $key\r\nSec-WebSocket-Version: 13\r\n\r\n";
+    fwrite($sock, $handshake);
+    $response = '';
+    while (!feof($sock)) {
+        $response .= fread($sock, 1024);
+        if (strpos($response, "\r\n\r\n") !== false) break;
+    }
+    if (strpos($response, '101') === false) { fclose($sock); return false; }
+    $msg = '["EVENT",' . $event_json . ']';
+    $len = strlen($msg);
+    $mask = random_bytes(4);
+    $masked = '';
+    for ($i = 0; $i < $len; $i++) $masked .= chr(ord($msg[$i]) ^ ord($mask[$i % 4]));
+    $frame = ($len <= 125)
+        ? chr(0x81) . chr(0x80 | $len) . $mask . $masked
+        : chr(0x81) . chr(0xFE) . pack('n', $len) . $mask . $masked;
+    fwrite($sock, $frame);
+    stream_set_timeout($sock, 2);
+    fread($sock, 256);
+    fclose($sock);
+    return true;
+}
+
 $input = json_decode(file_get_contents('php://input'), true);
 if (!$input) {
     http_response_code(400);
@@ -140,8 +168,7 @@ if ($profileGlob) {
             . escapeshellarg($profile['nostr_privkey']) . ' '
             . escapeshellarg($nostrEvent) . ' 2>/dev/null');
         if ($signedJson) {
-            shell_exec('echo ' . escapeshellarg(trim($signedJson))
-                . ' | /opt/strfry/strfry --config /opt/strfry/strfry.conf import 2>/dev/null');
+            nostr_publish_ws(trim($signedJson), '127.0.0.1', 7777);
         }
     }
 }

@@ -31,8 +31,9 @@ ssh RN1 "journalctl -u strfry -f"
 ```
 
 ### Next steps
-- [ ] Generate per-user Nostr keypairs in `save-post.php` and store in profile files
-- [ ] Sign and publish events to relay when posts are saved
+- [x] Generate per-user Nostr keypairs in `save-post.php` and store in profile files
+- [x] Sign and publish events to relay when posts are saved
+- [ ] **NIP-05 Nostr addresses** — give each user `username@directsponsor.net` by serving `/.well-known/nostr.json` (maps usernames → pubkeys). A small PHP script reads all profile files and outputs the required JSON. Users can then verify their identity in any Nostr client with their DS address.
 - [ ] Tighten write policy to allowlist DS-issued pubkeys only
 - [ ] Future: public relay on ES6 for wider Nostr network reach
 
