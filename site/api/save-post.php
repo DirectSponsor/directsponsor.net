@@ -158,6 +158,12 @@ if ($profileGlob) {
         $nostrPubkey = $profile['nostr_pubkey'];
         $content = $title ? $title . "\n\n" . $intro : $intro;
         if ($body) $content .= "\n\n" . strip_tags($body);
+        if ($image_url) {
+            $absImage = (strpos($image_url, 'http') === 0)
+                ? $image_url
+                : 'https://directsponsor.net' . $image_url;
+            $content .= "\n\n" . $absImage;
+        }
         $nostrEvent = json_encode([
             'kind'       => 1,
             'created_at' => $post['created'] ?? time(),
