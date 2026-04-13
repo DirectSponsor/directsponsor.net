@@ -111,8 +111,44 @@ if ($post_id) {
 
 file_put_contents($postFile, json_encode($post, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
+// Nostr: get or create keypair, sign event, import to relay
+$nostrPubkey = null;
+$profileGlob = glob(USERDATA_DIR . '/profiles/*-' . $callerUsername . '.txt');
+if ($profileGlob) {
+    $profileFile = $profileGlob[0];
+    $profile = json_decode(file_get_contents($profileFile), true) ?: [];
+    if (empty($profile['nostr_privkey'])) {
+        $keyJson = shell_exec('/usr/bin/python3 /opt/strfry/nostr-sign.py genkey 2>/dev/null');
+        $keys = $keyJson ? json_decode($keyJson, true) : null;
+        if ($keys) {
+            $profile['nostr_privkey'] = $keys['privkey'];
+            $profile['nostr_pubkey']  = $keys['pubkey'];
+            file_put_contents($profileFile, json_encode($profile, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        }
+    }
+    if (!empty($profile['nostr_privkey'])) {
+        $nostrPubkey = $profile['nostr_pubkey'];
+        $content = $title ? $title . "\n\n" . $intro : $intro;
+        if ($body) $content .= "\n\n" . strip_tags($body);
+        $nostrEvent = json_encode([
+            'kind'       => 1,
+            'created_at' => $post['created'] ?? time(),
+            'tags'       => [['r', 'https://directsponsor.net/posts.html?user=' . $callerUsername . '&post_id=' . $post['post_id']]],
+            'content'    => $content,
+        ], JSON_UNESCAPED_UNICODE);
+        $signedJson = shell_exec('/usr/bin/python3 /opt/strfry/nostr-sign.py sign '
+            . escapeshellarg($profile['nostr_privkey']) . ' '
+            . escapeshellarg($nostrEvent) . ' 2>/dev/null');
+        if ($signedJson) {
+            shell_exec('echo ' . escapeshellarg(trim($signedJson))
+                . ' | /opt/strfry/strfry --config /opt/strfry/strfry.conf import 2>/dev/null');
+        }
+    }
+}
+
 echo json_encode([
-    'success' => true,
-    'post_id' => $post['post_id'],
-    'filename' => basename($postFile),
+    'success'      => true,
+    'post_id'      => $post['post_id'],
+    'filename'     => basename($postFile),
+    'nostr_pubkey' => $nostrPubkey,
 ]);

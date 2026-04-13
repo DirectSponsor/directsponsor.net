@@ -1,5 +1,5 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-04-08 (session 6)_
+_Last updated: 2026-04-13 (session 7)_
 
 ## What's done and live
 
@@ -123,10 +123,17 @@ _Last updated: 2026-04-08 (session 6)_
 - Grant & Annegret (Desert Farm): on hold — see above
 
 ### Future
-- **Reconciliation script** (done — see session 6 notes): re-run periodically with `ssh RN1 python3 /root/scripts/reconcile.py`
+- **Reconciliation script** (done — cron Sunday 3am on RN1, Telegram alert via DS_AuthBot to satoshihost-alerts group)
 - **Nostr integration** — see `nostr-integration.md` for full plan
 - Auth server post-verification screen: update to show all 3 sites
 - `delete-user.sh`: add clickforcharity.net cleanup step
+- **Comments — future optimisations** (not urgent at current scale):
+  - **Cached comment count**: store `comment_count` in the post's own JSON file (updated by `comments.php` on write/delete) so the feed doesn't need to read the comments file per post — currently fine up to ~50 active posts
+  - **Comment pagination**: if a post accumulates >50 comments, paginate (API already has all data; add `?offset=` param and a "Load more" button in the UI)
+- **How to Donate page** (done — `how-to-donate.html`): covers Lightning rationale, Coinos signup, faucets, Mt Pelerin. Still needs:
+  - Video walkthrough (pending Adam confirming account deletion/recreation on Coinos)
+  - Faucet details for litebits.io and satsman filled in
+  - Recipient cash-out info (how lightninglova/evans convert sats to local currency)
 - **Lightning explainer + donor onboarding page** — need a dedicated page (e.g. `how-to-donate.html` or similar) covering:
   - Why we use Bitcoin Lightning *only*: it's the only payment method that lets us see exactly when a specific payment arrives and credit it automatically, without the platform taking custody of funds
   - Why traditional banking doesn't work: fees are unreasonable for small international amounts, payments aren't direct (go through intermediaries), and there's no reliable way to match a payment to a specific fundraiser without building a full merchant system
@@ -135,6 +142,15 @@ _Last updated: 2026-04-08 (session 6)_
     2. Fund it for free via faucets: **litebits.io** and **satsman** (small amounts but enough to test/start)
     3. Or buy sats with a bank transfer via **Mt Pelerin** exchange — no KYC for small amounts, straightforward bill-payment setup
   - A step-by-step tutorial (video or illustrated walkthrough) will need to be produced at some point covering the above flow end-to-end
+
+### Comments system (live as of 2026-04-13)
+- **Storage**: `userdata/comments/{username}-{post_id}.json` (keyed by post author + post ID)
+- **API**: `site/api/comments.php` — GET to read, POST to write/delete; JWT required to post
+- **One level of threading**: top-level comments (newest first) + replies (oldest first, collapsed by toggle)
+- **Feed integration**: `posts-api.php` now returns `comment_count` per post (reads comments file); displayed as "💬 3 comments" or "💬 Comment" link on every feed card
+- **Auth**: must be logged in to comment; guests see a login prompt
+- **Delete**: users can delete their own comments (also removes replies)
+- **Note**: `mbstring` PHP extension not installed on RN1 — use `strlen()` not `mb_strlen()` in all API files
 
 ### Posts / Blog system (live as of 2026-04-03)
 - **Single content type** — everything is a "post"

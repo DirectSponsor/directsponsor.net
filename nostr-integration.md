@@ -1,6 +1,78 @@
 # DirectSponsor.net - NOSTR Integration
 ---
 
+## ✅ Infrastructure Status (as of 2026-04-13)
+
+| Component | Status | Detail |
+|-----------|--------|--------|
+| strfry relay | **Running** | systemd service on RN1, boot-enabled |
+| Public URL | **Live** | `wss://relay.directsponsor.net` |
+| SSL cert | **Valid** | Let's Encrypt via acme.sh; covers `directsponsor.net`, `www.directsponsor.net`, `relay.directsponsor.net` |
+| Apache proxy | **Working** | Dedicated vhost at `/etc/apache2/sites-available/relay.directsponsor.net.conf`; HTTP/2 disabled for WS compatibility |
+| Write policy | **Open (temp)** | `/opt/strfry/write-policy.py` — accepts all events; to be tightened once DS keypairs are in use |
+| End-to-end test | **Passed** | Iris.to → WSS → Apache → strfry confirmed; event count verified via `strfry scan --count` |
+| NIP-11 relay info | **Working** | `curl -H "Accept: application/nostr+json" https://relay.directsponsor.net/` returns valid JSON |
+
+### Key paths on RN1
+- Binary: `/opt/strfry/strfry`
+- Config: `/opt/strfry/strfry.conf` (bind `127.0.0.1:7777`)
+- Write policy: `/opt/strfry/write-policy.py`
+- DB: `/var/lib/strfry/db/`
+- Systemd: `/etc/systemd/system/strfry.service`
+
+### Useful commands
+```bash
+# Check event count
+ssh RN1 "/opt/strfry/strfry --config /opt/strfry/strfry.conf scan --count '{}'"
+# Service status
+ssh RN1 "systemctl status strfry"
+# Live logs
+ssh RN1 "journalctl -u strfry -f"
+```
+
+### Next steps
+- [ ] Generate per-user Nostr keypairs in `save-post.php` and store in profile files
+- [ ] Sign and publish events to relay when posts are saved
+- [ ] Tighten write policy to allowlist DS-issued pubkeys only
+- [ ] Future: public relay on ES6 for wider Nostr network reach
+
+---
+
+## ⚠️ Architectural Decisions (read first)
+
+### Zaps are out of scope — by design
+Nostr zaps (NIP-57) allow anyone to send Lightning payments to a recipient's Lightning address directly from a Nostr client. We have **deliberately chosen not to track or integrate zaps** into the fundraiser system. Reasons:
+
+- Our fundraiser goal progress bar represents **accountable, tracked donations only** — donors who care about transparency use our donate modal, which creates an audit trail (ledger, webhook, goal progress).
+- Zaps bypass our invoice creation flow entirely, so we have no reliable way to associate a zap with a specific fundraiser without significant custom infrastructure.
+- Anyone can zap anyone's Lightning address at any time — that already works without any action from us.
+- Mixing untracked zaps into goal progress would undermine the accountability that is the whole point of DirectSponsor.
+
+**Action**: Fundraiser pages should include a small note making clear the progress bar reflects tracked donations only, so donors aren't confused if a recipient also receives zaps outside our system.
+
+### Auto-generated Nostr keypairs (future)
+When a user registers, we plan to generate a Nostr keypair server-side and store it in their profile file. Posts they publish on DirectSponsor will be broadcast to Nostr relays transparently — users don't need to know or care. If they later want to claim their Nostr identity with their own key (e.g. they open a Damus account), they can link it via signature verification. This keeps the "zero Nostr complexity" promise for regular users while still putting content into the Nostr ecosystem.
+
+## Server Allocation Plan
+
+| Server | Specs | Role |
+|--------|-------|------|
+| **RN1** (`104.168.38.197`) | 4GB RAM, 62GB disk, 3 cores | directsponsor.net + **private Nostr relay** (write-restricted to registered users) |
+| **ES6** | 3GB RAM, 100GB disk, 1 core | Future **public Nostr relay** (open writes, bridges content to wider network) |
+| **dr1** | 2GB RAM, 30GB disk, 1 core | Browser bookmarks sync server (separate project, `browser-sync/`) |
+
+**Rationale:**
+- Private relay on RN1 first — low risk, plenty of headroom (3.5GB RAM free, 58GB disk free), source of truth for our users' content
+- ES6 kept for public relay: larger disk (events accumulate), more bandwidth (3TB), not needed until private relay is stable
+- dr1 is overkill for bookmarks sync (tiny payloads, low frequency) but that's fine — it's cheap
+
+**Future public relay notes:**
+- When ES6 public relay is live, `save-post.php` broadcasts to both: private relay (guaranteed) + public relay (best effort, for Nostr network reach)
+- Even if the public relay prunes content, the private relay retains everything
+- Consider a second cheap VPS ($5-6/mo) if ES6 gets repurposed
+
+---
+
 DirectSponsor.net becomes a **dual-interface content platform** with **decentralized relay network**:
 
 - **Web interface** for traditional users (zero Nostr complexity)
