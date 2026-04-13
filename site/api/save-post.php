@@ -168,14 +168,21 @@ if ($profileGlob) {
             . escapeshellarg($profile['nostr_privkey']) . ' '
             . escapeshellarg($nostrEvent) . ' 2>/dev/null');
         if ($signedJson) {
+            $signed = json_decode(trim($signedJson), true);
+            if ($signed && !empty($signed['id'])) {
+                $post['nostr_event_id'] = $signed['id'];
+                $post['nostr_pubkey']   = $signed['pubkey'];
+                file_put_contents($postFile, json_encode($post, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            }
             nostr_publish_ws(trim($signedJson), '127.0.0.1', 7777);
         }
     }
 }
 
 echo json_encode([
-    'success'      => true,
-    'post_id'      => $post['post_id'],
-    'filename'     => basename($postFile),
-    'nostr_pubkey' => $nostrPubkey,
+    'success'        => true,
+    'post_id'        => $post['post_id'],
+    'filename'       => basename($postFile),
+    'nostr_pubkey'   => $nostrPubkey,
+    'nostr_event_id' => $post['nostr_event_id'] ?? null,
 ]);

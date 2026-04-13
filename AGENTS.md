@@ -207,6 +207,8 @@ json.dump(d, open(f,'w'), indent=2)
 - **`donor_name` fallback** — if no explicit name given, falls back to `donor_username`, then `Anonymous`
 - **Apache strips Authorization header** — JWT sent as `Authorization: Bearer ...` is dropped. Both `save-post.php` and `save-fundraiser.php` check `$input['jwt']` as fallback; frontend sends JWT in request body too
 - **CSS list reset** — global `ul { list-style: none }` was removed (2026-04-03). Emoji/nav lists that need markers stripped must use `class="plain-list"`. WYSIWYG and post body lists use explicit `list-style: disc/decimal` in `directsponsor-compact.css`
+- **Nostr: strfry DB not writable by www-data** — `/var/lib/strfry/db/` is owned by root; PHP-FPM (`www-data`) cannot run `strfry import` directly. Instead, `save-post.php` publishes events via raw WebSocket to `127.0.0.1:7777` (strfry's internal port), bypassing Apache and file permissions entirely. Do not attempt to fix this with sudo or chown — the WS approach is cleaner.
+- **Nostr: nostr-sign.py uses pure Python BIP340** — `/opt/strfry/nostr-sign.py` implements secp256k1 Schnorr signing with no external dependencies (only stdlib). PHP shells out to it for keypair generation and event signing. Do not replace with a library without confirming it's available on RN1.
 
 ---
 
@@ -221,6 +223,28 @@ json.dump(d, open(f,'w'), indent=2)
 
 **Pending**:
 - Grant & Annegret — Desert Farm (on hold — Bitcoin not viable in Namibia; may revisit with a third-party runner + bank transfers later)
+
+---
+
+## Nostr Infrastructure (as of 2026-04-13)
+
+- **Relay**: strfry running on RN1 at `127.0.0.1:7777`, public via `wss://relay.directsponsor.net`
+- **Systemd**: `/etc/systemd/system/strfry.service` — boot-enabled
+- **Config**: `/opt/strfry/strfry.conf`
+- **DB**: `/var/lib/strfry/db/` (LMDB, root-owned)
+- **Write policy**: `/opt/strfry/write-policy.py` — currently open (accepts all); to be tightened to DS-issued pubkeys once production-ready
+- **Signing helper**: `/opt/strfry/nostr-sign.py` — pure Python BIP340 Schnorr; used by `save-post.php`
+- **Per-user keypairs**: generated on first post, stored as `nostr_privkey` / `nostr_pubkey` in profile `.txt` file
+- **Apache vhost**: `/etc/apache2/sites-available/relay.directsponsor.net.conf` — HTTP/2 disabled for WS compatibility
+- **SSL**: Let's Encrypt via acme.sh, covers `directsponsor.net`, `www.directsponsor.net`, `relay.directsponsor.net`
+- **Full plan**: `nostr-integration.md`
+
+Useful commands:
+```bash
+ssh RN1 "/opt/strfry/strfry --config /opt/strfry/strfry.conf scan --count '{}'"   # event count
+ssh RN1 "systemctl status strfry"                                                  # service status
+ssh RN1 "journalctl -u strfry -f"                                                  # live logs
+```
 
 ---
 
