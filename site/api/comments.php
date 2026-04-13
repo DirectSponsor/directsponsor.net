@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['error' => 'Comment body required']);
             exit;
         }
-        if (mb_strlen($body) > 1000) {
+        if (strlen($body) > 1000) {
             http_response_code(400);
             echo json_encode(['error' => 'Comment too long (max 1000 chars)']);
             exit;
