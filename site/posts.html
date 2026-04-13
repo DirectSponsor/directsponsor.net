@@ -212,6 +212,13 @@ function dsLogout() {
 <!-- Single post full view -->
 <div id="single-post-wrap" style="display:none;"></div>
 
+<!-- Comments section (shown in single post view) -->
+<div id="comments-wrap" style="display:none;">
+    <div class="post-card" id="comments-inner">
+        <div class="feed-loading">Loading comments...</div>
+    </div>
+</div>
+
 <script>
 var _jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
 var _username = null, _userId = null;
@@ -523,8 +530,161 @@ function loadSinglePost(username, postId) {
             html += '</div>';
             wrap.innerHTML = html;
             if (p.title) document.title = p.title + ' - DirectSponsor';
+            document.getElementById('comments-wrap').style.display = '';
+            loadComments(_viewUser, _viewPostId);
         })
         .catch(function() { wrap.innerHTML = '<p>Could not load post.</p>'; });
+}
+
+// --- Comments ---
+
+function loadComments(postUser, postId) {
+    var inner = document.getElementById('comments-inner');
+    inner.innerHTML = '<div class="feed-loading">Loading comments...</div>';
+    fetch('/api/comments.php?username=' + encodeURIComponent(postUser) + '&post_id=' + encodeURIComponent(postId))
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (!d.success) { inner.innerHTML = '<p>Could not load comments.</p>'; return; }
+            renderComments(d.comments || [], postUser, postId);
+        })
+        .catch(function() { inner.innerHTML = '<p>Could not load comments.</p>'; });
+}
+
+function renderComments(comments, postUser, postId) {
+    var inner = document.getElementById('comments-inner');
+    // Separate top-level and replies
+    var topLevel = comments.filter(function(c) { return !c.parent_id; });
+    var replies  = comments.filter(function(c) { return !!c.parent_id; });
+    // Top-level newest first
+    topLevel.sort(function(a, b) { return b.timestamp - a.timestamp; });
+    // Replies oldest first
+    replies.sort(function(a, b) { return a.timestamp - b.timestamp; });
+
+    var html = '<h3 style="margin:0 0 0.8em;font-size:1em;">💬 Comments (' + topLevel.length + ')</h3>';
+
+    topLevel.forEach(function(c) {
+        var cReplies = replies.filter(function(r) { return r.parent_id === c.id; });
+        html += buildComment(c, postUser, postId);
+        // Replies toggle
+        if (cReplies.length > 0) {
+            html += '<div class="comment-replies" id="replies-' + esc(c.id) + '" style="display:none;margin-left:1.5em;border-left:2px solid var(--border);padding-left:0.8em;">';
+            cReplies.forEach(function(r) { html += buildComment(r, postUser, postId); });
+            html += '</div>';
+            html += '<button onclick="toggleReplies(\'' + esc(c.id) + '\', ' + cReplies.length + ')" id="toggle-btn-' + esc(c.id) + '" ' +
+                'style="background:none;border:none;color:var(--link);cursor:pointer;font-size:0.82em;padding:0.1em 0 0.6em 0;">' +
+                '▶ Show ' + cReplies.length + ' ' + (cReplies.length === 1 ? 'reply' : 'replies') + '</button>';
+        }
+        // Reply form (shown inline on click)
+        if (_username) {
+            html += '<div id="reply-form-' + esc(c.id) + '" style="display:none;margin-left:1.5em;margin-top:0.3em;">' +
+                '<textarea id="reply-body-' + esc(c.id) + '" rows="2" placeholder="Write a reply..." ' +
+                'style="width:100%;box-sizing:border-box;font-size:0.9em;padding:0.4em;border:1px solid var(--border);border-radius:0.3em;background:var(--bg-card);color:var(--text);"></textarea>' +
+                '<div style="text-align:right;margin-top:0.3em;">' +
+                '<button onclick="submitReply(\'' + esc(c.id) + '\', \'' + esc(postUser) + '\', \'' + esc(postId) + '\')" ' +
+                'style="font-size:0.85em;padding:0.3em 0.8em;background:var(--link);color:#fff;border:none;border-radius:0.3em;cursor:pointer;">Post reply</button>' +
+                '<button onclick="document.getElementById(\x27reply-form-' + esc(c.id) + '\x27).style.display=\x27none\x27" ' +
+                'style="font-size:0.85em;padding:0.3em 0.6em;background:none;border:none;color:var(--text-muted);cursor:pointer;">Cancel</button>' +
+                '</div></div>';
+        }
+    });
+
+    // New comment form
+    if (_username) {
+        html += '<div style="margin-top:1em;border-top:1px solid var(--border);padding-top:0.8em;">' +
+            '<textarea id="new-comment-body" rows="3" placeholder="Add a comment..." ' +
+            'style="width:100%;box-sizing:border-box;padding:0.4em;border:1px solid var(--border);border-radius:0.3em;background:var(--bg-card);color:var(--text);"></textarea>' +
+            '<div style="text-align:right;margin-top:0.3em;">' +
+            '<button onclick="submitComment(\'' + esc(postUser) + '\', \'' + esc(postId) + '\')" ' +
+            'style="padding:0.35em 1em;background:var(--link);color:#fff;border:none;border-radius:0.3em;cursor:pointer;">Post comment</button>' +
+            '</div></div>';
+    } else {
+        html += '<p style="margin-top:0.8em;border-top:1px solid var(--border);padding-top:0.8em;font-size:0.9em;color:var(--text-muted);">' +
+            '<a href="#" onclick="window.location.href=\'https://auth.directsponsor.org/jwt-login.php?redirect_uri=\'+encodeURIComponent(window.location.href.replace(/^http:/,\'https:\')); return false;">Log in</a> to leave a comment.</p>';
+    }
+
+    if (topLevel.length === 0 && !_username) {
+        html = '<p style="color:var(--text-muted);font-size:0.9em;">No comments yet. ' +
+            '<a href="#" onclick="window.location.href=\'https://auth.directsponsor.org/jwt-login.php?redirect_uri=\'+encodeURIComponent(window.location.href.replace(/^http:/,\'https:\')); return false;">Log in</a> to be the first.</p>';
+    }
+
+    inner.innerHTML = html;
+}
+
+function buildComment(c, postUser, postId) {
+    var date = new Date(c.timestamp * 1000).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+    var isOwn = (_username && c.author === _username);
+    var html = '<div class="comment" style="margin-bottom:0.7em;padding-bottom:0.7em;border-bottom:1px solid var(--border);">' +
+        '<div style="font-size:0.82em;color:var(--text-muted);margin-bottom:0.2em;">' +
+        '<strong>' + esc(c.author) + '</strong> &middot; ' + date;
+    if (isOwn) {
+        html += ' &middot; <button onclick="deleteComment(\'' + esc(c.id) + '\', \'' + esc(postUser) + '\', \'' + esc(postId) + '\')" ' +
+            'style="background:none;border:none;color:#c00;cursor:pointer;font-size:0.9em;padding:0;">Delete</button>';
+    }
+    if (!c.parent_id && _username) {
+        html += ' &middot; <button onclick="showReplyForm(\'' + esc(c.id) + '\')" ' +
+            'style="background:none;border:none;color:var(--link);cursor:pointer;font-size:0.9em;padding:0;">Reply</button>';
+    }
+    html += '</div><div style="font-size:0.95em;">' + esc(c.body) + '</div></div>';
+    return html;
+}
+
+function toggleReplies(commentId, count) {
+    var el  = document.getElementById('replies-' + commentId);
+    var btn = document.getElementById('toggle-btn-' + commentId);
+    var open = el.style.display === 'none';
+    el.style.display  = open ? '' : 'none';
+    btn.textContent   = open
+        ? '▼ Hide replies'
+        : '▶ Show ' + count + ' ' + (count === 1 ? 'reply' : 'replies');
+}
+
+function showReplyForm(commentId) {
+    var el = document.getElementById('reply-form-' + commentId);
+    if (el) { el.style.display = ''; document.getElementById('reply-body-' + commentId).focus(); }
+}
+
+function submitComment(postUser, postId) {
+    var body = document.getElementById('new-comment-body').value.trim();
+    if (!body) return;
+    fetch('/api/comments.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action:'post', username: postUser, post_id: postId, body: body, jwt: _jwt})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.success) { loadComments(postUser, postId); }
+        else { alert(d.error || 'Could not post comment.'); }
+    });
+}
+
+function submitReply(parentId, postUser, postId) {
+    var body = document.getElementById('reply-body-' + parentId).value.trim();
+    if (!body) return;
+    fetch('/api/comments.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action:'post', username: postUser, post_id: postId, body: body, parent_id: parentId, jwt: _jwt})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.success) { loadComments(postUser, postId); }
+        else { alert(d.error || 'Could not post reply.'); }
+    });
+}
+
+function deleteComment(commentId, postUser, postId) {
+    if (!confirm('Delete this comment?')) return;
+    fetch('/api/comments.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action:'delete', username: postUser, post_id: postId, comment_id: commentId, jwt: _jwt})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.success) { loadComments(postUser, postId); }
+        else { alert(d.error || 'Could not delete comment.'); }
+    });
 }
 
 function esc(s) {
