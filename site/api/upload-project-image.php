@@ -54,13 +54,13 @@ if ($uploadedFile['size'] > 2 * 1024 * 1024) {
 }
 
 // Validate file type - Accept JPG, PNG, and WebP
-$allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+$allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 $finfo = finfo_open(FILEINFO_MIME_TYPE);
 $mimeType = finfo_file($finfo, $uploadedFile['tmp_name']);
 finfo_close($finfo);
 
 if (!in_array($mimeType, $allowedTypes)) {
-    echo json_encode(['success' => false, 'error' => 'Please upload a JPG, PNG, or WebP image file.']);
+    echo json_encode(['success' => false, 'error' => 'Please upload a JPG, PNG, WebP, or GIF image file.']);
     exit;
 }
 
@@ -69,7 +69,8 @@ $extensions = [
     'image/jpeg' => 'jpg',
     'image/jpg' => 'jpg',
     'image/png' => 'png',
-    'image/webp' => 'webp'
+    'image/webp' => 'webp',
+    'image/gif' => 'gif'
 ];
 $extension = $extensions[$mimeType] ?? 'jpg';
 

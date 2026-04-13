@@ -33,7 +33,9 @@ ssh RN1 "journalctl -u strfry -f"
 ### Next steps
 - [x] Generate per-user Nostr keypairs in `save-post.php` and store in profile files
 - [x] Sign and publish events to relay when posts are saved
-- [ ] **NIP-05 Nostr addresses** — give each user `username@directsponsor.net` by serving `/.well-known/nostr.json` (maps usernames → pubkeys). A small PHP script reads all profile files and outputs the required JSON. Users can then verify their identity in any Nostr client with their DS address.
+- [ ] **NIP-05 + display names** — two parts done together:
+  1. Serve `/.well-known/nostr.json` mapping usernames → pubkeys (NIP-05 verification — gives `username@directsponsor.net` with green tick in clients)
+  2. Publish a **kind 0 metadata event** when keypair is first generated: `{"name":"<username>","nip05":"<username>@directsponsor.net"}` — this replaces the random generated name (e.g. "adequate vicuna") with the real DS username in all Nostr clients
 - [ ] Display Nostr replies on post pages (client-side JS querying public relays by `nostr_event_id`)
 - [ ] Tighten write policy to allowlist DS-issued pubkeys only
 - [ ] **User-facing Nostr docs** — explain that replies from Nostr users are visible on the site, but replying *back* to a Nostr user requires a Nostr client (Iris, Damus, Amethyst etc.) using the user's own key. DS users who want to engage in those threads will need their npub exported. Keep it simple — most users won't care, but power users will want to know.
