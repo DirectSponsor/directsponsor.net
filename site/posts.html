@@ -495,7 +495,9 @@ function buildCard(p) {
     if (p.image_url) html += '<div class="post-image"><img src="' + esc(p.image_url) + '" alt="" loading="lazy"></div>';
     html += '<p class="post-intro">' + escHtml(p.intro) + '</p>';
     if (p.has_body) html += '<div class="read-more"><a href="posts.html?user=' + esc(p.username) + '&post_id=' + esc(p.post_id) + '">Read more →</a></div>';
-    html += '<div style="margin-top:0.4em;font-size:0.85em;"><a href="posts.html?user=' + esc(p.username) + '&post_id=' + esc(p.post_id) + '" style="color:var(--text-muted);text-decoration:none;">💬 Comment</a></div>';
+    var cCount = p.comment_count || 0;
+    var cLabel = cCount > 0 ? '💬 ' + cCount + ' ' + (cCount === 1 ? 'comment' : 'comments') : '💬 Comment';
+    html += '<div style="margin-top:0.4em;font-size:0.85em;"><a href="posts.html?user=' + esc(p.username) + '&post_id=' + esc(p.post_id) + '" style="color:var(--text-muted);text-decoration:none;">' + cLabel + '</a></div>';
     div.innerHTML = html;
     if (_username && p.username === _username) {
         var editBtn = document.createElement('button');

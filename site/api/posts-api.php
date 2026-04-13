@@ -8,6 +8,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit; }
 
 define('USERDATA_DIR', '/var/www/directsponsor.net/userdata');
 
+function commentCount($username, $postId) {
+    $file = USERDATA_DIR . '/comments/' . preg_replace('/[^a-z0-9_-]/', '', strtolower($username)) . '-' . preg_replace('/[^0-9]/', '', $postId) . '.json';
+    if (!file_exists($file)) return 0;
+    $data = json_decode(file_get_contents($file), true);
+    return count($data['comments'] ?? []);
+}
+
 $action = $_GET['action'] ?? 'feed';
 
 // GET feed - all posts from all users, reverse chronological
@@ -22,15 +29,18 @@ if ($action === 'feed') {
         foreach (glob($postsBase . '/*/[0-9]*.json') ?: [] as $file) {
             $data = json_decode(file_get_contents($file), true);
             if ($data && !empty($data['intro'])) {
+                $pid = $data['post_id'] ?? '';
+                $uname = $data['username'] ?? '';
                 $posts[] = [
-                    'post_id'   => $data['post_id'] ?? '',
-                    'username'  => $data['username'] ?? '',
-                    'title'     => $data['title'] ?? '',
-                    'intro'     => $data['intro'] ?? '',
-                    'has_body'  => !empty($data['body']),
-                    'image_url' => $data['image_url'] ?? '',
-                    'created'   => $data['created'] ?? 0,
-                    'updated'   => $data['updated'] ?? 0,
+                    'post_id'       => $pid,
+                    'username'      => $uname,
+                    'title'         => $data['title'] ?? '',
+                    'intro'         => $data['intro'] ?? '',
+                    'has_body'      => !empty($data['body']),
+                    'image_url'     => $data['image_url'] ?? '',
+                    'created'       => $data['created'] ?? 0,
+                    'updated'       => $data['updated'] ?? 0,
+                    'comment_count' => commentCount($uname, $pid),
                 ];
             }
         }
@@ -80,14 +90,17 @@ if ($action === 'user_posts') {
     foreach (glob(USERDATA_DIR . '/posts/' . $username . '/[0-9]*.json') ?: [] as $file) {
         $data = json_decode(file_get_contents($file), true);
         if ($data && !empty($data['intro'])) {
+            $pid = $data['post_id'] ?? '';
+            $uname = $data['username'] ?? '';
             $posts[] = [
-                'post_id'   => $data['post_id'] ?? '',
-                'username'  => $data['username'] ?? '',
-                'title'     => $data['title'] ?? '',
-                'intro'     => $data['intro'] ?? '',
-                'has_body'  => !empty($data['body']),
-                'image_url' => $data['image_url'] ?? '',
-                'created'   => $data['created'] ?? 0,
+                'post_id'       => $pid,
+                'username'      => $uname,
+                'title'         => $data['title'] ?? '',
+                'intro'         => $data['intro'] ?? '',
+                'has_body'      => !empty($data['body']),
+                'image_url'     => $data['image_url'] ?? '',
+                'created'       => $data['created'] ?? 0,
+                'comment_count' => commentCount($uname, $pid),
             ];
         }
     }
