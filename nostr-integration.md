@@ -36,6 +36,7 @@ ssh RN1 "journalctl -u strfry -f"
 - [ ] **NIP-05 + display names** — two parts done together:
   1. Serve `/.well-known/nostr.json` mapping usernames → pubkeys (NIP-05 verification — gives `username@directsponsor.net` with green tick in clients)
   2. Publish a **kind 0 metadata event** when keypair is first generated: `{"name":"<username>","nip05":"<username>@directsponsor.net"}` — this replaces the random generated name (e.g. "adequate vicuna") with the real DS username in all Nostr clients
+- [ ] **Video embeds in posts** — support YouTube and Odysee URLs pasted into post body; auto-convert to `<iframe>` embeds on display. Both support standard embed URLs. Keep it opt-in (only embed if URL is on its own line) so plain text links still work.
 - [ ] Display Nostr replies on post pages (client-side JS querying public relays by `nostr_event_id`)
 - [ ] Tighten write policy to allowlist DS-issued pubkeys only
 - [ ] **User-facing Nostr docs** — explain that replies from Nostr users are visible on the site, but replying *back* to a Nostr user requires a Nostr client (Iris, Damus, Amethyst etc.) using the user's own key. DS users who want to engage in those threads will need their npub exported. Keep it simple — most users won't care, but power users will want to know.
