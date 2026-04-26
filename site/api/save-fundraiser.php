@@ -100,9 +100,16 @@ $raw_project_id = preg_replace('/[^a-z0-9-]/', '', strtolower($input['project_id
 $userProjectDir  = PROJECTS_DIR . '/' . $target_username;
 
 if ($raw_project_id) {
-    // Explicit ID requested — use it (editing existing or creating at specific slot)
-    $project_id = $raw_project_id;
-} else {
+    // Explicit ID requested — but only allow if not already used in completed/
+    $completedFile = $userProjectDir . '/completed/' . $raw_project_id . '.html';
+    if (file_exists($completedFile) && !file_exists($userProjectDir . '/active/' . $raw_project_id . '.html')) {
+        // ID already used by a completed project and no active file to edit — auto-assign next free
+        $raw_project_id = '';
+    } else {
+        $project_id = $raw_project_id;
+    }
+}
+if (!$raw_project_id) {
     // Auto-assign: find lowest number not used in active/ or completed/
     $used = [];
     foreach (glob($userProjectDir . '/active/*.html') ?: [] as $f) {

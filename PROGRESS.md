@@ -124,12 +124,34 @@ _Last updated: 2026-04-13 (session 7)_
 
 ### Future
 - **Reconciliation script** (done — cron Sunday 3am on RN1, Telegram alert via DS_AuthBot to satoshihost-alerts group)
-- **Nostr integration** — see `nostr-integration.md` for full plan
+- **Nostr integration** — see `nostr-integration.md` for full plan; deeper integration (cross-node identity, flagging, fraud prevention) still pending
 - Auth server post-verification screen: update to show all 3 sites
 - `delete-user.sh`: add clickforcharity.net cleanup step
-- **Comments — future optimisations** (not urgent at current scale):
-  - **Cached comment count**: store `comment_count` in the post's own JSON file (updated by `comments.php` on write/delete) so the feed doesn't need to read the comments file per post — currently fine up to ~50 active posts
-  - **Comment pagination**: if a post accumulates >50 comments, paginate (API already has all data; add `?offset=` param and a "Load more" button in the UI)
+
+### Sponsorship groups (major planned feature — the core of DS)
+
+Fundraiser campaigns are live. Sponsorship groups are the primary mechanism and the long-term goal — not yet built. See `direct_sponsor_sponsorship_groups.docx` and `direct_sponsor_recipient_groups.docx` for full design.
+
+Key things to build:
+- **Data model**: sponsorship group per recipient; membership table (active / standby / queued tiers); monthly commitment amount; payment history per sponsor
+- **Sponsor tier management**: joining a group, tier assignment (active by default, self-select standby), queue position
+- **Reminder + response-window system**: monthly reminder dispatch; defined window to respond; automatic demotion/replacement if no response
+- **Automatic promotion logic**: active lapses → standby fills in → queued promoted to standby → next queued joins
+- **Recipient group tools**: common fund accounting (income/outgoings, all members visible), coordinator action log, group decision documentation
+- **UI for sponsors**: join/leave a group, view commitment, see recipient updates
+- **UI for recipients**: view group composition (active/standby/queued), see payment history
+- **Network architecture**: DS is designed as independent nodes linked via Nostr — not a growing central platform. `directsponsor.net` is proof-of-concept. Deeper Nostr integration (cross-node identity, shared sponsor queues, flagging) is on the roadmap.
+
+Design principles (structural, not rules):
+- Max 12 sponsors per group
+- Money never passes through an intermediary — payments go sponsor→recipient directly
+- Common fund (if any) is collectively controlled — no single person has discretionary power
+- Coordinator role is administrative only (carries out group decisions, no financial discretion)
+- Reputational accountability: violating the DS definition loses network access, not legal sanction
+
+### Comments — future optimisations (not urgent at current scale)
+- **Cached comment count**: store `comment_count` in the post's own JSON file (updated by `comments.php` on write/delete) so the feed doesn't need to read the comments file per post — currently fine up to ~50 active posts
+- **Comment pagination**: if a post accumulates >50 comments, paginate (API already has all data; add `?offset=` param and a "Load more" button in the UI)
 - **How to Donate page** (done — `how-to-donate.html`): covers Lightning rationale, Coinos signup, faucets, Mt Pelerin. Still needs:
   - Video walkthrough (pending Adam confirming account deletion/recreation on Coinos)
   - Faucet details for litebits.io and satsman filled in

@@ -4,12 +4,14 @@ This file provides guidance to AI coding assistants (Cascade/Windsurf, Warp, etc
 
 ## Project Overview
 
-DirectSponsor.net is a peer-to-peer fundraising platform using Bitcoin Lightning payments. Donors send sats directly to recipients via Coinos Lightning wallets — no intermediaries. Recipients manage their fundraisers through a self-service UI. All storage is file-based; no database.
+DirectSponsor.net is a peer-to-peer support platform using Bitcoin Lightning payments. It has two mechanisms: **fundraisers** (one-off campaigns) and **sponsorship groups** (ongoing monthly commitments). Sponsorship groups are the more important of the two — they provide recipients with reliable income and a lasting human relationship, not just a transaction. All payments go directly recipient-to-recipient via Coinos Lightning wallets; no intermediaries hold funds. All storage is file-based; no database.
 
 ### Terminology
-- **Recipient** — the person running a fundraising initiative (e.g. evans, lightninglova)
+- **Recipient** — the person (or small group) receiving support (e.g. evans, lightninglova)
+- **Recipient group** — a small group of recipients (max 12) cooperating on a shared project. Each member receives their own sponsorship income directly; a voluntary common fund may exist but is collectively controlled — no single person has discretionary financial power. See `direct_sponsor_recipient_groups.docx`.
 - **Project** — the recipient's overarching initiative (e.g. Badilisha Food Forest, Bitcoin4Ghana); stored as a content page, not a system entity
 - **Fundraiser** — a specific campaign the system manages (goal, progress, donate button); stored as a numbered HTML file (`001.html`, `002.html`...)
+- **Sponsorship group** — a small group (max 12) of sponsors making a regular monthly commitment to a specific recipient. Has three tiers: Active, Standby, Queued. See `direct_sponsor_sponsorship_groups.docx`.
 
 ## Philosophy
 
@@ -17,6 +19,8 @@ DirectSponsor.net is a peer-to-peer fundraising platform using Bitcoin Lightning
 - Minimal dependencies — vanilla JS, handcrafted CSS, PHP built-ins only
 - Every byte is a cost — target fast 3G load times, <500KB per core page
 - Features must degrade gracefully without JavaScript
+- **Structural integrity over rules** — the system is designed so that misuse is structurally impossible ("can not", not "should not"). Money never passes through a single intermediary; common funds stay under collective group control; coordinator roles are administrative only.
+- **Not a growing platform** — the long-term model is a network of independent nodes linked via Nostr, not one large central site. Each node serves its own community.
 
 ---
 
@@ -248,12 +252,70 @@ ssh RN1 "journalctl -u strfry -f"                                               
 
 ---
 
+## Sponsorship Groups (planned — not yet built)
+
+The core feature of DS, currently in design stage. Key facts for agents:
+
+### Sponsor tiers
+- **Active** — core member; monthly commitment; must respond within defined window or is replaced
+- **Standby** — self-selected; fills gaps when an active lapses; maintains group stability
+- **Queued** — wants to join; waits for a place to open (place opens when active lapses with no standby, or group expands)
+
+### Group rules
+- Max 12 members (often smaller by design — see nimno.net/notes/small-groups/)
+- Reminder system triggers at the right time each month; non-responsive actives are removed and replaced (not punitive — structural)
+- A waiting list of queued sponsors is a signal of value, not a problem
+
+### What needs building
+- Sponsor tier management (active / standby / queued membership per recipient)
+- Monthly reminder dispatch + response-window tracking
+- Automatic active→standby→queued promotion logic
+- UI for sponsors to join a group, view their commitments, see recipient updates
+- UI for recipients to see their group composition
+
+---
+
+## Recipient Groups (planned — not yet built)
+
+Recipients can be solo or a small group (max 12). The DS name/network access is conditional on meeting the definition:
+
+1. Each member receives their sponsorship income **directly** from their own sponsors — no member controls another's funds
+2. Group is small (≤ 12 members)
+3. A common fund may exist if chosen — funded voluntarily by members, under **collective group control**
+4. No single individual has discretionary power over the common fund
+5. Coordinator (internal or hired) is **administrative only** — carries out group decisions, makes no financial decisions independently
+6. All significant decisions and coordinator actions are documented within the system
+7. All activity takes place within the public DS system — soliciting funds outside it disqualifies the group from using the DS name
+
+A group that violates these characteristics loses access to the DS network/brand — there is no enforcement, but the value of membership is the incentive to stay within it.
+
+### What needs building
+- Common fund accounting tool (income + outgoings, visible to all members)
+- Coordinator action log
+- Group decision documentation
+- Nostr cross-node identity for multi-node recipient groups
+
+---
+
+## Network Architecture (long-term vision)
+
+- DS is designed as a **network of independent nodes**, not a growing central platform
+- Each node = a separate DS installation serving a local or topical community
+- Nodes are linked via Nostr: cross-node identity, sponsor queues can span nodes, flagging/fraud-prevention layer
+- Current site (`directsponsor.net`) is the proof-of-concept foundation
+- Central site does not grow into a large platform — successful groups spawn independent nodes
+
+---
+
 ## Pending Tasks
 
 - Grant & Annegret: on hold — Bitcoin not viable in Namibia. Project page archived to `archive/grant-annegret-project.html`. May revisit if a third-party runner is found who can handle bank transfers.
 - Reconciliation script (backend only, no UI): cross-check `transaction-ledger.json` against per-user `donations_made` arrays
 - Auth server post-verification screen: update to show all 3 sites
 - `delete-user.sh`: add clickforcharity.net cleanup step
+- **Sponsorship group system** — see Sponsorship Groups section above
+- **Recipient group tools** — common fund accounting, coordinator log, decision docs (see Recipient Groups section above)
+- **Nostr deeper integration** — cross-node identity, flagging, fraud prevention (see `nostr-integration.md`)
 
 ## User Account Deletion
 
