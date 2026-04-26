@@ -163,6 +163,17 @@ function dsLogout() {
     <p>You need the <strong>recipient</strong> role to manage projects. Please contact an admin.</p>
 </div>
 
+<div id="completed-view" class="project-card" style="display:none;">
+    <p class="section-title">✅ Fundraiser completed</p>
+    <p id="completed-title" style="font-size:1.1em;font-weight:bold;"></p>
+    <p id="completed-summary" class="color-dim"></p>
+    <p>This fundraiser reached its goal and is now closed. You can start a new one based on it — all the details will be pre-filled for you to adjust.</p>
+    <div style="margin-top:1em;">
+        <button class="save-btn" onclick="cloneProject()">📋 Start new fundraiser based on this</button>
+        <a id="completed-view-link" href="#" style="margin-left:1em;">View completed fundraiser →</a>
+    </div>
+</div>
+
 <div id="edit-form-wrap" style="display:none;">
 
     <div class="project-card">
@@ -304,27 +315,58 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function show(id) {
     document.getElementById('loading-msg').style.display = 'none';
-    ['not-logged-in','access-denied','edit-form-wrap'].forEach(function(i) {
+    ['not-logged-in','access-denied','completed-view','edit-form-wrap'].forEach(function(i) {
         document.getElementById(i).style.display = 'none';
     });
     document.getElementById(id).style.display = '';
 }
 
+var _cloneData = null;
+
 function loadProject() {
+    if (!_projectId) {
+        // New project — show blank form
+        document.getElementById('form-subtitle').textContent = 'New Fundraiser';
+        show('edit-form-wrap');
+        return;
+    }
     fetch('/api/fundraiser-api.php?action=get&id=' + encodeURIComponent(_projectId) + '&username=' + encodeURIComponent(_username))
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success && data.fundraiser) {
-                populateForm(data.fundraiser);
+                if (data.fundraiser.status === 'completed') {
+                    showCompletedView(data.fundraiser);
+                } else {
+                    populateForm(data.fundraiser);
+                    show('edit-form-wrap');
+                }
+            } else {
+                // Project not found or new — show blank form
+                show('edit-form-wrap');
             }
-            // Whether loaded or not (new project), show the form
-            document.getElementById('loading-msg').style.display = 'none';
-            document.getElementById('edit-form-wrap').style.display = '';
         })
-        .catch(function() {
-            document.getElementById('loading-msg').style.display = 'none';
-            document.getElementById('edit-form-wrap').style.display = '';
-        });
+        .catch(function() { show('edit-form-wrap'); });
+}
+
+function showCompletedView(f) {
+    _cloneData = f;
+    document.getElementById('completed-title').textContent = f.title || _projectId;
+    var raised = (f.current_amount || 0).toLocaleString();
+    var goal   = (f.goal_amount   || 0).toLocaleString();
+    document.getElementById('completed-summary').textContent =
+        raised + ' sats raised of ' + goal + ' sat goal.';
+    document.getElementById('completed-view-link').href =
+        '/fundraiser.html?project=' + encodeURIComponent(_projectId) + '&user=' + encodeURIComponent(_username);
+    show('completed-view');
+}
+
+function cloneProject() {
+    _cloneData.status = 'active';
+    populateForm(_cloneData);
+    _projectId = null;  // force auto-assign of new ID on save
+    document.getElementById('form-subtitle').textContent = 'New Fundraiser (based on: ' + (_cloneData.title || '') + ')';
+    show('edit-form-wrap');
+    window.scrollTo(0, 0);
 }
 
 function populateForm(f) {
