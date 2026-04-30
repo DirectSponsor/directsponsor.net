@@ -1,5 +1,5 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-04-13 (session 7)_
+_Last updated: 2026-04-27 (session 8)_
 
 ## What's done and live
 
@@ -110,6 +110,7 @@ _Last updated: 2026-04-13 (session 7)_
     project-donations-pending/
       pending.json             # in-flight invoices (cleared on webhook confirm)
     transaction-ledger.json    # audit trail of all confirmed payments
+    post-notify-state.json     # watermark + per-user cooldowns for Telegram post notifications
   logs/
     project_payments.log
     webhook.log
@@ -199,6 +200,14 @@ Design principles (structural, not rules):
 - **CSS list styling** — global `ul { list-style: none }` was overriding bullets in WYSIWYG/post body. Fixed (2026-04-03): removed the global reset; content-page emoji lists use `class="plain-list"` instead; `.wysiwyg-body ul/ol` and `.post-body ul/ol` explicitly set `list-style: disc/decimal`. All post/wysiwyg styles now live in `directsponsor-compact.css`, no page-level `<style>` blocks.
 - **Apache strips Authorization header** — JWT from `Authorization: Bearer ...` header is dropped by Apache. Workaround: send JWT in request body as `jwt` field; `save-post.php` and `save-fundraiser.php` both check body as fallback.
 - **Ledger stored recipient as donor_username** (fixed 2026-04-08): `webhook.php` line 412 used `$donation['username']` (= recipient) instead of `$donation['donor_username']` (= actual donor) when writing the ledger entry. Fixed to `$donation['donor_username']`. Historical entries where donor==recipient in the ledger are flagged as "suspect" by the reconcile script — they are pre-fix test/self-donations lost to the glob bug, not a financial integrity issue.
+
+### Session 8 — Post notifications (2026-04-27)
+- Created `@DSSitesCheckBot` (Telegram) — general-purpose site alerts bot
+- Credentials stored in `/root/.telegram-sites-check` on RN1 (chmod 600)
+- Built `/root/scripts/notify-new-posts.py` — scans `userdata/posts/*/*.json`, fires one Telegram message per user for posts newer than watermark; 10-min per-user cooldown
+- State file: `/var/www/directsponsor.net/userdata/data/post-notify-state.json`
+- Cron installed on RN1: `0 * * * *`, log: `/var/log/ds-post-notify.log`
+- Disabled (de-scheduled) the broken `check_links.py` GitHub Actions workflow in `satoshihost/monitors` repo (CFC PTC page JS renderer failing; manual trigger still available)
 
 ### Session 6 — Reconciliation (2026-04-08)
 - Built `scripts/reconcile.py` (deployed to `/root/scripts/reconcile.py` on RN1)

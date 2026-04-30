@@ -252,6 +252,32 @@ ssh RN1 "journalctl -u strfry -f"                                               
 
 ---
 
+## Server-side Cron Scripts & Notifications
+
+All scripts live on RN1 at `/root/scripts/`. Logs go to `/var/log/`.
+
+### Telegram bots → `satoshihost-alerts` group (chat ID: `-1002247747301`)
+
+| Bot | Username | Credentials on RN1 | Purpose |
+|-----|----------|--------------------|---------|
+| DS_AuthBot | `@DS_AuthBot` | token in `reconcile-notify.sh` | Weekly reconciliation reports (Sun 3am) |
+| SitesCheckBot | `@DSSitesCheckBot` | `/root/.telegram-sites-check` | Site alerts: new posts, page down, broken links, etc. |
+
+A third bot (backup alerts) posts from es3-auth via `/root/.telegram-backup-alerts` on that server.
+
+### Post notification — `notify-new-posts.py`
+
+- **Script**: `/root/scripts/notify-new-posts.py`
+- **Cron**: `0 * * * *` (hourly)
+- **Log**: `/var/log/ds-post-notify.log`
+- **State**: `/var/www/directsponsor.net/userdata/data/post-notify-state.json`
+- **Logic**: scans `userdata/posts/*/*.json` for files where `created > last_seen_created`; groups by user; sends one Telegram message per user; advances the watermark after each run
+- **Cooldown**: 10-min per-user cooldown in state file (prevents double-notify if cron fires twice)
+- **Top-level only**: every `.json` in `posts/` dirs is a top-level post — replies live in `comments/` and are excluded automatically
+- **No external deps**: uses Python stdlib only (`urllib`, `json`, `glob`)
+
+---
+
 ## Sponsorship Groups (planned — not yet built)
 
 The core feature of DS, currently in design stage. Key facts for agents:
