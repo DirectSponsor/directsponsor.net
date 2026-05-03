@@ -697,8 +697,17 @@ function loadPublicSponsorship(username) {
             var isMember = false;
             (g.members || []).forEach(function(m) { if (m.username === me) isMember = true; });
             var isRecipient = (me === username);
-            var monthlyHtml = g.suggested_monthly_sats
-                ? '<p class="color-muted text-small">⚡ ' + g.suggested_monthly_sats.toLocaleString() + ' sats/month suggested</p>'
+            var filled = g.slots_filled || 0;
+            var total  = g.slots_total  || 0;
+            var pct    = total > 0 ? Math.min(100, Math.round(filled / total * 100)) : 0;
+            var queueCount = (g.members || []).filter(function(m) { return m.slots === 0; }).length;
+            var progressHtml = total > 0
+                ? '<div style="margin:0.5em 0 0.75em;">'
+                    + '<div style="width:100%;background:var(--border);border-radius:0.2em;height:0.5em;overflow:hidden;">'
+                    + '<div style="width:' + pct + '%;height:100%;background:#f7b731;border-radius:0.2em;"></div></div>'
+                    + '<p class="color-muted text-small" style="margin:0.2em 0;">' + filled + ' of ' + total + ' slots filled ($' + (filled*10) + ' of $' + (total*10) + '/month)'
+                    + (queueCount ? ' — ' + queueCount + ' in queue' : '') + '</p>'
+                  + '</div>'
                 : '';
             var joinHtml = '';
             if (!isRecipient) {
@@ -706,20 +715,17 @@ function loadPublicSponsorship(username) {
                     joinHtml = '<p><span class="color-muted text-small">✓ You are in this group</span>'
                         + ' <button class="btn-small" onclick="pubLeaveGroup(\'' + escHtml(username) + '\',this)">Leave</button></p>';
                 } else if (me) {
-                    joinHtml = '<p><button class="save-btn" onclick="pubJoinGroup(\'' + escHtml(username) + '\',this)">Join sponsor group</button></p>';
+                    var maxSlots = total > 0 ? Math.max(1, total - filled) : 6;
+                    joinHtml = '<p>'
+                        + '<label style="font-size:0.85em;">Slots ($10/month each): <input type="number" id="pub-slots-' + escHtml(username) + '" value="1" min="1" max="' + maxSlots + '" style="width:3.5em;text-align:center;"></label>'
+                        + ' <button class="save-btn" onclick="pubJoinGroup(\'' + escHtml(username) + '\',this)">Join sponsor group</button></p>';
                 } else {
                     joinHtml = '<p><a href="#" onclick="window.location.href=\'https://auth.directsponsor.org/jwt-login.php?redirect_uri=\'+encodeURIComponent(window.location.href.replace(/^http:/,\'https:\')); return false;" class="save-btn" style="text-decoration:none;display:inline-block;">Log in to join</a></p>';
                 }
             }
             content.innerHTML =
                 (g.description ? '<p>' + escHtml(g.description) + '</p>' : '')
-                + '<div style="display:table;width:100%;border-collapse:collapse;margin:0.5em 0;">'
-                + '<div style="display:table-row;">'
-                + sgTierCell('Active', (c.active||0) + '/12', 'var(--bg-subtle,#eeffee)')
-                + sgTierCell('Standby', c.standby||0, 'var(--bg-subtle,#fff8ee)')
-                + sgTierCell('Queued', c.queued||0, 'var(--bg-subtle,#eef0ff)')
-                + '</div></div>'
-                + monthlyHtml + joinHtml;
+                + progressHtml + joinHtml;
             section.style.display = 'block';
         })
         .catch(function() {});
@@ -731,16 +737,20 @@ function sgTierCell(label, count, bg) {
 function pubJoinGroup(recipient, btn) {
     var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
     if (!jwt) return;
+    var slotsEl = document.getElementById('pub-slots-' + recipient);
+    var slots = slotsEl ? (parseInt(slotsEl.value) || 1) : 1;
     btn.disabled = true; btn.textContent = 'Joining...';
     fetch('/api/sponsorship-api.php?action=join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
-        body: JSON.stringify({ recipient: recipient, jwt: jwt })
+        body: JSON.stringify({ recipient: recipient, slots: slots, jwt: jwt })
     })
     .then(function(r) { return r.json(); })
     .then(function(d) {
-        if (d.success) { btn.textContent = '\u2713 Joined (queued)'; btn.disabled = true; }
-        else { btn.disabled = false; btn.textContent = 'Join sponsor group'; alert(d.error || 'Could not join.'); }
+        if (d.success) {
+            var msg = d.slots > 0 ? '\u2713 Reserved ' + d.slots + ' slot' + (d.slots > 1 ? 's' : '') + ' ($' + (d.slots * 10) + '/mo)' : '\u2713 Added to queue';
+            btn.textContent = msg; btn.disabled = true;
+        } else { btn.disabled = false; btn.textContent = 'Join sponsor group'; alert(d.error || 'Could not join.'); }
     })
     .catch(function() { btn.disabled = false; btn.textContent = 'Join sponsor group'; alert('Network error.'); });
 }
@@ -777,27 +787,25 @@ function loadMyGroup(username) {
 }
 function renderMyGroup(g, username) {
     var desc    = g ? (g.description || '') : '';
-    var monthly = g ? (g.suggested_monthly_sats || 0) : 0;
+    var monthly = g ? (g.monthly_need_usd || 0) : 0;
     var members = g ? (g.members || []) : [];
     var membersHtml = '';
     if (members.length) {
         membersHtml = '<h3 style="margin:1em 0 0.4em;">Members (' + members.length + ')</h3>'
             + '<table style="width:100%;border-collapse:collapse;font-size:0.9em;">'
             + '<tr><th style="text-align:left;padding:0.3em 0.5em;border-bottom:1px solid var(--border);">Member</th>'
-            + '<th style="text-align:center;padding:0.3em 0.5em;border-bottom:1px solid var(--border);">Tier</th>'
+            + '<th style="text-align:center;padding:0.3em 0.5em;border-bottom:1px solid var(--border);">Slots ($10/mo)</th>'
             + '<th style="text-align:center;padding:0.3em 0.5em;border-bottom:1px solid var(--border);">Joined</th>'
             + '<th style="padding:0.3em 0.5em;border-bottom:1px solid var(--border);"></th></tr>';
         members.forEach(function(m) {
             membersHtml += '<tr>'
                 + '<td style="padding:0.3em 0.5em;"><a href="profile.html?user=' + encodeURIComponent(m.username) + '">' + escHtml(m.display_name || m.username) + '</a></td>'
                 + '<td style="text-align:center;padding:0.3em 0.5em;">'
-                    + '<select onchange="setMemberTier(\'' + escHtml(username) + '\',\'' + escHtml(m.username) + '\',this.value,this)" style="font-size:0.85em;">'
-                    + '<option value="active"'  + (m.tier === 'active'  ? ' selected' : '') + '>Active</option>'
-                    + '<option value="standby"' + (m.tier === 'standby' ? ' selected' : '') + '>Standby</option>'
-                    + '<option value="queued"'  + (m.tier === 'queued'  ? ' selected' : '') + '>Queued</option>'
-                    + '</select></td>'
+                    + '<input type="number" value="' + (m.slots || 0) + '" min="0" style="width:3.5em;text-align:center;font-size:0.85em;" onchange="setMemberSlots(\'' + escHtml(username) + '\',\'' + escHtml(m.username) + '\',this.value,this)">'
+                    + ' <span style="font-size:0.8em;color:var(--text-muted);">' + (m.slots === 0 ? '(queued)' : '') + '</span>'
+                  + '</td>'
                 + '<td style="text-align:center;padding:0.3em 0.5em;color:var(--text-muted);font-size:0.85em;">' + escHtml(m.joined_date || '') + '</td>'
-                + '<td style="padding:0.3em 0.5em;text-align:right;"><button class="btn-small" onclick="removeMember(\'' + escHtml(username) + '\',\'' + escHtml(m.username) + '\',this)">✕</button></td>'
+                + '<td style="padding:0.3em 0.5em;text-align:right;"><button class="btn-small" onclick="removeMember(\'' + escHtml(username) + '\',\'' + escHtml(m.username) + '\',this)">\u2715</button></td>'
                 + '</tr>';
         });
         membersHtml += '</table>';
@@ -810,9 +818,9 @@ function renderMyGroup(g, username) {
             + '<textarea id="sg-description" rows="2" style="width:100%;box-sizing:border-box;" placeholder="Shown to potential sponsors on the sponsorships page">' + escHtml(desc) + '</textarea>'
         + '</div>'
         + '<div class="form-row">'
-            + '<label for="sg-monthly">Suggested monthly amount (sats)</label>'
-            + '<input type="number" id="sg-monthly" value="' + monthly + '" min="0" placeholder="e.g. 10000" style="width:10em;">'
-            + '<p class="field-hint">Optional guidance for sponsors — they are not locked in to this amount.</p>'
+            + '<label for="sg-need-usd">Monthly income needed (USD)</label>'
+            + '<input type="number" id="sg-need-usd" value="' + monthly + '" min="0" step="10" placeholder="e.g. 60" style="width:7em;">'
+            + '<p class="field-hint">Sets the number of $10/month sponsorship slots (e.g. $60 = 6 slots).</p>'
         + '</div>'
         + '<button class="save-btn" onclick="saveGroupSetup(\'' + escHtml(username) + '\')" style="margin-bottom:0.5em;">Save group settings</button>'
         + ' <span id="sg-setup-status" class="status-msg"></span>'
@@ -821,14 +829,14 @@ function renderMyGroup(g, username) {
 function saveGroupSetup(username) {
     var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
     if (!jwt) return;
-    var desc    = (document.getElementById('sg-description').value || '').trim();
-    var monthly = parseInt(document.getElementById('sg-monthly').value) || 0;
-    var status  = document.getElementById('sg-setup-status');
+    var desc   = (document.getElementById('sg-description').value || '').trim();
+    var needUsd = Math.round((parseInt(document.getElementById('sg-need-usd').value) || 0) / 10) * 10;
+    var status = document.getElementById('sg-setup-status');
     status.textContent = 'Saving...'; status.className = 'status-msg';
     fetch('/api/sponsorship-api.php?action=setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
-        body: JSON.stringify({ description: desc, suggested_monthly_sats: monthly, jwt: jwt })
+        body: JSON.stringify({ description: desc, monthly_need_usd: needUsd, jwt: jwt })
     })
     .then(function(r) { return r.json(); })
     .then(function(d) {
@@ -837,23 +845,23 @@ function saveGroupSetup(username) {
     })
     .catch(function() { status.textContent = 'Network error.'; status.className = 'status-msg error'; });
 }
-function setMemberTier(recipient, target, tier, sel) {
+function setMemberSlots(recipient, target, slots, inp) {
     var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
     if (!jwt) return;
-    var prev = sel.dataset.prev || sel.value;
-    sel.disabled = true;
+    var prev = inp.dataset.prev !== undefined ? inp.dataset.prev : inp.value;
+    inp.disabled = true;
     fetch('/api/sponsorship-api.php?action=manage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
-        body: JSON.stringify({ recipient: recipient, target_username: target, op: 'set_tier', tier: tier, jwt: jwt })
+        body: JSON.stringify({ recipient: recipient, target_username: target, op: 'set_slots', slots: parseInt(slots) || 0, jwt: jwt })
     })
     .then(function(r) { return r.json(); })
     .then(function(d) {
-        sel.disabled = false;
-        if (!d.success) { alert(d.error || 'Could not update tier.'); sel.value = prev; }
-        else { sel.dataset.prev = tier; }
+        inp.disabled = false;
+        if (!d.success) { alert(d.error || 'Could not update slots.'); inp.value = prev; }
+        else { inp.dataset.prev = slots; }
     })
-    .catch(function() { sel.disabled = false; sel.value = prev; });
+    .catch(function() { inp.disabled = false; inp.value = prev; });
 }
 function removeMember(recipient, target, btn) {
     var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
@@ -889,8 +897,8 @@ function loadMySponsored(username) {
             if (!groups.length) { noneEl.style.display = 'block'; return; }
             groups.forEach(function(g) {
                 var myEntry = (g.members || []).find(function(m) { return m.username === username; });
-                var tier = myEntry ? myEntry.tier : 'queued';
-                var tierLabel = tier === 'active' ? '\u25cf Active' : tier === 'standby' ? '\u25d0 Standby' : '\u25cb Queued';
+                var slots = myEntry ? (myEntry.slots || 0) : 0;
+                var tierLabel = slots > 0 ? '\u25cf ' + slots + ' slot' + (slots > 1 ? 's' : '') + ' ($' + (slots*10) + '/mo)' : '\u25cb Queued';
                 var li = document.createElement('div');
                 li.className = 'donation-item';
                 li.style.marginBottom = '0.4em';

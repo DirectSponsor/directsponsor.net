@@ -278,7 +278,38 @@ A third bot (backup alerts) posts from es3-auth via `/root/.telegram-backup-aler
 
 ---
 
-## Sponsorship Groups (planned — not yet built)
+## Sponsorship Groups (Phase 1 live — 2026-05-03)
+
+Data stored at `userdata/sponsorship-groups/{username}.json` (one per recipient):
+```json
+{
+  "recipient_username": "evans",
+  "description": "Support the Badilisha Food Forest",
+  "suggested_monthly_sats": 10000,
+  "created_date": "2026-05-03",
+  "members": [
+    {
+      "username": "alice",
+      "display_name": "Alice",
+      "tier": "active",
+      "joined_date": "2026-05-03",
+      "note": ""
+    }
+  ]
+}
+```
+
+API: `site/api/sponsorship-api.php`
+- `GET ?action=list` — all groups (public)
+- `GET ?action=get&username=X` — single group (public)
+- `POST ?action=setup` — create/update description + suggested_monthly_sats (recipient only)
+- `POST ?action=join` — body: `{recipient, jwt}` — join queue (any logged-in user)
+- `POST ?action=leave` — body: `{recipient, jwt}` — leave group
+- `POST ?action=manage` — body: `{recipient, target_username, op: "set_tier"|"remove", tier?, jwt}` — recipient/admin only
+
+Max 12 active members enforced server-side. All tiers: `active`, `standby`, `queued`.
+
+## Sponsorship Groups — remaining phases (planned)
 
 The core feature of DS, currently in design stage. Key facts for agents:
 

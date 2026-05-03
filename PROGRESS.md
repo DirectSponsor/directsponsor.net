@@ -1,5 +1,5 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-04-27 (session 8)_
+_Last updated: 2026-05-03 (session 9)_
 
 ## What's done and live
 
@@ -129,18 +129,29 @@ _Last updated: 2026-04-27 (session 8)_
 - Auth server post-verification screen: update to show all 3 sites
 - `delete-user.sh`: add clickforcharity.net cleanup step
 
-### Sponsorship groups (major planned feature — the core of DS)
+### Sponsorship groups (Phase 1 live — 2026-05-03)
 
-Fundraiser campaigns are live. Sponsorship groups are the primary mechanism and the long-term goal — not yet built. See `direct_sponsor_sponsorship_groups.docx` and `direct_sponsor_recipient_groups.docx` for full design.
+Phase 1 is deployed. Recipients can set up a group; sponsors can join the queue; recipient manages tier assignments.
 
-Key things to build:
-- **Data model**: sponsorship group per recipient; membership table (active / standby / queued tiers); monthly commitment amount; payment history per sponsor
-- **Sponsor tier management**: joining a group, tier assignment (active by default, self-select standby), queue position
-- **Reminder + response-window system**: monthly reminder dispatch; defined window to respond; automatic demotion/replacement if no response
+**Live files:**
+- `site/api/sponsorship-api.php` — actions: `list`, `get`, `join`, `leave`, `manage`, `setup`
+- `site/sponsorships.html` — public listing of all groups
+- `site/profile.html` — sponsorship sections added (public view with join button; recipient management; "Groups I'm Sponsoring")
+- Data: `userdata/sponsorship-groups/{username}.json` — one file per recipient
+
+**What's working:**
+- Recipient (from profile page): creates/edits group description + suggested monthly sats; sees member list; promotes/demotes members between active/standby/queued tiers; removes members
+- Sponsor (from sponsorships.html or recipient's profile page): joins queue; leaves group; sees their tier
+- Public: sponsorships.html lists all groups with tier counts; recipient profile page shows group status + join button
+
+**Phase 2 still to build:**
+
+### Sponsorship groups — Phase 2 and beyond
+
+- **Monthly payment flow**: "Pay this month" button for active sponsors → Coinos invoice (same flow as fundraisers); payment recorded per-month per-sponsor in group file
+- **Reminder + response-window system**: monthly cron dispatches reminders (Telegram); tracks who has responded; non-responsive actives demoted after window closes
 - **Automatic promotion logic**: active lapses → standby fills in → queued promoted to standby → next queued joins
 - **Recipient group tools**: common fund accounting (income/outgoings, all members visible), coordinator action log, group decision documentation
-- **UI for sponsors**: join/leave a group, view commitment, see recipient updates
-- **UI for recipients**: view group composition (active/standby/queued), see payment history
 - **Network architecture**: DS is designed as independent nodes linked via Nostr — not a growing central platform. `directsponsor.net` is proof-of-concept. Deeper Nostr integration (cross-node identity, shared sponsor queues, flagging) is on the roadmap.
 
 Design principles (structural, not rules):

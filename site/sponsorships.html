@@ -150,24 +150,37 @@ function dsLogout() {
 
 <div class="project-card">
     <h1>Sponsorship Groups</h1>
-    <p>A sponsorship group is a small circle of people making a regular monthly commitment to support one recipient. Unlike a fundraiser, which has a goal and an endpoint, sponsorship is ongoing — providing a recipient with a reliable income and real human relationships.</p>
+    <p>A sponsorship group is a small circle of people making a regular monthly commitment to support one recipient. Each sponsorship covers $10/month — you can commit as many multiples as you like. Unlike a fundraiser, sponsorship is ongoing, providing reliable income and a real human relationship.</p>
     <p class="color-muted text-small">Payments go directly from sponsor to recipient via Bitcoin Lightning. No intermediary holds funds.</p>
 </div>
 
 <div id="groups-loading" class="project-card" style="text-align:center;padding:1.5em;color:var(--text-dim);">Loading sponsorship groups...</div>
 <div id="groups-list"></div>
-<div id="groups-empty" class="project-card" style="display:none;">
-    <p>No sponsorship groups are active yet. Recipients can set up their group from their <a href="profile.html">profile page</a>.</p>
+<div id="groups-full-bar" style="display:none;">
+    <div class="project-card" style="text-align:center;">
+        <p class="color-muted">All current sponsorship groups are full.</p>
+        <p><button class="sg-join-btn" onclick="showAllGroups()">View full groups &amp; join queue</button></p>
+    </div>
+</div>
+<div id="groups-full-list" style="display:none;"></div>
+<div id="groups-all-empty" class="project-card" style="display:none;">
+    <p>No sponsorship groups have been set up yet. Recipients can create their group from their <a href="profile.html">profile page</a>.</p>
+</div>
+
+<div class="project-card" id="waitlist-section">
+    <h2>Global waitlist</h2>
+    <p id="waitlist-intro">No open sponsorship slots right now? Join the global waitlist and we'll notify you when a slot becomes available.</p>
+    <div id="waitlist-actions"></div>
 </div>
 
 <div class="project-card">
     <h2>How it works</h2>
     <ul>
-        <li><strong>Active sponsors</strong> make a monthly Lightning payment directly to the recipient. Up to 12 per group.</li>
-        <li><strong>Standby sponsors</strong> are volunteers who fill in if an active sponsor misses a month.</li>
-        <li><strong>Queued sponsors</strong> are on the waiting list — promoted when a place opens.</li>
+        <li><strong>Each sponsorship slot</strong> = $10/month, paid directly to the recipient in Bitcoin (sats).</li>
+        <li><strong>Commit 1 or more slots</strong> — whatever fits your budget.</li>
+        <li><strong>When slots are full</strong>, the group is closed to new sponsors. You can still join the queue.</li>
+        <li><strong>A queue</strong> is a sign of demand. When a slot opens you'll be first to know.</li>
     </ul>
-    <p class="color-muted text-small">A waiting list is a sign of value. Groups are kept small so the relationship stays real.</p>
 </div>
 
 <style>
@@ -180,13 +193,10 @@ function dsLogout() {
 }
 .sg-card h2 { margin: 0 0 0.25em; font-size: 1.1em; }
 .sg-desc { color: var(--text-muted); font-size: 0.9em; margin: 0.25em 0 0.75em; }
-.sg-tiers { display: table; width: 100%; border-collapse: collapse; margin-bottom: 0.75em; }
-.sg-tier { display: table-cell; text-align: center; padding: 0.4em 0.5em; border: 1px solid var(--border); font-size: 0.85em; }
-.sg-tier-label { font-size: 0.8em; color: var(--text-muted); display: block; }
-.sg-tier-count { font-weight: bold; font-size: 1.1em; }
-.sg-tier-active { background: var(--bg-subtle, #f0fff0); }
-.sg-tier-standby { background: var(--bg-subtle, #fff8f0); }
-.sg-tier-queued { background: var(--bg-subtle, #f0f4ff); }
+.sg-progress-wrap { margin: 0.5em 0 0.75em; }
+.sg-progress-bar { width: 100%; background: var(--border); border-radius: 0.2em; height: 0.6em; overflow: hidden; }
+.sg-progress-fill { height: 100%; background: #f7b731; border-radius: 0.2em; transition: width 0.3s; }
+.sg-progress-label { font-size: 0.8em; color: var(--text-muted); margin-top: 0.2em; }
 .sg-monthly { font-size: 0.85em; color: var(--text-muted); margin-bottom: 0.75em; }
 .sg-actions { margin-top: 0.5em; }
 .sg-join-btn {
@@ -195,8 +205,10 @@ function dsLogout() {
 }
 .sg-join-btn:hover { background: #e0a520; }
 .sg-join-btn:disabled { background: var(--border); color: var(--text-muted); cursor: default; }
+.sg-full-badge { font-size: 0.75em; background: var(--border); padding: 0.1em 0.5em; border-radius: 0.2em; margin-left: 0.4em; vertical-align: middle; }
 .sg-view-link { font-size: 0.85em; margin-left: 0.75em; }
 .sg-status-msg { font-size: 0.85em; margin-left: 0.5em; }
+.sg-slots-input { width: 3.5em; text-align: center; margin: 0 0.3em; }
 </style>
 
 <script>
@@ -204,46 +216,108 @@ function dsLogout() {
     var _me = null;
     try {
         var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
-        if (jwt) {
-            var pl = JSON.parse(atob(jwt.split('.')[1]));
-            _me = pl.username || null;
-        }
+        if (jwt) { _me = JSON.parse(atob(jwt.split('.')[1])).username || null; }
     } catch(e) {}
 
+    var _allGroups = [];
+
+    function esc(s) {
+        return String(s).replace(/[&<>"']/g, function(c) {
+            return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+        });
+    }
+
+    // Load groups
     fetch('/api/sponsorship-api.php?action=list')
         .then(function(r) { return r.json(); })
         .then(function(data) {
             document.getElementById('groups-loading').style.display = 'none';
-            var groups = data.groups || [];
-            if (!groups.length) {
-                document.getElementById('groups-empty').style.display = 'block';
-                return;
+            _allGroups = data.groups || [];
+            var open   = _allGroups.filter(function(g) { return !g.is_full; });
+            var full   = _allGroups.filter(function(g) { return g.is_full; });
+
+            if (!_allGroups.length) {
+                document.getElementById('groups-all-empty').style.display = 'block';
+            } else if (!open.length) {
+                document.getElementById('groups-full-bar').style.display = 'block';
+                var fullList = document.getElementById('groups-full-list');
+                full.forEach(function(g) { fullList.appendChild(renderGroup(g)); });
+            } else {
+                var list = document.getElementById('groups-list');
+                open.forEach(function(g) { list.appendChild(renderGroup(g)); });
+                if (full.length) {
+                    var bar = document.createElement('p');
+                    bar.style.cssText = 'font-size:0.85em;color:var(--text-muted);margin:0.5em 0;';
+                    bar.innerHTML = full.length + ' group' + (full.length > 1 ? 's are' : ' is') + ' currently full. '
+                        + '<a href="#" onclick="showAllGroups(); return false;">View queue options →</a>';
+                    list.appendChild(bar);
+                }
             }
-            var list = document.getElementById('groups-list');
-            groups.forEach(function(g) {
-                list.appendChild(renderGroup(g));
-            });
         })
         .catch(function() {
             document.getElementById('groups-loading').innerHTML = '<p class="color-muted">Could not load groups.</p>';
         });
+
+    // Load waitlist count
+    fetch('/api/sponsorship-api.php?action=waitlist_get')
+        .then(function(r) { return r.json(); })
+        .then(function(d) { renderWaitlist(d); })
+        .catch(function() {});
+
+    function renderWaitlist(d) {
+        var count = d.count || 0;
+        var onList = (d.members || []).some(function(m) { return m.username === _me; });
+        var actEl = document.getElementById('waitlist-actions');
+        var introEl = document.getElementById('waitlist-intro');
+        if (introEl) introEl.textContent = count
+            ? count + ' ' + (count === 1 ? 'person is' : 'people are') + ' on the global waitlist.'
+            : 'No one is on the global waitlist yet — be the first.';
+        if (!actEl) return;
+        if (!_me) {
+            actEl.innerHTML = '<a href="#" onclick="window.location.href=\'https://auth.directsponsor.org/jwt-login.php?redirect_uri=\'+encodeURIComponent(window.location.href.replace(/^http:/,\'https:\')); return false;" class="sg-join-btn" style="text-decoration:none;display:inline-block;">Log in to join waitlist</a>';
+        } else if (onList) {
+            actEl.innerHTML = '<span class="color-muted text-small">✓ You are on the waitlist</span> '
+                + '<button class="sg-join-btn" style="background:var(--border);color:var(--text);margin-left:0.5em;" onclick="leaveWaitlist(this)">Leave waitlist</button>';
+        } else {
+            actEl.innerHTML = '<button class="sg-join-btn" onclick="joinWaitlist(this)">Join global waitlist</button>';
+        }
+    }
+
+    window.showAllGroups = function() {
+        document.getElementById('groups-full-bar').style.display = 'none';
+        document.getElementById('groups-full-list').style.display = 'block';
+        var fullList = document.getElementById('groups-full-list');
+        if (!fullList.children.length) {
+            _allGroups.filter(function(g) { return g.is_full; }).forEach(function(g) {
+                fullList.appendChild(renderGroup(g));
+            });
+        }
+    };
 
     function renderGroup(g) {
         var div = document.createElement('div');
         div.className = 'sg-card';
         div.id = 'sg-' + g.recipient_username;
 
-        var c = g.counts || {};
-        var activeCount  = c.active  || 0;
-        var standbyCount = c.standby || 0;
-        var queuedCount  = c.queued  || 0;
-        var monthly = g.suggested_monthly_sats
-            ? g.suggested_monthly_sats.toLocaleString() + ' sats/month suggested'
+        var filled = g.slots_filled || 0;
+        var total  = g.slots_total  || 0;
+        var pct    = total > 0 ? Math.min(100, Math.round(filled / total * 100)) : 0;
+        var monthly = g.monthly_need_usd
+            ? '$' + g.monthly_need_usd + '/month'
             : '';
+        var queueCount = (g.members || []).filter(function(m) { return m.slots === 0; }).length;
 
         var isMember = false;
         (g.members || []).forEach(function(m) { if (m.username === _me) isMember = true; });
         var isRecipient = (_me === g.recipient_username);
+
+        var progressHtml = total > 0
+            ? '<div class="sg-progress-wrap">'
+                + '<div class="sg-progress-bar"><div class="sg-progress-fill" style="width:' + pct + '%"></div></div>'
+                + '<div class="sg-progress-label">' + filled + ' of ' + total + ' slots filled ($' + (filled * 10) + ' of $' + (total * 10) + '/month)'
+                + (queueCount ? ' &mdash; ' + queueCount + ' in queue' : '') + '</div>'
+              + '</div>'
+            : '';
 
         var joinArea = '';
         if (isRecipient) {
@@ -252,20 +326,24 @@ function dsLogout() {
             joinArea = '<span class="sg-status-msg color-muted">✓ You are in this group</span>'
                 + ' <button class="sg-join-btn" style="background:var(--border);color:var(--text);" onclick="leaveGroup(\'' + esc(g.recipient_username) + '\',this)">Leave</button>';
         } else if (_me) {
-            joinArea = '<button class="sg-join-btn" onclick="joinGroup(\'' + esc(g.recipient_username) + '\',this)">Join group</button>';
+            if (!g.is_full) {
+                joinArea = '<label style="font-size:0.85em;margin-right:0.25em;">Slots ($10/month each):</label>'
+                    + '<input type="number" class="sg-slots-input" id="slots-' + esc(g.recipient_username) + '" value="1" min="1" max="' + Math.max(1, total - filled) + '">'
+                    + ' <button class="sg-join-btn" onclick="joinGroup(\'' + esc(g.recipient_username) + '\',this)">Join</button>';
+            } else {
+                joinArea = '<span class="sg-status-msg color-muted">Group full</span>'
+                    + ' <button class="sg-join-btn" onclick="joinGroup(\'' + esc(g.recipient_username) + '\',this)">Join queue</button>';
+            }
         } else {
-            joinArea = '<a href="' + encodeURI('https://auth.directsponsor.org/jwt-login.php?redirect_uri=') + encodeURIComponent('https://directsponsor.net/sponsorships.html') + '" class="sg-join-btn" style="text-decoration:none;display:inline-block;">Log in to join</a>';
+            joinArea = '<a href="#" onclick="window.location.href=\'https://auth.directsponsor.org/jwt-login.php?redirect_uri=\'+encodeURIComponent(window.location.href.replace(/^http:/,\'https:\')); return false;" class="sg-join-btn" style="text-decoration:none;display:inline-block;">Log in to join</a>';
         }
 
         div.innerHTML =
-            '<h2><a href="profile.html?user=' + esc(g.recipient_username) + '">' + esc(g.recipient_username) + '</a>\'s group</h2>'
+            '<h2><a href="profile.html?user=' + esc(g.recipient_username) + '">' + esc(g.recipient_username) + '</a>\'s group'
+                + (g.is_full ? ' <span class="sg-full-badge">Full</span>' : '') + '</h2>'
             + (g.description ? '<p class="sg-desc">' + esc(g.description) + '</p>' : '')
-            + '<div class="sg-tiers">'
-                + '<div class="sg-tier sg-tier-active"><span class="sg-tier-count">' + activeCount + '/12</span><span class="sg-tier-label">Active</span></div>'
-                + '<div class="sg-tier sg-tier-standby"><span class="sg-tier-count">' + standbyCount + '</span><span class="sg-tier-label">Standby</span></div>'
-                + '<div class="sg-tier sg-tier-queued"><span class="sg-tier-count">' + queuedCount + '</span><span class="sg-tier-label">Queued</span></div>'
-            + '</div>'
-            + (monthly ? '<div class="sg-monthly">⚡ ' + monthly + '</div>' : '')
+            + progressHtml
+            + (monthly ? '<div class="sg-monthly">' + monthly + ' needed</div>' : '')
             + '<div class="sg-actions">' + joinArea + '</div>';
 
         return div;
@@ -274,33 +352,36 @@ function dsLogout() {
     window.joinGroup = function(recipient, btn) {
         var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
         if (!jwt) { alert('Please log in first.'); return; }
+        var slotsEl = document.getElementById('slots-' + recipient);
+        var slots = slotsEl ? (parseInt(slotsEl.value) || 1) : 1;
         btn.disabled = true;
         btn.textContent = 'Joining...';
         fetch('/api/sponsorship-api.php?action=join', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
-            body: JSON.stringify({ recipient: recipient, jwt: jwt })
+            body: JSON.stringify({ recipient: recipient, slots: slots, jwt: jwt })
         })
         .then(function(r) { return r.json(); })
         .then(function(d) {
             if (d.success) {
+                var msg = d.slots > 0
+                    ? '✓ Reserved ' + d.slots + ' slot' + (d.slots > 1 ? 's' : '') + ' ($' + (d.slots * 10) + '/month)'
+                    : '✓ Added to queue';
                 var card = document.getElementById('sg-' + recipient);
                 if (card) {
                     var actEl = card.querySelector('.sg-actions');
-                    if (actEl) actEl.innerHTML = '<span class="sg-status-msg color-muted">✓ You are now in the queue</span>'
+                    if (actEl) actEl.innerHTML = '<span class="sg-status-msg color-muted">' + msg + '</span>'
                         + ' <button class="sg-join-btn" style="background:var(--border);color:var(--text);" onclick="leaveGroup(\'' + esc(recipient) + '\',this)">Leave</button>';
-                    var qEl = card.querySelector('.sg-tier-queued .sg-tier-count');
-                    if (qEl) qEl.textContent = (parseInt(qEl.textContent) + 1);
                 }
             } else {
                 btn.disabled = false;
-                btn.textContent = 'Join group';
+                btn.textContent = 'Join';
                 alert(d.error || 'Could not join group.');
             }
         })
         .catch(function() {
             btn.disabled = false;
-            btn.textContent = 'Join group';
+            btn.textContent = 'Join';
             alert('Network error.');
         });
     };
@@ -317,21 +398,46 @@ function dsLogout() {
         })
         .then(function(r) { return r.json(); })
         .then(function(d) {
-            if (d.success) {
-                window.location.reload();
-            } else {
-                btn.disabled = false;
-                alert(d.error || 'Could not leave group.');
-            }
+            if (d.success) { window.location.reload(); }
+            else { btn.disabled = false; alert(d.error || 'Could not leave group.'); }
         })
         .catch(function() { btn.disabled = false; alert('Network error.'); });
     };
 
-    function esc(s) {
-        return String(s).replace(/[&<>"']/g, function(c) {
-            return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-        });
-    }
+    window.joinWaitlist = function(btn) {
+        var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+        if (!jwt) return;
+        btn.disabled = true;
+        fetch('/api/sponsorship-api.php?action=waitlist_join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
+            body: JSON.stringify({ jwt: jwt })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.success) renderWaitlist({ count: d.count, members: [{ username: _me }] });
+            else { btn.disabled = false; alert(d.error || 'Could not join waitlist.'); }
+        })
+        .catch(function() { btn.disabled = false; alert('Network error.'); });
+    };
+
+    window.leaveWaitlist = function(btn) {
+        var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+        if (!jwt) return;
+        if (!confirm('Leave the global waitlist?')) return;
+        btn.disabled = true;
+        fetch('/api/sponsorship-api.php?action=waitlist_leave', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
+            body: JSON.stringify({ jwt: jwt })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.success) renderWaitlist({ count: d.count, members: [] });
+            else { btn.disabled = false; alert(d.error || 'Could not leave waitlist.'); }
+        })
+        .catch(function() { btn.disabled = false; alert('Network error.'); });
+    };
 })();
 </script>
 
