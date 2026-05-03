@@ -1,8 +1,8 @@
 <!-- DS-CMS Built File - Edit source files in includes/ folder -->
 
-<!-- #TITLE#="Admin — DirectSponsor" -->
-<!-- #DESC#="Admin role management for DirectSponsor." -->
-<!-- #KEYWORDS#="admin, roles, directsponsor" -->
+<!-- #TITLE#="Sponsorship Groups - DirectSponsor" -->
+<!-- #DESC#="Support a recipient with a regular monthly commitment. Small groups, direct payments, real relationships." -->
+<!-- #KEYWORDS#="sponsorship, monthly support, direct sponsorship, peer-to-peer, bitcoin lightning" -->
 
 <!-- include start doctype-head.incl -->
 <!DOCTYPE html>
@@ -11,15 +11,15 @@
     <script>(function(){var t=localStorage.getItem('ds-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');})()</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin — DirectSponsor</title>
-    <meta name="description" content="Admin role management for DirectSponsor.">
-    <meta name="keywords" content="admin, roles, directsponsor">
+    <title>Sponsorship Groups - DirectSponsor</title>
+    <meta name="description" content="Support a recipient with a regular monthly commitment. Small groups, direct payments, real relationships.">
+    <meta name="keywords" content="sponsorship, monthly support, direct sponsorship, peer-to-peer, bitcoin lightning">
     
     <!-- Open Graph Meta Tags -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://directsponsor.net">
-    <meta property="og:title" content="Admin — DirectSponsor">
-    <meta property="og:description" content="Admin role management for DirectSponsor.">
+    <meta property="og:title" content="Sponsorship Groups - DirectSponsor">
+    <meta property="og:description" content="Support a recipient with a regular monthly commitment. Small groups, direct payments, real relationships.">
     <meta property="og:image" content="https://directsponsor.net/images/og/og-home.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -52,7 +52,6 @@
 <!-- BETa RIBBON -->
 <div class="corner-ribbon top-left sticky red shadow">BETA</div>
 <!-- include end doctype-head.incl -->
-
 
 <!-- include start social-layout-start.incl -->
 <header class="site-header">
@@ -149,196 +148,191 @@ function dsLogout() {
 <!-- UNIQUE PAGE CONTENT GOES HERE -->
 <!-- include end social-layout-start.incl -->
 
-<div id="loading" class="project-card"><p>Loading...</p></div>
-
-<div id="not-logged-in" class="project-card">
-    <h2>Login required</h2>
-    <p>You must be logged in as an admin to access this page.</p>
-    <a href="#" onclick="window.location.href='https://auth.directsponsor.org/jwt-login.php?redirect_uri='+encodeURIComponent(window.location.href.replace(/^http:/,'https:')); return false;" class="save-btn" style="text-decoration:none;display:inline-block;">Log in</a>
+<div class="project-card">
+    <h1>Sponsorship Groups</h1>
+    <p>A sponsorship group is a small circle of people making a regular monthly commitment to support one recipient. Unlike a fundraiser, which has a goal and an endpoint, sponsorship is ongoing — providing a recipient with a reliable income and real human relationships.</p>
+    <p class="color-muted text-small">Payments go directly from sponsor to recipient via Bitcoin Lightning. No intermediary holds funds.</p>
 </div>
 
-<div id="access-denied" class="project-card">
-    <h2>⛔ Access Denied</h2>
-    <p>This page is for admins only.</p>
-    <a href="index.html">← Back to home</a>
+<div id="groups-loading" class="project-card" style="text-align:center;padding:1.5em;color:var(--text-dim);">Loading sponsorship groups...</div>
+<div id="groups-list"></div>
+<div id="groups-empty" class="project-card" style="display:none;">
+    <p>No sponsorship groups are active yet. Recipients can set up their group from their <a href="profile.html">profile page</a>.</p>
 </div>
 
-<div id="admin-panel">
-
-    <div class="project-card admin-section">
-        <h2>🔑 Role Management</h2>
-        <p class="color-dim" style="font-size:0.9em;margin-bottom:0.75em;">Search for a user by username, then add or remove roles.</p>
-        <div class="search-row">
-            <input type="text" id="search-input" placeholder="Search username…" onkeydown="if(event.key==='Enter')searchUsers()">
-            <button onclick="searchUsers()">Search</button>
-        </div>
-        <div id="search-status" class="color-muted" style="font-size:0.85em;margin-top:0.4em;"></div>
-        <div id="search-results" style="margin-top:0.75em;"></div>
-    </div>
-
-    <div class="project-card admin-section">
-        <h2>ℹ️ Available Roles</h2>
-        <ul class="color-dim" style="font-size:0.9em;margin:0;padding-left:1.2em;line-height:1.8em;">
-            <li><strong>member</strong> — default for all users, cannot be removed</li>
-            <li><strong>recipient</strong> — can receive donations; unlocks Coinos username field and My Fundraisers section</li>
-            <li><strong>admin</strong> — full admin access including this panel</li>
-        </ul>
-    </div>
-
+<div class="project-card">
+    <h2>How it works</h2>
+    <ul>
+        <li><strong>Active sponsors</strong> make a monthly Lightning payment directly to the recipient. Up to 12 per group.</li>
+        <li><strong>Standby sponsors</strong> are volunteers who fill in if an active sponsor misses a month.</li>
+        <li><strong>Queued sponsors</strong> are on the waiting list — promoted when a place opens.</li>
+    </ul>
+    <p class="color-muted text-small">A waiting list is a sign of value. Groups are kept small so the relationship stays real.</p>
 </div>
+
+<style>
+.sg-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 0.4em;
+    padding: 1em 1.2em;
+    margin-bottom: 1em;
+}
+.sg-card h2 { margin: 0 0 0.25em; font-size: 1.1em; }
+.sg-desc { color: var(--text-muted); font-size: 0.9em; margin: 0.25em 0 0.75em; }
+.sg-tiers { display: table; width: 100%; border-collapse: collapse; margin-bottom: 0.75em; }
+.sg-tier { display: table-cell; text-align: center; padding: 0.4em 0.5em; border: 1px solid var(--border); font-size: 0.85em; }
+.sg-tier-label { font-size: 0.8em; color: var(--text-muted); display: block; }
+.sg-tier-count { font-weight: bold; font-size: 1.1em; }
+.sg-tier-active { background: var(--bg-subtle, #f0fff0); }
+.sg-tier-standby { background: var(--bg-subtle, #fff8f0); }
+.sg-tier-queued { background: var(--bg-subtle, #f0f4ff); }
+.sg-monthly { font-size: 0.85em; color: var(--text-muted); margin-bottom: 0.75em; }
+.sg-actions { margin-top: 0.5em; }
+.sg-join-btn {
+    background: #f7b731; color: #000; border: none; cursor: pointer;
+    padding: 0.4em 1em; border-radius: 0.3em; font-size: 0.9em; font-weight: bold;
+}
+.sg-join-btn:hover { background: #e0a520; }
+.sg-join-btn:disabled { background: var(--border); color: var(--text-muted); cursor: default; }
+.sg-view-link { font-size: 0.85em; margin-left: 0.75em; }
+.sg-status-msg { font-size: 0.85em; margin-left: 0.5em; }
+</style>
 
 <script>
-var _adminUserId = null;
-
-document.addEventListener('DOMContentLoaded', function() {
-    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
-    if (!jwt) {
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('not-logged-in').style.display = 'block';
-        return;
-    }
-
-    var payload;
+(function() {
+    var _me = null;
     try {
-        payload = JSON.parse(atob(jwt.split('.')[1]));
-    } catch(e) {
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('not-logged-in').style.display = 'block';
-        return;
-    }
+        var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+        if (jwt) {
+            var pl = JSON.parse(atob(jwt.split('.')[1]));
+            _me = pl.username || null;
+        }
+    } catch(e) {}
 
-    _adminUserId = payload.user_id || payload.sub || payload.id;
-    var username  = payload.username || '';
-
-    // Check roles via API (can't trust client-side JWT alone for admin gate)
-    fetch('/api/simple-profile.php?action=check_roles&roles=admin&user_id=' + encodeURIComponent(_adminUserId)
-          + (username ? '&username=' + encodeURIComponent(username) : ''))
+    fetch('/api/sponsorship-api.php?action=list')
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            document.getElementById('loading').style.display = 'none';
-            if (!data.success || !data.role_checks['admin']) {
-                document.getElementById('access-denied').style.display = 'block';
+            document.getElementById('groups-loading').style.display = 'none';
+            var groups = data.groups || [];
+            if (!groups.length) {
+                document.getElementById('groups-empty').style.display = 'block';
                 return;
             }
-            document.getElementById('admin-panel').style.display = 'block';
-        })
-        .catch(function() {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('access-denied').style.display = 'block';
-        });
-});
-
-function searchUsers() {
-    var q = document.getElementById('search-input').value.trim();
-    if (!q) return;
-    var status = document.getElementById('search-status');
-    var results = document.getElementById('search-results');
-    status.textContent = 'Searching…';
-    results.innerHTML = '';
-
-    fetch('/api/simple-profile.php?action=search&query=' + encodeURIComponent(q)
-          + '&user_id=' + encodeURIComponent(_adminUserId))
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (!data.success) {
-                status.textContent = data.error || 'Search failed.';
-                return;
-            }
-            status.textContent = data.count + ' user(s) found.';
-            if (data.count === 0) return;
-            data.results.forEach(function(u) {
-                results.appendChild(renderUserCard(u));
+            var list = document.getElementById('groups-list');
+            groups.forEach(function(g) {
+                list.appendChild(renderGroup(g));
             });
         })
-        .catch(function() { status.textContent = 'Network error.'; });
-}
+        .catch(function() {
+            document.getElementById('groups-loading').innerHTML = '<p class="color-muted">Could not load groups.</p>';
+        });
 
-function renderUserCard(u) {
-    var div = document.createElement('div');
-    div.className = 'user-result';
-    div.id = 'user-card-' + u.user_id;
+    function renderGroup(g) {
+        var div = document.createElement('div');
+        div.className = 'sg-card';
+        div.id = 'sg-' + g.recipient_username;
 
-    var roles = u.roles || ['member'];
+        var c = g.counts || {};
+        var activeCount  = c.active  || 0;
+        var standbyCount = c.standby || 0;
+        var queuedCount  = c.queued  || 0;
+        var monthly = g.suggested_monthly_sats
+            ? g.suggested_monthly_sats.toLocaleString() + ' sats/month suggested'
+            : '';
 
-    div.innerHTML =
-        '<div class="user-result-header">' +
-            '<span class="user-result-name">' + escHtml(u.display_name || u.username) + '</span>' +
-            '<span class="user-result-id">@' + escHtml(u.username) + ' &nbsp;·&nbsp; id: ' + escHtml(u.user_id) + '</span>' +
-        '</div>' +
-        '<div class="roles-row" id="roles-row-' + u.user_id + '">' +
-            renderRoleBadges(u.user_id, roles) +
-        '</div>' +
-        '<div class="add-role-row">' +
-            '<select id="role-select-' + u.user_id + '">' +
-                '<option value="recipient">recipient</option>' +
-                '<option value="admin">admin</option>' +
-                '<option value="member">member</option>' +
-            '</select>' +
-            '<button onclick="addRole(\'' + escAttr(u.user_id) + '\')">+ Add role</button>' +
-            '<span class="msg" id="msg-' + u.user_id + '"></span>' +
-        '</div>';
-    return div;
-}
+        var isMember = false;
+        (g.members || []).forEach(function(m) { if (m.username === _me) isMember = true; });
+        var isRecipient = (_me === g.recipient_username);
 
-function renderRoleBadges(userId, roles) {
-    return roles.map(function(r) {
-        var removable = r !== 'member';
-        return '<span class="role-badge ' + r + '">' + escHtml(r) +
-            (removable ? ' <button title="Remove role" onclick="removeRole(\'' + escAttr(userId) + '\',\'' + escAttr(r) + '\')">✕</button>' : '') +
-            '</span>';
-    }).join('');
-}
-
-function addRole(userId) {
-    var role = document.getElementById('role-select-' + userId).value;
-    manageRole(userId, 'add', role);
-}
-
-function removeRole(userId, role) {
-    manageRole(userId, 'remove', role);
-}
-
-function manageRole(userId, operation, role) {
-    var msgEl = document.getElementById('msg-' + userId);
-    msgEl.textContent = 'Saving…';
-    msgEl.className = 'msg';
-
-    fetch('/api/simple-profile.php?action=manage_roles', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            user_id:        _adminUserId,
-            target_user_id: userId,
-            operation:      operation,
-            role:           role
-        })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (data.success) {
-            msgEl.textContent = '✅ Done';
-            msgEl.className = 'msg ok';
-            // Re-render the badges with updated roles
-            document.getElementById('roles-row-' + userId).innerHTML =
-                renderRoleBadges(userId, data.new_roles);
+        var joinArea = '';
+        if (isRecipient) {
+            joinArea = '<a href="profile.html" class="sg-view-link">Manage your group →</a>';
+        } else if (isMember) {
+            joinArea = '<span class="sg-status-msg color-muted">✓ You are in this group</span>'
+                + ' <button class="sg-join-btn" style="background:var(--border);color:var(--text);" onclick="leaveGroup(\'' + esc(g.recipient_username) + '\',this)">Leave</button>';
+        } else if (_me) {
+            joinArea = '<button class="sg-join-btn" onclick="joinGroup(\'' + esc(g.recipient_username) + '\',this)">Join group</button>';
         } else {
-            msgEl.textContent = data.error || 'Failed.';
-            msgEl.className = 'msg err';
+            joinArea = '<a href="' + encodeURI('https://auth.directsponsor.org/jwt-login.php?redirect_uri=') + encodeURIComponent('https://directsponsor.net/sponsorships.html') + '" class="sg-join-btn" style="text-decoration:none;display:inline-block;">Log in to join</a>';
         }
-        setTimeout(function() { msgEl.textContent = ''; }, 3000);
-    })
-    .catch(function() {
-        msgEl.textContent = 'Network error.';
-        msgEl.className = 'msg err';
-    });
-}
 
-function escHtml(s) {
-    return String(s).replace(/[&<>"']/g, function(c) {
-        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-    });
-}
-function escAttr(s) { return escHtml(s); }
+        div.innerHTML =
+            '<h2><a href="profile.html?user=' + esc(g.recipient_username) + '">' + esc(g.recipient_username) + '</a>\'s group</h2>'
+            + (g.description ? '<p class="sg-desc">' + esc(g.description) + '</p>' : '')
+            + '<div class="sg-tiers">'
+                + '<div class="sg-tier sg-tier-active"><span class="sg-tier-count">' + activeCount + '/12</span><span class="sg-tier-label">Active</span></div>'
+                + '<div class="sg-tier sg-tier-standby"><span class="sg-tier-count">' + standbyCount + '</span><span class="sg-tier-label">Standby</span></div>'
+                + '<div class="sg-tier sg-tier-queued"><span class="sg-tier-count">' + queuedCount + '</span><span class="sg-tier-label">Queued</span></div>'
+            + '</div>'
+            + (monthly ? '<div class="sg-monthly">⚡ ' + monthly + '</div>' : '')
+            + '<div class="sg-actions">' + joinArea + '</div>';
+
+        return div;
+    }
+
+    window.joinGroup = function(recipient, btn) {
+        var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+        if (!jwt) { alert('Please log in first.'); return; }
+        btn.disabled = true;
+        btn.textContent = 'Joining...';
+        fetch('/api/sponsorship-api.php?action=join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
+            body: JSON.stringify({ recipient: recipient, jwt: jwt })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.success) {
+                var card = document.getElementById('sg-' + recipient);
+                if (card) {
+                    var actEl = card.querySelector('.sg-actions');
+                    if (actEl) actEl.innerHTML = '<span class="sg-status-msg color-muted">✓ You are now in the queue</span>'
+                        + ' <button class="sg-join-btn" style="background:var(--border);color:var(--text);" onclick="leaveGroup(\'' + esc(recipient) + '\',this)">Leave</button>';
+                    var qEl = card.querySelector('.sg-tier-queued .sg-tier-count');
+                    if (qEl) qEl.textContent = (parseInt(qEl.textContent) + 1);
+                }
+            } else {
+                btn.disabled = false;
+                btn.textContent = 'Join group';
+                alert(d.error || 'Could not join group.');
+            }
+        })
+        .catch(function() {
+            btn.disabled = false;
+            btn.textContent = 'Join group';
+            alert('Network error.');
+        });
+    };
+
+    window.leaveGroup = function(recipient, btn) {
+        var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+        if (!jwt) return;
+        if (!confirm('Leave this sponsorship group?')) return;
+        btn.disabled = true;
+        fetch('/api/sponsorship-api.php?action=leave', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
+            body: JSON.stringify({ recipient: recipient, jwt: jwt })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.success) {
+                window.location.reload();
+            } else {
+                btn.disabled = false;
+                alert(d.error || 'Could not leave group.');
+            }
+        })
+        .catch(function() { btn.disabled = false; alert('Network error.'); });
+    };
+
+    function esc(s) {
+        return String(s).replace(/[&<>"']/g, function(c) {
+            return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+        });
+    }
+})();
 </script>
 
 <!-- include start social-layout-end.incl -->

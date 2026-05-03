@@ -63,6 +63,7 @@
         </div>
         <nav class="main-nav">
             <a href="fundraisers.html">Fundraisers</a>
+            <a href="sponsorships.html">Sponsorships</a>
             <a href="posts.html">Posts</a>
             <a href="about.html">About</a>
             <button id="theme-toggle" onclick="dsToggleTheme()" title="Toggle dark mode" style="background:none;border:none;cursor:pointer;padding:0.25em 0.4em;font-size:1em;color:var(--link);margin-left:0.25em;vertical-align:middle;">🌙</button>
@@ -187,6 +188,10 @@ function dsLogout() {
             <p class="color-muted text-small">No projects yet.</p>
         </div>
     </div>
+    <div class="project-card profile-section" id="pub-sponsorship-section" style="display:none;">
+        <h2>🤝 Sponsorship Group</h2>
+        <div id="pub-sg-content"></div>
+    </div>
 </div>
 
 <div id="profile-content" style="display:none;">
@@ -267,6 +272,18 @@ function dsLogout() {
         <div id="my-projects-none" style="display:none;">
             <p class="color-muted text-small">No projects yet.</p>
         </div>
+    </div>
+
+    <div class="project-card profile-section" id="my-group-section" style="display:none;">
+        <h2>🤝 My Sponsor Group</h2>
+        <p class="hint-text">Set up your sponsorship group so that sponsors can find and join you. Manage tier assignments here.</p>
+        <div id="my-group-content"></div>
+    </div>
+
+    <div class="project-card profile-section" id="my-sponsorships-section" style="display:none;">
+        <h2>🤝 Groups I'm Sponsoring</h2>
+        <div id="my-sponsorships-list"></div>
+        <p id="my-sponsorships-none" class="color-muted text-small" style="display:none;">Not sponsoring anyone yet. <a href="sponsorships.html">Browse sponsorship groups →</a></p>
     </div>
 
     <div class="project-card profile-section" id="my-donations-section" style="display:none;">
@@ -354,6 +371,7 @@ function loadPublicProfile(username) {
             document.getElementById('profile-public').style.display = 'block';
             // Load their projects into the public section
             loadPublicProjects(username);
+            loadPublicSponsorship(username);
         })
         .catch(function() {
             document.getElementById('profile-loading').style.display = 'none';
@@ -437,11 +455,13 @@ function populateForm(p) {
         var uname = p.username || _username;
         if (uname) {
             loadUserProjects(uname);
+            loadMyGroup(uname);
         }
     }
 
     // Show donations made — for all logged-in users
     loadMyDonations();
+    loadMySponsored(p.username || _username);
 }
 
 function loadMyDonations() {
@@ -655,6 +675,249 @@ function saveProfile() {
         status.textContent = 'Network error.';
         status.className = 'status-msg error';
     });
+}
+</script>
+
+<script>
+// ---- Sponsorship: public view ----
+function loadPublicSponsorship(username) {
+    fetch('/api/sponsorship-api.php?action=get&username=' + encodeURIComponent(username))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success || !data.group) return;
+            var section = document.getElementById('pub-sponsorship-section');
+            var content = document.getElementById('pub-sg-content');
+            var g = data.group;
+            var c = g.counts || {};
+            var me = null;
+            try {
+                var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+                if (jwt) me = JSON.parse(atob(jwt.split('.')[1])).username || null;
+            } catch(e) {}
+            var isMember = false;
+            (g.members || []).forEach(function(m) { if (m.username === me) isMember = true; });
+            var isRecipient = (me === username);
+            var monthlyHtml = g.suggested_monthly_sats
+                ? '<p class="color-muted text-small">⚡ ' + g.suggested_monthly_sats.toLocaleString() + ' sats/month suggested</p>'
+                : '';
+            var joinHtml = '';
+            if (!isRecipient) {
+                if (isMember) {
+                    joinHtml = '<p><span class="color-muted text-small">✓ You are in this group</span>'
+                        + ' <button class="btn-small" onclick="pubLeaveGroup(\'' + escHtml(username) + '\',this)">Leave</button></p>';
+                } else if (me) {
+                    joinHtml = '<p><button class="save-btn" onclick="pubJoinGroup(\'' + escHtml(username) + '\',this)">Join sponsor group</button></p>';
+                } else {
+                    joinHtml = '<p><a href="#" onclick="window.location.href=\'https://auth.directsponsor.org/jwt-login.php?redirect_uri=\'+encodeURIComponent(window.location.href.replace(/^http:/,\'https:\')); return false;" class="save-btn" style="text-decoration:none;display:inline-block;">Log in to join</a></p>';
+                }
+            }
+            content.innerHTML =
+                (g.description ? '<p>' + escHtml(g.description) + '</p>' : '')
+                + '<div style="display:table;width:100%;border-collapse:collapse;margin:0.5em 0;">'
+                + '<div style="display:table-row;">'
+                + sgTierCell('Active', (c.active||0) + '/12', 'var(--bg-subtle,#eeffee)')
+                + sgTierCell('Standby', c.standby||0, 'var(--bg-subtle,#fff8ee)')
+                + sgTierCell('Queued', c.queued||0, 'var(--bg-subtle,#eef0ff)')
+                + '</div></div>'
+                + monthlyHtml + joinHtml;
+            section.style.display = 'block';
+        })
+        .catch(function() {});
+}
+function sgTierCell(label, count, bg) {
+    return '<div style="display:table-cell;text-align:center;padding:0.4em 0.5em;border:1px solid var(--border);background:' + bg + ';">'
+        + '<strong>' + count + '</strong><br><span class="color-muted text-small">' + label + '</span></div>';
+}
+function pubJoinGroup(recipient, btn) {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (!jwt) return;
+    btn.disabled = true; btn.textContent = 'Joining...';
+    fetch('/api/sponsorship-api.php?action=join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
+        body: JSON.stringify({ recipient: recipient, jwt: jwt })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.success) { btn.textContent = '\u2713 Joined (queued)'; btn.disabled = true; }
+        else { btn.disabled = false; btn.textContent = 'Join sponsor group'; alert(d.error || 'Could not join.'); }
+    })
+    .catch(function() { btn.disabled = false; btn.textContent = 'Join sponsor group'; alert('Network error.'); });
+}
+function pubLeaveGroup(recipient, btn) {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (!jwt) return;
+    if (!confirm('Leave this sponsorship group?')) return;
+    btn.disabled = true;
+    fetch('/api/sponsorship-api.php?action=leave', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
+        body: JSON.stringify({ recipient: recipient, jwt: jwt })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.success) window.location.reload();
+        else { btn.disabled = false; alert(d.error || 'Could not leave.'); }
+    })
+    .catch(function() { btn.disabled = false; alert('Network error.'); });
+}
+
+// ---- Sponsorship: recipient's own group management ----
+function loadMyGroup(username) {
+    fetch('/api/sponsorship-api.php?action=get&username=' + encodeURIComponent(username))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            document.getElementById('my-group-section').style.display = 'block';
+            renderMyGroup(data.group || null, username);
+        })
+        .catch(function() {
+            document.getElementById('my-group-section').style.display = 'block';
+            renderMyGroup(null, username);
+        });
+}
+function renderMyGroup(g, username) {
+    var desc    = g ? (g.description || '') : '';
+    var monthly = g ? (g.suggested_monthly_sats || 0) : 0;
+    var members = g ? (g.members || []) : [];
+    var membersHtml = '';
+    if (members.length) {
+        membersHtml = '<h3 style="margin:1em 0 0.4em;">Members (' + members.length + ')</h3>'
+            + '<table style="width:100%;border-collapse:collapse;font-size:0.9em;">'
+            + '<tr><th style="text-align:left;padding:0.3em 0.5em;border-bottom:1px solid var(--border);">Member</th>'
+            + '<th style="text-align:center;padding:0.3em 0.5em;border-bottom:1px solid var(--border);">Tier</th>'
+            + '<th style="text-align:center;padding:0.3em 0.5em;border-bottom:1px solid var(--border);">Joined</th>'
+            + '<th style="padding:0.3em 0.5em;border-bottom:1px solid var(--border);"></th></tr>';
+        members.forEach(function(m) {
+            membersHtml += '<tr>'
+                + '<td style="padding:0.3em 0.5em;"><a href="profile.html?user=' + encodeURIComponent(m.username) + '">' + escHtml(m.display_name || m.username) + '</a></td>'
+                + '<td style="text-align:center;padding:0.3em 0.5em;">'
+                    + '<select onchange="setMemberTier(\'' + escHtml(username) + '\',\'' + escHtml(m.username) + '\',this.value,this)" style="font-size:0.85em;">'
+                    + '<option value="active"'  + (m.tier === 'active'  ? ' selected' : '') + '>Active</option>'
+                    + '<option value="standby"' + (m.tier === 'standby' ? ' selected' : '') + '>Standby</option>'
+                    + '<option value="queued"'  + (m.tier === 'queued'  ? ' selected' : '') + '>Queued</option>'
+                    + '</select></td>'
+                + '<td style="text-align:center;padding:0.3em 0.5em;color:var(--text-muted);font-size:0.85em;">' + escHtml(m.joined_date || '') + '</td>'
+                + '<td style="padding:0.3em 0.5em;text-align:right;"><button class="btn-small" onclick="removeMember(\'' + escHtml(username) + '\',\'' + escHtml(m.username) + '\',this)">✕</button></td>'
+                + '</tr>';
+        });
+        membersHtml += '</table>';
+    } else {
+        membersHtml = '<h3 style="margin:1em 0 0.4em;">Members</h3><p class="color-muted text-small">No members yet. Share your profile page to invite sponsors.</p>';
+    }
+    document.getElementById('my-group-content').innerHTML =
+        '<div class="form-row">'
+            + '<label for="sg-description">Group description</label>'
+            + '<textarea id="sg-description" rows="2" style="width:100%;box-sizing:border-box;" placeholder="Shown to potential sponsors on the sponsorships page">' + escHtml(desc) + '</textarea>'
+        + '</div>'
+        + '<div class="form-row">'
+            + '<label for="sg-monthly">Suggested monthly amount (sats)</label>'
+            + '<input type="number" id="sg-monthly" value="' + monthly + '" min="0" placeholder="e.g. 10000" style="width:10em;">'
+            + '<p class="field-hint">Optional guidance for sponsors — they are not locked in to this amount.</p>'
+        + '</div>'
+        + '<button class="save-btn" onclick="saveGroupSetup(\'' + escHtml(username) + '\')" style="margin-bottom:0.5em;">Save group settings</button>'
+        + ' <span id="sg-setup-status" class="status-msg"></span>'
+        + membersHtml;
+}
+function saveGroupSetup(username) {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (!jwt) return;
+    var desc    = (document.getElementById('sg-description').value || '').trim();
+    var monthly = parseInt(document.getElementById('sg-monthly').value) || 0;
+    var status  = document.getElementById('sg-setup-status');
+    status.textContent = 'Saving...'; status.className = 'status-msg';
+    fetch('/api/sponsorship-api.php?action=setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
+        body: JSON.stringify({ description: desc, suggested_monthly_sats: monthly, jwt: jwt })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.success) { status.textContent = '\u2705 Saved!'; }
+        else { status.textContent = d.error || 'Save failed.'; status.className = 'status-msg error'; }
+    })
+    .catch(function() { status.textContent = 'Network error.'; status.className = 'status-msg error'; });
+}
+function setMemberTier(recipient, target, tier, sel) {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (!jwt) return;
+    var prev = sel.dataset.prev || sel.value;
+    sel.disabled = true;
+    fetch('/api/sponsorship-api.php?action=manage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
+        body: JSON.stringify({ recipient: recipient, target_username: target, op: 'set_tier', tier: tier, jwt: jwt })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        sel.disabled = false;
+        if (!d.success) { alert(d.error || 'Could not update tier.'); sel.value = prev; }
+        else { sel.dataset.prev = tier; }
+    })
+    .catch(function() { sel.disabled = false; sel.value = prev; });
+}
+function removeMember(recipient, target, btn) {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (!jwt) return;
+    if (!confirm('Remove ' + target + ' from the group?')) return;
+    btn.disabled = true;
+    fetch('/api/sponsorship-api.php?action=manage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
+        body: JSON.stringify({ recipient: recipient, target_username: target, op: 'remove', jwt: jwt })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.success) { var row = btn.closest('tr'); if (row) row.parentNode.removeChild(row); }
+        else { btn.disabled = false; alert(d.error || 'Could not remove member.'); }
+    })
+    .catch(function() { btn.disabled = false; });
+}
+
+// ---- Sponsorship: groups the logged-in user has joined ----
+function loadMySponsored(username) {
+    if (!username) return;
+    fetch('/api/sponsorship-api.php?action=list')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var groups = (data.groups || []).filter(function(g) {
+                return (g.members || []).some(function(m) { return m.username === username; });
+            });
+            var section = document.getElementById('my-sponsorships-section');
+            section.style.display = 'block';
+            var list   = document.getElementById('my-sponsorships-list');
+            var noneEl = document.getElementById('my-sponsorships-none');
+            if (!groups.length) { noneEl.style.display = 'block'; return; }
+            groups.forEach(function(g) {
+                var myEntry = (g.members || []).find(function(m) { return m.username === username; });
+                var tier = myEntry ? myEntry.tier : 'queued';
+                var tierLabel = tier === 'active' ? '\u25cf Active' : tier === 'standby' ? '\u25d0 Standby' : '\u25cb Queued';
+                var li = document.createElement('div');
+                li.className = 'donation-item';
+                li.style.marginBottom = '0.4em';
+                li.innerHTML = '<a href="profile.html?user=' + encodeURIComponent(g.recipient_username) + '">' + escHtml(g.recipient_username) + '</a>'
+                    + ' <span class="color-muted text-small">' + tierLabel + '</span>'
+                    + ' <button class="btn-small" style="margin-left:0.5em;" onclick="leaveMySponsored(\'' + escHtml(g.recipient_username) + '\',this)">Leave</button>';
+                list.appendChild(li);
+            });
+        })
+        .catch(function() {});
+}
+function leaveMySponsored(recipient, btn) {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (!jwt) return;
+    if (!confirm('Leave ' + recipient + '\'s sponsorship group?')) return;
+    btn.disabled = true;
+    fetch('/api/sponsorship-api.php?action=leave', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
+        body: JSON.stringify({ recipient: recipient, jwt: jwt })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.success) { var item = btn.closest('.donation-item'); if (item) item.parentNode.removeChild(item); }
+        else { btn.disabled = false; alert(d.error || 'Could not leave.'); }
+    })
+    .catch(function() { btn.disabled = false; });
 }
 </script>
 

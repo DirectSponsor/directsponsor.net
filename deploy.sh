@@ -6,6 +6,9 @@
 
 set -e  # Exit on any error
 
+# Always resolve paths relative to this script's location, not the caller's cwd
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Check for --auto flag
 AUTO_MODE=false
 if [ "$1" = "--auto" ]; then
@@ -219,12 +222,25 @@ dry_run_preview() {
 # MAIN DEPLOYMENT SCRIPT
 # =============================================================================
 
+check_project_dir() {
+    # Ensure we are deploying directsponsor.net files, not some other project
+    if [[ ! -f "$SCRIPT_DIR/site/index.html" ]] || ! grep -qi 'directsponsor' "$SCRIPT_DIR/site/index.html" 2>/dev/null; then
+        echo -e "${RED}❌ SAFETY ABORT: $SCRIPT_DIR/site/index.html missing or does not look like a DirectSponsor page.${NC}"
+        echo -e "${RED}   Refusing to deploy — wrong directory?${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✅ Project directory verified: $SCRIPT_DIR${NC}"
+}
+
 main() {
     show_banner
     
-    echo -e "${BLUE}📂 Current directory: $(pwd)${NC}"
+    echo -e "${BLUE}📂 Script directory: $SCRIPT_DIR${NC}"
     echo -e "${BLUE}🕐 Started at: $(date)${NC}"
     echo
+    
+    # Verify we are in the right project before anything else
+    check_project_dir
     
     # Safety verification
     verify_target
@@ -234,8 +250,8 @@ main() {
     
     # Step 1: Build the site
     echo -e "${BLUE}🔨 Building site with DS-CMS...${NC}"
-    if [ -f "./build.sh" ]; then
-        ./build.sh site
+    if [ -f "$SCRIPT_DIR/build.sh" ]; then
+        bash "$SCRIPT_DIR/build.sh" site
         echo -e "${GREEN}✅ Build completed${NC}"
     else
         echo -e "${YELLOW}⚠️  build.sh not found, skipping build step${NC}"
@@ -275,7 +291,7 @@ main() {
         --exclude='Namibia-content/' \
         --exclude='evans-content/' \
         --exclude='.*' \
-        site/ "$TEMP_DIR/"
+        "$SCRIPT_DIR/site/" "$TEMP_DIR/"
     
     echo -e "${GREEN}✅ Production files prepared${NC}"
     
