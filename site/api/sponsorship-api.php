@@ -101,6 +101,7 @@ function publicGroup($group) {
             'display_name' => $m['display_name'] ?? $m['username'],
             'slots'        => (int)($m['slots'] ?? 1),
             'joined_date'  => $m['joined_date'],
+            'last_paid'    => $m['last_paid'] ?? null,
         ];
     }
     return $out;
@@ -165,6 +166,21 @@ if ($method === 'GET' && $action === 'get') {
     $group = readGroup($recipient);
     if (!$group) { echo json_encode(['success' => false, 'group' => null]); exit; }
     echo json_encode(['success' => true, 'group' => publicGroup($group)]);
+    exit;
+}
+
+// GET: check_payment — poll for sponsorship payment status
+if ($method === 'GET' && $action === 'check_payment') {
+    $payment_id  = trim($_GET['payment_id'] ?? '');
+    if (!$payment_id) { http_response_code(400); echo json_encode(['error' => 'payment_id required']); exit; }
+    $pendingFile = USERDATA_DIR . '/data/sponsorship-payments-pending/pending.json';
+    if (file_exists($pendingFile)) {
+        $pending = json_decode(file_get_contents($pendingFile), true) ?: [];
+        foreach ($pending as $p) {
+            if ($p['payment_id'] === $payment_id) { echo json_encode(['status' => 'pending']); exit; }
+        }
+    }
+    echo json_encode(['status' => 'paid']);
     exit;
 }
 
@@ -314,6 +330,109 @@ if ($method === 'POST' && $action === 'manage') {
     writeGroup($recipient, $group);
 
     echo json_encode(['success' => true, 'group' => publicGroup($group)]);
+    exit;
+}
+
+// POST: pay — sponsor pays their monthly commitment
+// Body: { recipient, amount_sats, jwt }
+if ($method === 'POST' && $action === 'pay') {
+    $caller = getCallerFromJwt($input);
+    if (!$caller) { http_response_code(401); echo json_encode(['error' => 'Authentication required']); exit; }
+
+    $recipient   = trim($input['recipient'] ?? '');
+    $amount_sats = (int)($input['amount_sats'] ?? 0);
+
+    if (!$recipient)      { http_response_code(400); echo json_encode(['error' => 'recipient required']); exit; }
+    if ($amount_sats < 1) { http_response_code(400); echo json_encode(['error' => 'amount_sats required']); exit; }
+    if ($caller['username'] === $recipient) { http_response_code(400); echo json_encode(['error' => 'Cannot pay yourself']); exit; }
+
+    // Verify caller has slots in this group
+    $group = readGroup($recipient);
+    if (!$group) { http_response_code(404); echo json_encode(['error' => 'Group not found']); exit; }
+    $members = $group['members'] ?? [];
+    $idx     = memberIndex($members, $caller['username']);
+    if ($idx === -1) { http_response_code(403); echo json_encode(['error' => 'Not a member of this group']); exit; }
+    $slots = (int)($members[$idx]['slots'] ?? 0);
+    if ($slots < 1) { http_response_code(400); echo json_encode(['error' => 'No slots assigned — ask the recipient to assign your slots first']); exit; }
+
+    // Get recipient Coinos API key from profile
+    $recipientSlug   = preg_replace('/[^a-z0-9_\-]/', '', strtolower($recipient));
+    $recipientGlob   = glob(USERDATA_DIR . '/profiles/*-' . $recipientSlug . '.txt');
+    if (!$recipientGlob) { http_response_code(422); echo json_encode(['error' => 'Recipient profile not found']); exit; }
+    $rp     = json_decode(file_get_contents($recipientGlob[0]), true);
+    $apiKey = $rp['coinos_api_key'] ?? null;
+    if (!$apiKey) { http_response_code(422); echo json_encode(['error' => 'Recipient has no payment key configured']); exit; }
+
+    // Sponsor display name
+    $displayName = $caller['username'];
+    $spGlob = glob(USERDATA_DIR . '/profiles/*-' . $caller['username'] . '.txt');
+    if ($spGlob) {
+        $sp = json_decode(file_get_contents($spGlob[0]), true);
+        $displayName = $sp['display_name'] ?? $caller['username'];
+    }
+
+    $month = date('Y-m');
+    $memo  = 'Sponsorship ' . $month . ' — ' . $displayName . ' (' . $slots . ' slot' . ($slots > 1 ? 's' : '') . ')';
+
+    $invoice_data = ['invoice' => [
+        'amount'  => $amount_sats,
+        'type'    => 'lightning',
+        'memo'    => $memo,
+        'webhook' => 'https://directsponsor.net/webhook.php',
+        'secret'  => 'directsponsor_webhook_secret_2025',
+    ]];
+
+    $curl = curl_init();
+    curl_setopt_array($curl, [
+        CURLOPT_URL            => 'https://coinos.io/api/invoice',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode($invoice_data),
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey],
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4,
+    ]);
+    $response = curl_exec($curl);
+    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    $curlErr  = curl_error($curl);
+    curl_close($curl);
+
+    if ($curlErr || $httpCode !== 200) {
+        http_response_code(502); echo json_encode(['error' => 'Payment service unavailable']); exit;
+    }
+    $invoice = json_decode($response, true);
+    if (!$invoice || !isset($invoice['text'])) {
+        http_response_code(502); echo json_encode(['error' => 'Invalid invoice response']); exit;
+    }
+
+    $payment_id  = uniqid('sp_');
+    $pendingDir  = USERDATA_DIR . '/data/sponsorship-payments-pending';
+    if (!is_dir($pendingDir)) mkdir($pendingDir, 0755, true);
+    $pendingFile = $pendingDir . '/pending.json';
+    $pending     = file_exists($pendingFile) ? (json_decode(file_get_contents($pendingFile), true) ?: []) : [];
+    $pending[] = [
+        'payment_id'       => $payment_id,
+        'type'             => 'sponsorship_payment',
+        'recipient'        => $recipient,
+        'sponsor_username' => $caller['username'],
+        'sponsor_name'     => $displayName,
+        'slots'            => $slots,
+        'amount_sats'      => $amount_sats,
+        'month'            => $month,
+        'payment_hash'     => $invoice['paymentHash'] ?? $invoice['hash'] ?? '',
+        'invoice'          => $invoice['text'],
+        'created_at'       => date('Y-m-d H:i:s'),
+    ];
+    file_put_contents($pendingFile, json_encode($pending, JSON_PRETTY_PRINT));
+
+    echo json_encode([
+        'success'      => true,
+        'payment_id'   => $payment_id,
+        'invoice'      => $invoice['text'],
+        'payment_hash' => $invoice['paymentHash'] ?? $invoice['hash'] ?? '',
+        'amount_sats'  => $amount_sats,
+        'qr_code'      => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($invoice['text']),
+    ]);
     exit;
 }
 

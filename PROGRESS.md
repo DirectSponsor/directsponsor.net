@@ -152,6 +152,7 @@ Phase 1 is deployed. Recipients can set up a group; sponsors can join the queue;
 - **Reminder + response-window system**: monthly cron dispatches reminders (Telegram); tracks who has responded; non-responsive actives demoted after window closes
 - **Automatic promotion logic**: active lapses → standby fills in → queued promoted to standby → next queued joins
 - **Recipient group tools**: common fund accounting (income/outgoings, all members visible), coordinator action log, group decision documentation
+- **Browser push / in-tab notifications**: Web Push API (service worker + VAPID keys) for payment arrival alerts to recipients. Decision: not needed for Phase 1 (no action required on join); revisit for Phase 2 when payments land. In-tab notifications (Notification API) are a simpler fallback if recipient has a tab open. Recipients who aren't on Telegram can use this instead.
 - **Network architecture**: DS is designed as independent nodes linked via Nostr — not a growing central platform. `directsponsor.net` is proof-of-concept. Deeper Nostr integration (cross-node identity, shared sponsor queues, flagging) is on the roadmap.
 
 Design principles (structural, not rules):

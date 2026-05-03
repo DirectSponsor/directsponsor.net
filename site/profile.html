@@ -294,6 +294,18 @@ function dsLogout() {
 
 </div>
 
+<div id="sp-pay-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);z-index:1000;overflow-y:auto;">
+  <div class="project-card" style="max-width:22em;margin:3em auto;padding:1.5em;">
+    <h3 id="sp-pay-title" style="margin-top:0;">Pay this month</h3>
+    <div id="sp-pay-body">
+      <p class="color-muted text-small">Getting exchange rate…</p>
+    </div>
+    <div style="margin-top:1em;text-align:right;">
+      <button class="btn-small" onclick="closeSponsorshipModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
 var _profile = null;
 var _userId = null;
@@ -905,17 +917,83 @@ function loadMySponsored(username) {
             groups.forEach(function(g) {
                 var myEntry = (g.members || []).find(function(m) { return m.username === username; });
                 var slots = myEntry ? (myEntry.slots || 0) : 0;
+                var lastPaid = myEntry ? (myEntry.last_paid || null) : null;
                 var tierLabel = slots > 0 ? '\u25cf ' + slots + ' slot' + (slots > 1 ? 's' : '') + ' ($' + (slots*10) + '/mo)' : '\u25cb Queued';
+                var lastPaidHtml = lastPaid
+                    ? ' <span class="color-muted text-small">(last paid ' + escHtml(lastPaid) + ')</span>'
+                    : '';
+                var payBtn = slots > 0
+                    ? ' <button class="save-btn" style="margin-left:0.5em;font-size:0.8em;padding:0.2em 0.7em;" onclick="openSponsorshipPay(\'' + escHtml(g.recipient_username) + '\',' + slots + ',this)">Pay this month</button>'
+                    : '';
                 var li = document.createElement('div');
                 li.className = 'donation-item';
-                li.style.marginBottom = '0.4em';
+                li.style.marginBottom = '0.6em';
                 li.innerHTML = '<a href="profile.html?user=' + encodeURIComponent(g.recipient_username) + '">' + escHtml(g.recipient_username) + '</a>'
                     + ' <span class="color-muted text-small">' + tierLabel + '</span>'
-                    + ' <button class="btn-small" style="margin-left:0.5em;" onclick="leaveMySponsored(\'' + escHtml(g.recipient_username) + '\',this)">Leave</button>';
+                    + lastPaidHtml
+                    + payBtn
+                    + ' <button class="btn-small" style="margin-left:0.3em;" onclick="leaveMySponsored(\'' + escHtml(g.recipient_username) + '\',this)">Leave</button>';
                 list.appendChild(li);
             });
         })
         .catch(function() {});
+}
+
+var _spPayPollTimer = null;
+
+function openSponsorshipPay(recipient, slots, btn) {
+    var modal = document.getElementById('sp-pay-modal');
+    var title = document.getElementById('sp-pay-title');
+    var body  = document.getElementById('sp-pay-body');
+    title.textContent = 'Pay ' + recipient + ' — ' + slots + ' slot' + (slots > 1 ? 's' : '') + ' ($' + (slots * 10) + ')';
+    body.innerHTML = '<p class="color-muted text-small">Getting exchange rate…</p>';
+    modal.style.display = 'block';
+
+    fetch('https://mempool.space/api/v1/prices')
+        .then(function(r) { return r.json(); })
+        .then(function(prices) {
+            var btcUsd = prices.USD;
+            if (!btcUsd) throw new Error('no rate');
+            var usd = slots * 10;
+            var sats = Math.round((usd / btcUsd) * 100000000);
+            var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+            if (!jwt) { body.innerHTML = '<p class="status-msg error">Please log in first.</p>'; return; }
+            body.innerHTML = '<p>Amount: <strong>' + sats.toLocaleString() + ' sats</strong> ($' + usd + ' at current rate)</p>'
+                + '<p class="color-muted text-small">Creating invoice…</p>';
+            return fetch('/api/sponsorship-api.php?action=pay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
+                body: JSON.stringify({ recipient: recipient, amount_sats: sats, jwt: jwt })
+            }).then(function(r) { return r.json(); }).then(function(d) {
+                if (!d.success) { body.innerHTML = '<p class="status-msg error">' + escHtml(d.error || 'Could not create invoice.') + '</p>'; return; }
+                var inv = d.invoice;
+                body.innerHTML =
+                    '<p style="text-align:center;"><img src="' + escHtml(d.qr_code) + '" alt="QR" style="max-width:220px;width:100%;"></p>'
+                    + '<p style="word-break:break-all;font-size:0.72em;" class="color-muted">' + escHtml(inv) + '</p>'
+                    + '<p id="sp-pay-status" class="color-muted text-small">Waiting for payment…</p>';
+                if (_spPayPollTimer) clearInterval(_spPayPollTimer);
+                _spPayPollTimer = setInterval(function() {
+                    fetch('/api/sponsorship-api.php?action=check_payment&payment_id=' + encodeURIComponent(d.payment_id))
+                        .then(function(r) { return r.json(); })
+                        .then(function(s) {
+                            if (s.status === 'paid') {
+                                clearInterval(_spPayPollTimer);
+                                var st = document.getElementById('sp-pay-status');
+                                if (st) st.innerHTML = '<strong>\u2705 Payment received! Thank you.</strong>';
+                                setTimeout(function() { closeSponsorshipModal(); location.reload(); }, 2500);
+                            }
+                        }).catch(function() {});
+                }, 3000);
+            });
+        })
+        .catch(function() {
+            body.innerHTML = '<p class="status-msg error">Could not get exchange rate. Please try again.</p>';
+        });
+}
+
+function closeSponsorshipModal() {
+    if (_spPayPollTimer) { clearInterval(_spPayPollTimer); _spPayPollTimer = null; }
+    document.getElementById('sp-pay-modal').style.display = 'none';
 }
 function leaveMySponsored(recipient, btn) {
     var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');

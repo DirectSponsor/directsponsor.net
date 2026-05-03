@@ -3,7 +3,9 @@
 define('DS_DATA_DIR', '/var/www/directsponsor.net/userdata');
 define('PROJECTS_DIR', DS_DATA_DIR . '/projects');
 define('SITE_INCOME_DIR', DS_DATA_DIR . '/payments/data/site-income');
-define('PROJECT_DONATIONS_DIR', DS_DATA_DIR . '/data/project-donations-pending');
+define('PROJECT_DONATIONS_DIR',   DS_DATA_DIR . '/data/project-donations-pending');
+define('SPONSORSHIP_PAY_DIR',     DS_DATA_DIR . '/data/sponsorship-payments-pending');
+define('SPONSORSHIP_GROUPS_DIR',  DS_DATA_DIR . '/sponsorship-groups');
 define('LOGS_DIR', DS_DATA_DIR . '/logs');
 define('DATA_DIR', DS_DATA_DIR . '/data');
 define('LOG_FILE', LOGS_DIR . '/webhook.log');
@@ -120,7 +122,25 @@ function processPaymentConfirmation($webhookData) {
         }
     }
     
-    // If not found in project donations, try SITE INCOME donations
+    // If not found in project donations, try SPONSORSHIP payments
+    $isSponsorshipPayment = false;
+    if ($matchedDonation === null) {
+        $spPending = loadJsonData(SPONSORSHIP_PAY_DIR . '/pending.json');
+        foreach ($spPending as $index => $payment) {
+            if (
+                (isset($webhookData['hash']) && $payment['payment_hash'] === $webhookData['hash']) ||
+                (isset($webhookData['hash']) && $payment['invoice']      === $webhookData['hash'])
+            ) {
+                $foundIndex           = $index;
+                $matchedDonation      = $payment;
+                $isSponsorshipPayment = true;
+                logWebhook("Found SPONSORSHIP PAYMENT match for recipient: " . $payment['recipient']);
+                break;
+            }
+        }
+    }
+
+    // If not found in sponsorship payments, try SITE INCOME donations
     if ($matchedDonation === null) {
         $sitePending = loadJsonData(SITE_INCOME_DIR . '/pending.json');
         foreach ($sitePending as $index => $donation) {
@@ -139,13 +159,15 @@ function processPaymentConfirmation($webhookData) {
     }
     
     if ($matchedDonation === null) {
-        logWebhook("No matching pending donation found in either system", 'WARNING');
+        logWebhook("No matching pending donation found in any system", 'WARNING');
         return false;
     }
     
     // Process based on donation type
     if ($isProjectDonation) {
         return processProjectDonation($matchedDonation, $foundIndex, $webhookData);
+    } elseif ($isSponsorshipPayment) {
+        return processSponsorshipPayment($matchedDonation, $foundIndex, $webhookData);
     } else {
         return processSiteIncomeDonation($matchedDonation, $foundIndex, $webhookData);
     }
@@ -444,6 +466,70 @@ function processProjectDonation($donation, $foundIndex, $webhookData) {
     }
 
     logWebhook("Project donation confirmed: {$amountSats} sats to project {$donation['project_id']}");
+    return true;
+}
+
+/**
+ * Process sponsorship payment confirmation
+ */
+function processSponsorshipPayment($payment, $foundIndex, $webhookData) {
+    $recipient       = $payment['recipient'];
+    $sponsorUsername = $payment['sponsor_username'];
+    $amountSats      = (int)$payment['amount_sats'];
+    $month           = $payment['month'] ?? date('Y-m');
+    logWebhook("Processing SPONSORSHIP payment: {$amountSats} sats from {$sponsorUsername} to {$recipient} ({$month})");
+
+    // Update group member record
+    $slug      = preg_replace('/[^a-z0-9_\-]/', '', strtolower($recipient));
+    $groupFile = SPONSORSHIP_GROUPS_DIR . '/' . $slug . '.json';
+    if (!file_exists($groupFile)) {
+        logWebhook("Sponsorship group file not found for {$recipient}", 'ERROR');
+    } else {
+        $group   = json_decode(file_get_contents($groupFile), true);
+        $members = $group['members'] ?? [];
+        $idx     = -1;
+        foreach ($members as $i => $m) {
+            if (($m['username'] ?? '') === $sponsorUsername) { $idx = $i; break; }
+        }
+        if ($idx === -1) {
+            logWebhook("Sponsor {$sponsorUsername} not found in group {$recipient} — recording payment anyway", 'WARNING');
+        } else {
+            if (!isset($members[$idx]['payments'])) $members[$idx]['payments'] = [];
+            $members[$idx]['payments'][] = [
+                'date'        => date('Y-m-d'),
+                'month'       => $month,
+                'amount_sats' => $amountSats,
+                'slots'       => $payment['slots'],
+            ];
+            $members[$idx]['last_paid'] = date('Y-m-d');
+            $group['members'] = $members;
+            file_put_contents($groupFile, json_encode($group, JSON_PRETTY_PRINT));
+            logWebhook("Updated last_paid and payments[] for {$sponsorUsername} in group {$recipient}");
+        }
+    }
+
+    // Remove from pending
+    $spPending = loadJsonData(SPONSORSHIP_PAY_DIR . '/pending.json');
+    array_splice($spPending, $foundIndex, 1);
+    saveJsonData(SPONSORSHIP_PAY_DIR . '/pending.json', $spPending);
+
+    // Append to transaction ledger
+    $ledger = loadJsonData(DATA_DIR . '/transaction-ledger.json');
+    if (!isset($ledger['transactions'])) $ledger['transactions'] = [];
+    $ledger['transactions'][] = [
+        'timestamp'        => date('Y-m-d H:i:s'),
+        'type'             => 'sponsorship_payment',
+        'recipient'        => $recipient,
+        'sponsor_username' => $sponsorUsername,
+        'sponsor_name'     => $payment['sponsor_name'],
+        'slots'            => $payment['slots'],
+        'month'            => $month,
+        'amount_sats'      => $amountSats,
+        'payment_hash'     => $payment['payment_hash'],
+    ];
+    saveJsonData(DATA_DIR . '/transaction-ledger.json', $ledger);
+
+    logWebhook("Sponsorship payment confirmed: {$amountSats} sats from {$sponsorUsername} to {$recipient}");
     return true;
 }
 
