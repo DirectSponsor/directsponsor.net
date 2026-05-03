@@ -328,12 +328,12 @@ function dsLogout() {
         } else if (_me) {
             if (!g.is_full) {
                 var avail = Math.max(1, total - filled);
+                var opts = '<option value="">Select slots…</option>';
+                for (var s = 1; s <= avail; s++) opts += '<option value="' + s + '">$' + (s * 10) + '/month (' + s + ' slot' + (s > 1 ? 's' : '') + ')</option>';
                 joinArea = '<div style="margin:0.25em 0;">'
-                    + '<span style="font-size:0.85em;">Commit </span>'
-                    + '<input type="number" class="sg-slots-input" id="slots-' + esc(g.recipient_username) + '" value="1" min="1" max="' + avail + '" oninput="updateSlotCost(\'' + esc(g.recipient_username) + '\')" style="width:3em;text-align:center;">'
-                    + '<span style="font-size:0.85em;"> &times; $10 = </span>'
-                    + '<strong><span id="cost-' + esc(g.recipient_username) + '">$10</span>/month</strong>'
-                    + ' <button class="sg-join-btn" style="margin-left:0.5em;" onclick="joinGroup(\'' + esc(g.recipient_username) + '\',this)">Commit &amp; join</button>'
+                    + '<select id="slots-' + esc(g.recipient_username) + '" style="font-size:0.9em;margin-right:0.5em;">'
+                    + opts + '</select>'
+                    + '<button class="sg-join-btn" onclick="joinGroup(\'' + esc(g.recipient_username) + '\',this)">Commit &amp; join</button>'
                     + '</div>';
             } else {
                 joinArea = '<span class="sg-status-msg color-muted">Group full</span>'
@@ -354,17 +354,12 @@ function dsLogout() {
         return div;
     }
 
-    window.updateSlotCost = function(recipient) {
-        var el = document.getElementById('slots-' + recipient);
-        var costEl = document.getElementById('cost-' + recipient);
-        if (el && costEl) costEl.textContent = '$' + ((parseInt(el.value) || 1) * 10);
-    };
-
     window.joinGroup = function(recipient, btn) {
         var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
         if (!jwt) { alert('Please log in first.'); return; }
         var slotsEl = document.getElementById('slots-' + recipient);
-        var slots = slotsEl ? (parseInt(slotsEl.value) || 1) : 1;
+        var slots = slotsEl ? parseInt(slotsEl.value) : 0;
+        if (!slots) { alert('Please select how many slots you want to commit.'); return; }
         btn.disabled = true;
         btn.textContent = 'Joining...';
         fetch('/api/sponsorship-api.php?action=join', {

@@ -716,12 +716,12 @@ function loadPublicSponsorship(username) {
                         + ' <button class="btn-small" onclick="pubLeaveGroup(\'' + escHtml(username) + '\',this)">Leave</button></p>';
                 } else if (me) {
                     var maxSlots = total > 0 ? Math.max(1, total - filled) : 6;
+                    var pubOpts = '<option value="">Select slots…</option>';
+                    for (var ps = 1; ps <= maxSlots; ps++) pubOpts += '<option value="' + ps + '">$' + (ps * 10) + '/month (' + ps + ' slot' + (ps > 1 ? 's' : '') + ')</option>';
                     joinHtml = '<p>'
-                        + '<span style="font-size:0.85em;">Commit </span>'
-                        + '<input type="number" id="pub-slots-' + escHtml(username) + '" value="1" min="1" max="' + maxSlots + '" style="width:3em;text-align:center;" oninput="pubUpdateCost(\'' + escHtml(username) + '\')">'
-                        + '<span style="font-size:0.85em;"> &times; $10 = </span>'
-                        + '<strong><span id="pub-cost-' + escHtml(username) + '">$10</span>/month</strong>'
-                        + ' <button class="save-btn" style="margin-left:0.4em;" onclick="pubJoinGroup(\'' + escHtml(username) + '\',this)">Commit &amp; join</button>'
+                        + '<select id="pub-slots-' + escHtml(username) + '" style="font-size:0.9em;margin-right:0.5em;">'
+                        + pubOpts + '</select>'
+                        + '<button class="save-btn" onclick="pubJoinGroup(\'' + escHtml(username) + '\',this)">Commit &amp; join</button>'
                         + '</p>';
                 } else {
                     joinHtml = '<p><a href="#" onclick="window.location.href=\'https://auth.directsponsor.org/jwt-login.php?redirect_uri=\'+encodeURIComponent(window.location.href.replace(/^http:/,\'https:\')); return false;" class="save-btn" style="text-decoration:none;display:inline-block;">Log in to join</a></p>';
@@ -738,16 +738,12 @@ function sgTierCell(label, count, bg) {
     return '<div style="display:table-cell;text-align:center;padding:0.4em 0.5em;border:1px solid var(--border);background:' + bg + ';">'
         + '<strong>' + count + '</strong><br><span class="color-muted text-small">' + label + '</span></div>';
 }
-function pubUpdateCost(username) {
-    var el = document.getElementById('pub-slots-' + username);
-    var costEl = document.getElementById('pub-cost-' + username);
-    if (el && costEl) costEl.textContent = '$' + ((parseInt(el.value) || 1) * 10);
-}
 function pubJoinGroup(recipient, btn) {
     var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
     if (!jwt) return;
     var slotsEl = document.getElementById('pub-slots-' + recipient);
-    var slots = slotsEl ? (parseInt(slotsEl.value) || 1) : 1;
+    var slots = slotsEl ? parseInt(slotsEl.value) : 0;
+    if (!slots) { alert('Please select how many slots you want to commit.'); return; }
     btn.disabled = true; btn.textContent = 'Joining...';
     fetch('/api/sponsorship-api.php?action=join', {
         method: 'POST',
