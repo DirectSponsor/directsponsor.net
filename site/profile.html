@@ -929,7 +929,7 @@ function loadMySponsored(username) {
                     if (alreadyPaid) {
                         payBtn = ' <span class="color-muted text-small" style="margin-left:0.5em;">\u2713 Paid for ' + escHtml(fmtMonth(dueMonth)) + '</span>';
                     } else {
-                        payBtn = ' <button class="save-btn" style="margin-left:0.5em;font-size:0.8em;padding:0.2em 0.7em;" onclick="openSponsorshipPay(\'' + escHtml(g.recipient_username) + '\',' + slots + ',\'' + dueMonth + '\',this)">Pay for ' + escHtml(fmtMonth(dueMonth)) + '</button>';
+                        payBtn = '<br><button class="save-btn" style="margin-top:0.4em;padding:0.5em 1.2em;font-size:1em;" onclick="openSponsorshipPay(\'' + escHtml(g.recipient_username) + '\',' + slots + ',\'' + dueMonth + '\',this)">⚡ Pay for ' + escHtml(fmtMonth(dueMonth)) + '</button>';
                     }
                 }
                 var li = document.createElement('div');
