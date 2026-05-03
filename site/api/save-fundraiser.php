@@ -240,6 +240,16 @@ if ($coinosApiKey) {
         'coinos_username' => $target_username,
     ];
     file_put_contents($configFile, json_encode($existingConfig, JSON_PRETTY_PRINT));
+
+    // Keep profile in sync so sponsorship payments can find the key
+    $profileGlob2 = glob(USERDATA_DIR . '/profiles/' . $callerId . '-*.txt');
+    if ($profileGlob2) {
+        $pd = json_decode(file_get_contents($profileGlob2[0]), true) ?: [];
+        if (($pd['coinos_api_key'] ?? '') !== $coinosApiKey) {
+            $pd['coinos_api_key'] = $coinosApiKey;
+            file_put_contents($profileGlob2[0], json_encode($pd, JSON_PRETTY_PRINT));
+        }
+    }
 }
 
 echo json_encode([
