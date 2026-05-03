@@ -353,7 +353,7 @@
             var uname = payload.username || payload.sub || '';
             if (uname) {
                 document.getElementById('nav-username-label').textContent = uname;
-                document.getElementById('nav-profile-link').href = 'profile.html?user=' + encodeURIComponent(uname);
+                document.getElementById('nav-profile-link').href = 'profile.html';
             }
         } catch(e) {}
         document.getElementById('nav-user-menu').style.display = '';
