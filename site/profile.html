@@ -459,9 +459,11 @@ function populateForm(p) {
         }
     }
 
-    // Show donations made — for all logged-in users
-    loadMyDonations();
-    loadMySponsored(p.username || _username);
+    // Show donations made and sponsorships joined — only for non-recipients
+    if (roles.indexOf('recipient') === -1) {
+        loadMyDonations();
+        loadMySponsored(p.username || _username);
+    }
 }
 
 function loadMyDonations() {
@@ -730,13 +732,13 @@ function loadPublicSponsorship(username) {
             content.innerHTML =
                 (g.description ? '<p>' + escHtml(g.description) + '</p>' : '')
                 + progressHtml + joinHtml;
-            section.style.display = 'block';
+            if (isRecipient) {
+                section.style.display = 'none';
+            } else {
+                section.style.display = 'block';
+            }
         })
         .catch(function() {});
-}
-function sgTierCell(label, count, bg) {
-    return '<div style="display:table-cell;text-align:center;padding:0.4em 0.5em;border:1px solid var(--border);background:' + bg + ';">'
-        + '<strong>' + count + '</strong><br><span class="color-muted text-small">' + label + '</span></div>';
 }
 function pubJoinGroup(recipient, btn) {
     var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');

@@ -35,7 +35,7 @@ SSH_CONFIG_ALIAS="RN1"
 SSH_KEY_PATH="~/.ssh/id_rsa"  # Default key or update if specific
 
 # Deploy method
-DEPLOY_METHOD="scp"  # Options: "rsync", "scp", or "manual"
+DEPLOY_METHOD="scp"  # Uses rsync --checksum for transfer; "scp" here means SSH-based (not manual)
 
 # =============================================================================
 # COLOR CODES
@@ -321,9 +321,11 @@ main() {
             SSH_TARGET="${REMOTE_USER}@${REMOTE_HOST}"
         fi
         
-        # Deploy with SCP
-        echo -e "${BLUE}📡 Transferring files via SCP...${NC}"
-        scp -i "$SSH_KEY_PATH" -P "$REMOTE_PORT" -r "$TEMP_DIR"/* "$SSH_TARGET:$REMOTE_PATH"
+        # Deploy with rsync (checksum-based — only transfers genuinely changed files)
+        echo -e "${BLUE}📡 Transferring files via rsync...${NC}"
+        rsync -avz --checksum --delete \
+            -e "ssh -i $SSH_KEY_PATH -p $REMOTE_PORT" \
+            "$TEMP_DIR/" "$SSH_TARGET:$REMOTE_PATH"
         
         # Fix remote permissions
         echo -e "${BLUE}🔧 Fixing remote permissions...${NC}"
