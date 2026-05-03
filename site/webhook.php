@@ -501,7 +501,8 @@ function processSponsorshipPayment($payment, $foundIndex, $webhookData) {
                 'amount_sats' => $amountSats,
                 'slots'       => $payment['slots'],
             ];
-            $members[$idx]['last_paid'] = date('Y-m-d');
+            $members[$idx]['last_paid']       = date('Y-m-d');
+            $members[$idx]['last_paid_month'] = $month;
             $group['members'] = $members;
             file_put_contents($groupFile, json_encode($group, JSON_PRETTY_PRINT));
             logWebhook("Updated last_paid and payments[] for {$sponsorUsername} in group {$recipient}");

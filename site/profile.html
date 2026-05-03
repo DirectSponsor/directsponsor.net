@@ -917,14 +917,21 @@ function loadMySponsored(username) {
             groups.forEach(function(g) {
                 var myEntry = (g.members || []).find(function(m) { return m.username === username; });
                 var slots = myEntry ? (myEntry.slots || 0) : 0;
-                var lastPaid = myEntry ? (myEntry.last_paid || null) : null;
+                var lastPaidMonth = myEntry ? (myEntry.last_paid_month || null) : null;
+                var dueMonth  = getDueMonth();
+                var alreadyPaid = (lastPaidMonth === dueMonth);
                 var tierLabel = slots > 0 ? '\u25cf ' + slots + ' slot' + (slots > 1 ? 's' : '') + ' ($' + (slots*10) + '/mo)' : '\u25cb Queued';
-                var lastPaidHtml = lastPaid
-                    ? ' <span class="color-muted text-small">(last paid ' + escHtml(lastPaid) + ')</span>'
+                var lastPaidHtml = lastPaidMonth
+                    ? ' <span class="color-muted text-small">(paid ' + escHtml(fmtMonth(lastPaidMonth)) + ')</span>'
                     : '';
-                var payBtn = slots > 0
-                    ? ' <button class="save-btn" style="margin-left:0.5em;font-size:0.8em;padding:0.2em 0.7em;" onclick="openSponsorshipPay(\'' + escHtml(g.recipient_username) + '\',' + slots + ',this)">Pay this month</button>'
-                    : '';
+                var payBtn = '';
+                if (slots > 0) {
+                    if (alreadyPaid) {
+                        payBtn = ' <span class="color-muted text-small" style="margin-left:0.5em;">\u2713 Paid for ' + escHtml(fmtMonth(dueMonth)) + '</span>';
+                    } else {
+                        payBtn = ' <button class="save-btn" style="margin-left:0.5em;font-size:0.8em;padding:0.2em 0.7em;" onclick="openSponsorshipPay(\'' + escHtml(g.recipient_username) + '\',' + slots + ',\'' + dueMonth + '\',this)">Pay for ' + escHtml(fmtMonth(dueMonth)) + '</button>';
+                    }
+                }
                 var li = document.createElement('div');
                 li.className = 'donation-item';
                 li.style.marginBottom = '0.6em';
@@ -941,11 +948,24 @@ function loadMySponsored(username) {
 
 var _spPayPollTimer = null;
 
-function openSponsorshipPay(recipient, slots, btn) {
+var _SP_GRACE_DAY = 5; // days 1-5: current month still due; day 6+: next month
+function getDueMonth() {
+    var now = new Date();
+    var due = now.getDate() <= _SP_GRACE_DAY
+        ? new Date(now.getFullYear(), now.getMonth(), 1)
+        : new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    return due.getFullYear() + '-' + String(due.getMonth() + 1).padStart(2, '0');
+}
+function fmtMonth(ym) {
+    var p = ym.split('-');
+    return ['January','February','March','April','May','June','July','August','September','October','November','December'][parseInt(p[1])-1] + ' ' + p[0];
+}
+
+function openSponsorshipPay(recipient, slots, month, btn) {
     var modal = document.getElementById('sp-pay-modal');
     var title = document.getElementById('sp-pay-title');
     var body  = document.getElementById('sp-pay-body');
-    title.textContent = 'Pay ' + recipient + ' — ' + slots + ' slot' + (slots > 1 ? 's' : '') + ' ($' + (slots * 10) + ')';
+    title.textContent = 'Pay for ' + fmtMonth(month) + ' — ' + recipient;
     body.innerHTML = '<p class="color-muted text-small">Getting exchange rate…</p>';
     modal.style.display = 'block';
 
@@ -958,12 +978,13 @@ function openSponsorshipPay(recipient, slots, btn) {
             var sats = Math.round((usd / btcUsd) * 100000000);
             var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
             if (!jwt) { body.innerHTML = '<p class="status-msg error">Please log in first.</p>'; return; }
-            body.innerHTML = '<p>Amount: <strong>' + sats.toLocaleString() + ' sats</strong> ($' + usd + ' at current rate)</p>'
+            body.innerHTML = '<p>Paying for: <strong>' + fmtMonth(month) + '</strong></p>'
+                + '<p>Amount: <strong>' + sats.toLocaleString() + ' sats</strong> ($' + usd + ' at current rate)</p>'
                 + '<p class="color-muted text-small">Creating invoice…</p>';
             return fetch('/api/sponsorship-api.php?action=pay', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
-                body: JSON.stringify({ recipient: recipient, amount_sats: sats, jwt: jwt })
+                body: JSON.stringify({ recipient: recipient, amount_sats: sats, month: month, jwt: jwt })
             }).then(function(r) { return r.json(); }).then(function(d) {
                 if (!d.success) { body.innerHTML = '<p class="status-msg error">' + escHtml(d.error || 'Could not create invoice.') + '</p>'; return; }
                 var inv = d.invoice;

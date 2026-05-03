@@ -101,7 +101,8 @@ function publicGroup($group) {
             'display_name' => $m['display_name'] ?? $m['username'],
             'slots'        => (int)($m['slots'] ?? 1),
             'joined_date'  => $m['joined_date'],
-            'last_paid'    => $m['last_paid'] ?? null,
+            'last_paid'      => $m['last_paid'] ?? null,
+            'last_paid_month' => $m['last_paid_month'] ?? null,
         ];
     }
     return $out;
@@ -342,9 +343,20 @@ if ($method === 'POST' && $action === 'pay') {
     $recipient   = trim($input['recipient'] ?? '');
     $amount_sats = (int)($input['amount_sats'] ?? 0);
 
+    $month = trim($input['month'] ?? '');
+    if (!preg_match('/^\d{4}-\d{2}$/', $month)) {
+        http_response_code(400); echo json_encode(['error' => 'month required (YYYY-MM)']); exit;
+    }
     if (!$recipient)      { http_response_code(400); echo json_encode(['error' => 'recipient required']); exit; }
     if ($amount_sats < 1) { http_response_code(400); echo json_encode(['error' => 'amount_sats required']); exit; }
     if ($caller['username'] === $recipient) { http_response_code(400); echo json_encode(['error' => 'Cannot pay yourself']); exit; }
+
+    // Server-side: month must be current or next only (no >1 month ahead)
+    $currentMonth = date('Y-m');
+    $nextMonth    = date('Y-m', strtotime('first day of next month'));
+    if ($month !== $currentMonth && $month !== $nextMonth) {
+        http_response_code(400); echo json_encode(['error' => 'Can only pay for current or next month']); exit;
+    }
 
     // Verify caller has slots in this group
     $group = readGroup($recipient);
@@ -354,6 +366,13 @@ if ($method === 'POST' && $action === 'pay') {
     if ($idx === -1) { http_response_code(403); echo json_encode(['error' => 'Not a member of this group']); exit; }
     $slots = (int)($members[$idx]['slots'] ?? 0);
     if ($slots < 1) { http_response_code(400); echo json_encode(['error' => 'No slots assigned — ask the recipient to assign your slots first']); exit; }
+
+    // Check not already paid for this month
+    foreach (($members[$idx]['payments'] ?? []) as $p) {
+        if (($p['month'] ?? '') === $month) {
+            http_response_code(400); echo json_encode(['error' => 'Already paid for ' . $month]); exit;
+        }
+    }
 
     // Get recipient Coinos API key from profile
     $recipientSlug   = preg_replace('/[^a-z0-9_\-]/', '', strtolower($recipient));
@@ -371,7 +390,6 @@ if ($method === 'POST' && $action === 'pay') {
         $displayName = $sp['display_name'] ?? $caller['username'];
     }
 
-    $month = date('Y-m');
     $memo  = 'Sponsorship ' . $month . ' — ' . $displayName . ' (' . $slots . ' slot' . ($slots > 1 ? 's' : '') . ')';
 
     $invoice_data = ['invoice' => [
