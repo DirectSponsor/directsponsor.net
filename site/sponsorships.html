@@ -327,9 +327,14 @@ function dsLogout() {
                 + ' <button class="sg-join-btn" style="background:var(--border);color:var(--text);" onclick="leaveGroup(\'' + esc(g.recipient_username) + '\',this)">Leave</button>';
         } else if (_me) {
             if (!g.is_full) {
-                joinArea = '<label style="font-size:0.85em;margin-right:0.25em;">Slots ($10/month each):</label>'
-                    + '<input type="number" class="sg-slots-input" id="slots-' + esc(g.recipient_username) + '" value="1" min="1" max="' + Math.max(1, total - filled) + '">'
-                    + ' <button class="sg-join-btn" onclick="joinGroup(\'' + esc(g.recipient_username) + '\',this)">Join</button>';
+                var avail = Math.max(1, total - filled);
+                joinArea = '<div style="margin:0.25em 0;">'
+                    + '<span style="font-size:0.85em;">Commit </span>'
+                    + '<input type="number" class="sg-slots-input" id="slots-' + esc(g.recipient_username) + '" value="1" min="1" max="' + avail + '" oninput="updateSlotCost(\'' + esc(g.recipient_username) + '\')" style="width:3em;text-align:center;">'
+                    + '<span style="font-size:0.85em;"> &times; $10 = </span>'
+                    + '<strong><span id="cost-' + esc(g.recipient_username) + '">$10</span>/month</strong>'
+                    + ' <button class="sg-join-btn" style="margin-left:0.5em;" onclick="joinGroup(\'' + esc(g.recipient_username) + '\',this)">Commit &amp; join</button>'
+                    + '</div>';
             } else {
                 joinArea = '<span class="sg-status-msg color-muted">Group full</span>'
                     + ' <button class="sg-join-btn" onclick="joinGroup(\'' + esc(g.recipient_username) + '\',this)">Join queue</button>';
@@ -348,6 +353,12 @@ function dsLogout() {
 
         return div;
     }
+
+    window.updateSlotCost = function(recipient) {
+        var el = document.getElementById('slots-' + recipient);
+        var costEl = document.getElementById('cost-' + recipient);
+        if (el && costEl) costEl.textContent = '$' + ((parseInt(el.value) || 1) * 10);
+    };
 
     window.joinGroup = function(recipient, btn) {
         var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');

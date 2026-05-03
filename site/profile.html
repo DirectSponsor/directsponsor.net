@@ -717,8 +717,12 @@ function loadPublicSponsorship(username) {
                 } else if (me) {
                     var maxSlots = total > 0 ? Math.max(1, total - filled) : 6;
                     joinHtml = '<p>'
-                        + '<label style="font-size:0.85em;">Slots ($10/month each): <input type="number" id="pub-slots-' + escHtml(username) + '" value="1" min="1" max="' + maxSlots + '" style="width:3.5em;text-align:center;"></label>'
-                        + ' <button class="save-btn" onclick="pubJoinGroup(\'' + escHtml(username) + '\',this)">Join sponsor group</button></p>';
+                        + '<span style="font-size:0.85em;">Commit </span>'
+                        + '<input type="number" id="pub-slots-' + escHtml(username) + '" value="1" min="1" max="' + maxSlots + '" style="width:3em;text-align:center;" oninput="pubUpdateCost(\'' + escHtml(username) + '\')">'
+                        + '<span style="font-size:0.85em;"> &times; $10 = </span>'
+                        + '<strong><span id="pub-cost-' + escHtml(username) + '">$10</span>/month</strong>'
+                        + ' <button class="save-btn" style="margin-left:0.4em;" onclick="pubJoinGroup(\'' + escHtml(username) + '\',this)">Commit &amp; join</button>'
+                        + '</p>';
                 } else {
                     joinHtml = '<p><a href="#" onclick="window.location.href=\'https://auth.directsponsor.org/jwt-login.php?redirect_uri=\'+encodeURIComponent(window.location.href.replace(/^http:/,\'https:\')); return false;" class="save-btn" style="text-decoration:none;display:inline-block;">Log in to join</a></p>';
                 }
@@ -733,6 +737,11 @@ function loadPublicSponsorship(username) {
 function sgTierCell(label, count, bg) {
     return '<div style="display:table-cell;text-align:center;padding:0.4em 0.5em;border:1px solid var(--border);background:' + bg + ';">'
         + '<strong>' + count + '</strong><br><span class="color-muted text-small">' + label + '</span></div>';
+}
+function pubUpdateCost(username) {
+    var el = document.getElementById('pub-slots-' + username);
+    var costEl = document.getElementById('pub-cost-' + username);
+    if (el && costEl) costEl.textContent = '$' + ((parseInt(el.value) || 1) * 10);
 }
 function pubJoinGroup(recipient, btn) {
     var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
