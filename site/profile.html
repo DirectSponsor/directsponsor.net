@@ -294,14 +294,25 @@ function dsLogout() {
 
 </div>
 
-<div id="sp-pay-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);z-index:1000;overflow-y:auto;">
-  <div class="project-card" style="max-width:22em;margin:3em auto;padding:1.5em;">
-    <h3 id="sp-pay-title" style="margin-top:0;">Pay this month</h3>
-    <div id="sp-pay-body">
+<div id="sp-pay-modal" role="dialog" aria-modal="true" aria-label="Pay sponsorship" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);z-index:1000;overflow-y:auto;">
+  <div id="sp-pay-modal-inner" style="background:var(--bg-card);border-radius:0.5em;max-width:22em;margin:3em auto;padding:1.5em;position:relative;">
+    <button class="modal-close" onclick="closeSponsorshipModal()" aria-label="Close">✕</button>
+    <h2 id="sp-pay-title" style="margin-top:0;font-size:1.1em;">⚡ Pay this month</h2>
+    <div id="sp-pay-loading">
       <p class="color-muted text-small">Getting exchange rate…</p>
     </div>
-    <div style="margin-top:1em;text-align:right;">
-      <button class="btn-small" onclick="closeSponsorshipModal()">Close</button>
+    <div id="sp-pay-invoice" style="display:none;">
+      <p id="sp-pay-desc" style="font-size:0.9em;"></p>
+      <p style="font-size:0.85em;color:var(--text-muted);">Scan with your Lightning wallet or copy the invoice below:</p>
+      <div id="sp-qr-container" style="text-align:center;margin:0.75em 0;"></div>
+      <div id="sp-invoice-text" style="word-break:break-all;font-size:0.7em;color:var(--text-muted);margin:0.5em 0;"></div>
+      <button onclick="copySpInvoice()" id="sp-copy-btn" class="btn-ghost" style="margin-bottom:0.5em;">📋 Copy Invoice</button>
+      <div id="sp-pay-status"></div>
+      <button class="btn-ghost" onclick="closeSponsorshipModal()" style="margin-top:1em;">Close</button>
+    </div>
+    <div id="sp-pay-error" style="display:none;">
+      <p class="error-msg" id="sp-error-msg"></p>
+      <button class="btn-ghost" onclick="closeSponsorshipModal()" style="margin-top:0.5em;">Close</button>
     </div>
   </div>
 </div>
@@ -947,6 +958,8 @@ function loadMySponsored(username) {
 }
 
 var _spPayPollTimer = null;
+var _spPayConfirmed = false;
+var _spInvoiceText  = '';
 
 var _SP_GRACE_DAY = 5; // days 1-5: current month still due; day 6+: next month
 function getDueMonth() {
@@ -962,36 +975,42 @@ function fmtMonth(ym) {
 }
 
 function openSponsorshipPay(recipient, slots, month, btn) {
-    var modal = document.getElementById('sp-pay-modal');
-    var title = document.getElementById('sp-pay-title');
-    var body  = document.getElementById('sp-pay-body');
-    title.textContent = 'Pay for ' + fmtMonth(month) + ' — ' + recipient;
-    body.innerHTML = '<p class="color-muted text-small">Getting exchange rate…</p>';
-    modal.style.display = 'block';
+    _spPayConfirmed = false;
+    _spInvoiceText  = '';
+    document.getElementById('sp-pay-title').textContent = '\u26a1 Pay for ' + fmtMonth(month) + ' \u2014 ' + recipient;
+    document.getElementById('sp-pay-loading').style.display = 'block';
+    document.getElementById('sp-pay-invoice').style.display = 'none';
+    document.getElementById('sp-pay-error').style.display   = 'none';
+    document.getElementById('sp-pay-status').textContent    = '';
+    document.getElementById('sp-pay-modal').style.display   = 'block';
 
     fetch('https://mempool.space/api/v1/prices')
         .then(function(r) { return r.json(); })
         .then(function(prices) {
             var btcUsd = prices.USD;
             if (!btcUsd) throw new Error('no rate');
-            var usd = slots * 10;
+            var usd  = slots * 10;
             var sats = Math.round((usd / btcUsd) * 100000000);
-            var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
-            if (!jwt) { body.innerHTML = '<p class="status-msg error">Please log in first.</p>'; return; }
-            body.innerHTML = '<p>Paying for: <strong>' + fmtMonth(month) + '</strong></p>'
-                + '<p>Amount: <strong>' + sats.toLocaleString() + ' sats</strong> ($' + usd + ' at current rate)</p>'
-                + '<p class="color-muted text-small">Creating invoice…</p>';
+            var jwt  = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+            if (!jwt) { showSpError('Please log in first.'); return; }
+            document.getElementById('sp-pay-loading').innerHTML = '<p class="color-muted text-small">Creating invoice…</p>';
             return fetch('/api/sponsorship-api.php?action=pay', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
                 body: JSON.stringify({ recipient: recipient, amount_sats: sats, month: month, jwt: jwt })
             }).then(function(r) { return r.json(); }).then(function(d) {
-                if (!d.success) { body.innerHTML = '<p class="status-msg error">' + escHtml(d.error || 'Could not create invoice.') + '</p>'; return; }
-                var inv = d.invoice;
-                body.innerHTML =
-                    '<p style="text-align:center;"><img src="' + escHtml(d.qr_code) + '" alt="QR" style="max-width:220px;width:100%;"></p>'
-                    + '<p style="word-break:break-all;font-size:0.72em;" class="color-muted">' + escHtml(inv) + '</p>'
-                    + '<p id="sp-pay-status" class="color-muted text-small">Waiting for payment…</p>';
+                if (!d.success) { showSpError(d.error || 'Could not create invoice.'); return; }
+                _spInvoiceText = d.invoice;
+                document.getElementById('sp-pay-desc').innerHTML =
+                    'Paying for: <strong>' + escHtml(fmtMonth(month)) + '</strong> &mdash; '
+                    + '<strong>' + sats.toLocaleString() + ' sats</strong> ($' + usd + ')';
+                document.getElementById('sp-qr-container').innerHTML =
+                    '<img src="' + escHtml(d.qr_code) + '" alt="Lightning QR code" width="220" height="220">';
+                document.getElementById('sp-invoice-text').textContent = d.invoice;
+                document.getElementById('sp-copy-btn').textContent = '\ud83d\udccb Copy Invoice';
+                document.getElementById('sp-pay-loading').style.display = 'none';
+                document.getElementById('sp-pay-invoice').style.display = 'block';
+                document.getElementById('sp-pay-status').textContent    = 'Waiting for payment\u2026';
                 if (_spPayPollTimer) clearInterval(_spPayPollTimer);
                 _spPayPollTimer = setInterval(function() {
                     fetch('/api/sponsorship-api.php?action=check_payment&payment_id=' + encodeURIComponent(d.payment_id))
@@ -999,22 +1018,45 @@ function openSponsorshipPay(recipient, slots, month, btn) {
                         .then(function(s) {
                             if (s.status === 'paid') {
                                 clearInterval(_spPayPollTimer);
-                                var st = document.getElementById('sp-pay-status');
-                                if (st) st.innerHTML = '<strong>\u2705 Payment received! Thank you.</strong>';
-                                setTimeout(function() { closeSponsorshipModal(); location.reload(); }, 2500);
+                                _spPayConfirmed = true;
+                                document.getElementById('sp-pay-status').innerHTML =
+                                    '<strong>\u2705 Payment received! Thank you! Close this window to update your payment status.</strong>';
                             }
                         }).catch(function() {});
                 }, 3000);
             });
         })
-        .catch(function() {
-            body.innerHTML = '<p class="status-msg error">Could not get exchange rate. Please try again.</p>';
-        });
+        .catch(function() { showSpError('Could not get exchange rate. Please try again.'); });
+}
+
+function showSpError(msg) {
+    document.getElementById('sp-pay-loading').style.display = 'none';
+    document.getElementById('sp-error-msg').textContent     = msg;
+    document.getElementById('sp-pay-error').style.display   = 'block';
+}
+
+function copySpInvoice() {
+    var btn = document.getElementById('sp-copy-btn');
+    navigator.clipboard.writeText(_spInvoiceText).then(function() {
+        btn.textContent = '\u2705 Copied!';
+        setTimeout(function() { btn.textContent = '\ud83d\udccb Copy Invoice'; }, 2000);
+    }).catch(function() {
+        var ta = document.createElement('textarea');
+        ta.value = _spInvoiceText;
+        ta.style.cssText = 'position:fixed;opacity:0;';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        btn.textContent = '\u2705 Copied!';
+        setTimeout(function() { btn.textContent = '\ud83d\udccb Copy Invoice'; }, 2000);
+    });
 }
 
 function closeSponsorshipModal() {
     if (_spPayPollTimer) { clearInterval(_spPayPollTimer); _spPayPollTimer = null; }
     document.getElementById('sp-pay-modal').style.display = 'none';
+    if (_spPayConfirmed) location.reload();
 }
 function leaveMySponsored(recipient, btn) {
     var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
