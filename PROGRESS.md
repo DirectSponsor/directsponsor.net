@@ -126,6 +126,7 @@ _Last updated: 2026-05-03 (session 9)_
 ### Future
 - **Reconciliation script** (done — cron Sunday 3am on RN1, Telegram alert via DS_AuthBot to satoshihost-alerts group)
 - **Nostr integration** — see `nostr-integration.md` for full plan; deeper integration (cross-node identity, flagging, fraud prevention) still pending
+- **PHP error alerting** — use `set_error_handler()` + `error_log()` in the API files to catch unexpected errors, with a lightweight cron (or triggered script) that tails `/var/log/` and fires a Telegram alert via DSSitesCheckBot. No external dependencies; pure PHP + cron + existing bot.
 - Auth server post-verification screen: update to show all 3 sites
 - `delete-user.sh`: add clickforcharity.net cleanup step
 
@@ -144,11 +145,47 @@ Phase 1 is deployed. Recipients can set up a group; sponsors can join the queue;
 - Sponsor (from sponsorships.html or recipient's profile page): joins queue; leaves group; sees their tier
 - Public: sponsorships.html lists all groups with tier counts; recipient profile page shows group status + join button
 
-**Phase 2 still to build:**
+**Phase 2 — Payments (live 2026-05-03):**
 
-### Sponsorship groups — Phase 2 and beyond
+### Sponsorship payments — how it works
 
-- **Monthly payment flow**: "Pay this month" button for active sponsors → Coinos invoice (same flow as fundraisers); payment recorded per-month per-sponsor in group file
+Payments are per calendar month. The system tracks `last_paid_month` (YYYY-MM) per member in the group JSON file. Duplicate payments for the same month are rejected by the API.
+
+**Grace window (5-day rule):**
+- Days 1–5 of the month: sponsor pays for the **current** month
+- Day 6 onwards: sponsor pays for the **next** month
+- Never more than one month ahead — prevents sponsors pre-loading funds against uncommitted income
+
+**Data stored per member in group file:**
+```json
+"last_paid": "2026-05-03",
+"last_paid_month": "2026-05"
+```
+
+**UI behaviour:**
+- Not yet paid → `⚡ Pay for May 2026` button (large, on its own line)
+- Already paid → `✓ Paid for May 2026` (greyed out, no button)
+- Modal: QR code + invoice text + 📋 Copy Invoice button + status line
+- On payment confirmed: modal stays open showing ✅ success message; sponsor closes manually; page reloads to show paid state
+
+**API actions added to `sponsorship-api.php`:**
+- `pay` (POST) — validates month format, checks grace window, checks duplicate, creates Coinos invoice, stores pending payment
+- `check_payment` (GET) — polls pending payment status
+
+**Webhook (`webhook.php`):**
+- Detects sponsorship payments by `payment_type: sponsorship` in pending record
+- Calls `processSponsorshipPayment()` — updates `last_paid` + `last_paid_month` in group file, writes to transaction ledger
+
+**Infrastructure fixes made alongside payments (2026-05-03):**
+- `save-fundraiser.php`: when a Coinos API key is saved to the project config, it is now also synced to the recipient's profile file — so sponsorship payments (which read from the profile) work automatically for any recipient who has set up a fundraiser
+- `social-layout-start.incl`: nav profile link for logged-in user now goes to `profile.html` (no `?user=` param) instead of `profile.html?user=USERNAME` — the own-profile path triggers lazy auto-creation of the profile file; the public path (`?user=X`) does not
+- `simple-profile.php`: `loadProfileData()` already auto-creates a minimal profile file on first own-profile GET (lazy-loads from auth server if possible, otherwise creates default)
+
+**Phase 3 still to build:**
+
+### Sponsorship groups — Phase 3 and beyond
+
+- **Monthly payment flow**: ~~"Pay this month" button for active sponsors → Coinos invoice (same flow as fundraisers); payment recorded per-month per-sponsor in group file~~ ✅ done
 - **Reminder + response-window system**: monthly cron dispatches reminders (Telegram); tracks who has responded; non-responsive actives demoted after window closes
 - **Automatic promotion logic**: active lapses → standby fills in → queued promoted to standby → next queued joins
 - **Recipient group tools**: common fund accounting (income/outgoings, all members visible), coordinator action log, group decision documentation

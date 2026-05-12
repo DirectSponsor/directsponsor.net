@@ -349,7 +349,9 @@ function dsLogout() {
             + (g.description ? '<p class="sg-desc">' + esc(g.description) + '</p>' : '')
             + progressHtml
             + (monthly ? '<div class="sg-monthly">' + monthly + ' needed</div>' : '')
-            + '<div class="sg-actions">' + joinArea + '</div>';
+            + '<div class="sg-actions">' + joinArea
+            + ' <a href="group.php?recipient=' + esc(g.recipient_username) + '" class="sg-view-link">View group →</a>'
+            + '</div>';
 
         return div;
     }

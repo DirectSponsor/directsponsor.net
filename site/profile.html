@@ -826,6 +826,7 @@ function renderMyGroup(g, username) {
             + '<tr><th style="text-align:left;padding:0.3em 0.5em;border-bottom:1px solid var(--border);">Member</th>'
             + '<th style="text-align:center;padding:0.3em 0.5em;border-bottom:1px solid var(--border);">Slots ($10/mo)</th>'
             + '<th style="text-align:center;padding:0.3em 0.5em;border-bottom:1px solid var(--border);">Joined</th>'
+            + '<th style="text-align:center;padding:0.3em 0.5em;border-bottom:1px solid var(--border);">' + fmtMonth(getDueMonth()) + '</th>'
             + '<th style="padding:0.3em 0.5em;border-bottom:1px solid var(--border);"></th></tr>';
         members.forEach(function(m) {
             membersHtml += '<tr>'
@@ -835,10 +836,18 @@ function renderMyGroup(g, username) {
                     + ' <span style="font-size:0.8em;color:var(--text-muted);">' + (m.slots === 0 ? '(queued)' : '') + '</span>'
                   + '</td>'
                 + '<td style="text-align:center;padding:0.3em 0.5em;color:var(--text-muted);font-size:0.85em;">' + escHtml(m.joined_date || '') + '</td>'
+                + '<td style="text-align:center;padding:0.3em 0.5em;">'
+                    + (m.slots > 0
+                        ? ((m.last_paid_month === getDueMonth())
+                            ? '<span style="color:#2a9d2a;font-weight:bold;">&#10003; Paid</span>'
+                            : '<span style="color:var(--text-muted);">&#8212; Not yet</span>')
+                        : '<span style="color:var(--text-muted);">&#8212;</span>')
+                + '</td>'
                 + '<td style="padding:0.3em 0.5em;text-align:right;"><button class="btn-small" onclick="removeMember(\'' + escHtml(username) + '\',\'' + escHtml(m.username) + '\',this)">\u2715</button></td>'
                 + '</tr>';
         });
-        membersHtml += '</table>';
+        membersHtml += '</table>'
+            + '<p style="margin:0.5em 0 0;font-size:0.85em;"><a href="group.php?recipient=' + encodeURIComponent(username) + '">View full group page →</a></p>';
     } else {
         membersHtml = '<h3 style="margin:1em 0 0.4em;">Members</h3><p class="color-muted text-small">No members yet. Share your profile page to invite sponsors.</p>';
     }
