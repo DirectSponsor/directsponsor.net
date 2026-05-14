@@ -340,7 +340,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'search') {
         $requesterFile = USERDATA_DIR . "/profiles/{$requesterId}.txt";
     } else {
         $glob = glob(USERDATA_DIR . "/profiles/{$requesterId}-*.txt");
-        $requesterFile = $glob ? $glob[0] : USERDATA_DIR . "/profiles/{$requesterId}.txt";
+        if ($glob) {
+            $requesterFile = $glob[0];
+        } else {
+            $usernameHint = $_GET['username'] ?? '';
+            $found = $usernameHint ? findProfileByUsername($usernameHint) : null;
+            $requesterFile = $found ?: USERDATA_DIR . "/profiles/{$requesterId}.txt";
+        }
     }
     
     $requesterData = loadProfileData($requesterFile, $requesterId);
