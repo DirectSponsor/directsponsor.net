@@ -269,6 +269,7 @@ function dsLogout() {
 var _username = null;
 var _projectId = null;
 var _jwt = null;
+var _currentAmount = 0;
 
 document.addEventListener('DOMContentLoaded', function() {
     var params = new URLSearchParams(window.location.search);
@@ -375,7 +376,18 @@ function cloneProject() {
 function populateForm(f) {
     document.getElementById('form-subtitle').textContent =
         'Editing: ' + (f.title || _projectId);
-    if (_projectId) document.getElementById('delete-btn').style.display = 'inline-block';
+    _currentAmount = parseInt(f.current_amount) || 0;
+    if (_projectId) {
+        var delBtn = document.getElementById('delete-btn');
+        delBtn.style.display = 'inline-block';
+        if (_currentAmount > 0) {
+            delBtn.textContent = '🚫 Cancel fundraiser';
+            delBtn.title = 'Fundraiser has donations — will be marked cancelled and moved to completed';
+        } else {
+            delBtn.textContent = '🗑 Delete fundraiser';
+            delBtn.title = 'No donations — will be permanently removed';
+        }
+    }
     document.getElementById('f-title').value           = f.title || '';
     document.getElementById('f-description').value     = f.description || '';
     document.getElementById('f-full-description').innerHTML = f.story || f.description || '';
@@ -486,7 +498,10 @@ function insertLink() {
 
 function deleteFundraiser() {
     if (!_projectId) return;
-    if (!confirm('Delete this fundraiser? It will be archived and removed from the listings. This cannot be undone from here.')) return;
+    var msg = _currentAmount > 0
+        ? 'This fundraiser has received ' + _currentAmount.toLocaleString() + ' sats in donations and cannot be deleted.\n\nIt will be marked as \'cancelled\' and moved to the completed section so donors can see it was cancelled rather than fulfilled. Continue?'
+        : 'Delete this fundraiser? It has no donations and will be permanently removed from the site. This cannot be undone.';
+    if (!confirm(msg)) return;
     var btn = document.getElementById('delete-btn');
     btn.disabled = true;
     btn.textContent = 'Deleting…';

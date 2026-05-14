@@ -542,11 +542,16 @@ function populateFundraiser(d) {
         }
     } catch(e) {}
 
-    // Show completed banner if project is not active
+    // Show banner if project is not active
     if (d.status && d.status !== 'active') {
         var banner = document.createElement('div');
-        banner.style.cssText = 'background:#f0f0f0;border-left:4px solid #aaa;padding:0.6em 1em;margin-bottom:1em;font-size:0.9em;color:#555;';
-        banner.textContent = '✅ This project has been completed. Thank you to all donors!';
+        if (d.status === 'cancelled') {
+            banner.style.cssText = 'background:#fff3f3;border-left:4px solid #c00;padding:0.6em 1em;margin-bottom:1em;font-size:0.9em;color:#700;';
+            banner.textContent = '🚫 This fundraiser was cancelled by the recipient. Donations received are shown below.';
+        } else {
+            banner.style.cssText = 'background:#f0f0f0;border-left:4px solid #aaa;padding:0.6em 1em;margin-bottom:1em;font-size:0.9em;color:#555;';
+            banner.textContent = '✅ This project has been completed. Thank you to all donors!';
+        }
         document.getElementById('fundraiser-title').insertAdjacentElement('afterend', banner);
     }
     var recipientName = d.recipient || d.owner_user_id || '—';

@@ -95,7 +95,7 @@ if ($target_username !== $callerUsername) {
     exit;
 }
 
-// --- Delete action ---
+// --- Delete / Cancel action ---
 if (($input['action'] ?? '') === 'delete') {
     $del_project_id = preg_replace('/[^a-z0-9-]/', '', strtolower($input['project_id'] ?? ''));
     if (!$del_project_id) {
@@ -103,21 +103,45 @@ if (($input['action'] ?? '') === 'delete') {
         echo json_encode(['error' => 'project_id required']);
         exit;
     }
-    $activeFile  = PROJECTS_DIR . '/' . $target_username . '/active/'  . $del_project_id . '.html';
-    $archiveDir  = PROJECTS_DIR . '/' . $target_username . '/archive/';
-    $archiveFile = $archiveDir . $del_project_id . '.html';
+    $activeFile = PROJECTS_DIR . '/' . $target_username . '/active/' . $del_project_id . '.html';
     if (!file_exists($activeFile)) {
         http_response_code(404);
         echo json_encode(['error' => 'Active fundraiser not found']);
         exit;
     }
-    if (!is_dir($archiveDir)) mkdir($archiveDir, 0755, true);
-    if (!rename($activeFile, $archiveFile)) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Failed to archive fundraiser']);
-        exit;
+    // Read current-amount from the file to decide delete vs cancel
+    $html = file_get_contents($activeFile);
+    $currentAmount = 0;
+    if (preg_match('/<!-- current-amount -->([\d,]+)<!-- end current-amount -->/', $html, $m)) {
+        $currentAmount = (int)str_replace(',', '', $m[1]);
     }
-    echo json_encode(['success' => true, 'message' => 'Fundraiser archived']);
+    if ($currentAmount === 0) {
+        // No donations — move to archive (private)
+        $archiveDir = PROJECTS_DIR . '/' . $target_username . '/archive/';
+        if (!is_dir($archiveDir)) mkdir($archiveDir, 0755, true);
+        if (!rename($activeFile, $archiveDir . $del_project_id . '.html')) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to delete fundraiser']);
+            exit;
+        }
+        echo json_encode(['success' => true, 'message' => 'Fundraiser deleted']);
+    } else {
+        // Has donations — mark cancelled and move to completed (public record)
+        $html = preg_replace(
+            '/<!-- status -->.*?<!-- end status -->/s',
+            '<!-- status -->cancelled<!-- end status -->',
+            $html
+        );
+        $completedDir = PROJECTS_DIR . '/' . $target_username . '/completed/';
+        if (!is_dir($completedDir)) mkdir($completedDir, 0755, true);
+        file_put_contents($activeFile, $html);
+        if (!rename($activeFile, $completedDir . $del_project_id . '.html')) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to cancel fundraiser']);
+            exit;
+        }
+        echo json_encode(['success' => true, 'message' => 'Fundraiser cancelled']);
+    }
     exit;
 }
 
