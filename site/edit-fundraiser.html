@@ -462,7 +462,8 @@ function insertVideo() {
         return;
     }
     document.getElementById('f-full-description').focus();
-    document.execCommand('insertHTML', false, '<p>' + url.trim() + '</p>');
+    var safe = url.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    document.execCommand('insertHTML', false, '<p>' + safe + '</p>');
 }
 
 function insertLink() {
