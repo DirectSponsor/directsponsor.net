@@ -14,6 +14,14 @@ if (!$recipient) {
 $groupFile = GROUPS_DIR . '/' . $recipient . '.json';
 $group     = file_exists($groupFile) ? json_decode(file_get_contents($groupFile), true) : null;
 
+// Display name: profile display_name if set, else capitalize username
+$displayName = ucfirst($recipient);
+$profileGlob = glob(USERDATA_DIR . '/profiles/*-' . $recipient . '.txt');
+if ($profileGlob) {
+    $pd = json_decode(file_get_contents($profileGlob[0]), true);
+    if (!empty($pd['display_name'])) $displayName = $pd['display_name'];
+}
+
 function esc($s) { return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
 
 function fmtMonth($ym) {
@@ -34,7 +42,7 @@ $slotsFilled = 0;
 foreach ($members as $m) $slotsFilled += (int)($m['slots'] ?? 0);
 $pct = $slotsTotal > 0 ? min(100, round($slotsFilled / $slotsTotal * 100)) : 0;
 
-$title = esc($recipient) . "'s Sponsorship Group – DirectSponsor";
+$title = esc($displayName) . "'s Sponsorship Group – DirectSponsor";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -117,14 +125,14 @@ $title = esc($recipient) . "'s Sponsorship Group – DirectSponsor";
 <?php if (!$group): ?>
 <div class="grp-card">
     <h1>Group not found</h1>
-    <p class="color-muted">No sponsorship group exists for <strong><?= esc($recipient) ?></strong>.</p>
+    <p class="color-muted">No sponsorship group exists for <strong><?= esc($displayName) ?></strong>.</p>
     <p><a href="sponsorships.html">← Browse all groups</a></p>
 </div>
 <?php else: ?>
 
 <!-- Group header card -->
 <div class="grp-card">
-    <h1 style="margin:0 0 0.2em;"><?= esc($recipient) ?>'s Sponsorship Group</h1>
+    <h1 style="margin:0 0 0.2em;"><?= esc($displayName) ?>'s Sponsorship Group</h1>
     <?php if (!empty($group['description'])): ?>
     <p style="margin:0 0 0.75em;color:var(--text-muted);"><?= esc($group['description']) ?></p>
     <?php endif; ?>
