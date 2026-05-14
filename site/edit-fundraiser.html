@@ -203,6 +203,7 @@ function dsLogout() {
                 <button type="button" onclick="fmt('insertOrderedList')" title="Numbered list">1. List</button>
                 <div class="sep"></div>
                 <button type="button" onclick="insertLink()" title="Insert link">&#128279; Link</button>
+                <button type="button" onclick="insertVideo()" title="Insert YouTube or Odysee video">&#127910; Video</button>
             </div>
             <div class="wysiwyg-body" id="f-full-description" contenteditable="true" data-placeholder="Full story, goals, and impact..."></div>
             <p class="hint">Rich text. Use the toolbar to format headings, lists, and links.</p>
@@ -442,6 +443,26 @@ document.getElementById('f-image-upload').addEventListener('change', function(e)
 function fmt(cmd, val) {
     document.getElementById('f-full-description').focus();
     document.execCommand(cmd, false, val || null);
+}
+
+function videoUrlToEmbed(url) {
+    url = url.trim();
+    var yt = url.match(/(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (yt) return 'https://www.youtube.com/embed/' + yt[1];
+    var od = url.match(/^https?:\/\/(?:www\.)?odysee\.com(\/@[^?#]+)/);
+    if (od) return 'https://odysee.com/$/embed' + od[1];
+    return null;
+}
+
+function insertVideo() {
+    var url = prompt('Paste YouTube or Odysee video URL:');
+    if (!url) return;
+    if (!videoUrlToEmbed(url.trim())) {
+        alert('Unrecognised video URL. Supported: YouTube and Odysee.');
+        return;
+    }
+    document.getElementById('f-full-description').focus();
+    document.execCommand('insertHTML', false, '<p>' + url.trim() + '</p>');
 }
 
 function insertLink() {
