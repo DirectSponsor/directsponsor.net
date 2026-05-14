@@ -258,6 +258,7 @@ function dsLogout() {
 
         <div style="margin-top:1em;">
             <button class="save-btn" id="save-btn" onclick="saveProject()">💾 Save Changes</button>
+            <button type="button" id="delete-btn" onclick="deleteFundraiser()" style="display:none;margin-left:1.5em;background:none;border:1px solid #c00;color:#c00;padding:0.4em 1em;border-radius:0.3em;cursor:pointer;font-size:0.9em;">🗑 Delete fundraiser</button>
             <span class="status-msg" id="save-status"></span>
         </div>
     </div>
@@ -374,6 +375,7 @@ function cloneProject() {
 function populateForm(f) {
     document.getElementById('form-subtitle').textContent =
         'Editing: ' + (f.title || _projectId);
+    if (_projectId) document.getElementById('delete-btn').style.display = 'inline-block';
     document.getElementById('f-title').value           = f.title || '';
     document.getElementById('f-description').value     = f.description || '';
     document.getElementById('f-full-description').innerHTML = f.story || f.description || '';
@@ -480,6 +482,34 @@ function insertLink() {
             if (a) { a.target = '_blank'; a.rel = 'noopener'; }
         }
     }
+}
+
+function deleteFundraiser() {
+    if (!_projectId) return;
+    if (!confirm('Delete this fundraiser? It will be archived and removed from the listings. This cannot be undone from here.')) return;
+    var btn = document.getElementById('delete-btn');
+    btn.disabled = true;
+    btn.textContent = 'Deleting…';
+    fetch('/api/save-fundraiser.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ action: 'delete', project_id: _projectId, username: _username, jwt: _jwt })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            window.location.href = 'profile.html';
+        } else {
+            alert('Delete failed: ' + (data.error || 'Unknown error'));
+            btn.disabled = false;
+            btn.textContent = '🗑 Delete fundraiser';
+        }
+    })
+    .catch(function() {
+        alert('Network error — delete failed.');
+        btn.disabled = false;
+        btn.textContent = '🗑 Delete fundraiser';
+    });
 }
 
 function saveProject() {

@@ -95,6 +95,32 @@ if ($target_username !== $callerUsername) {
     exit;
 }
 
+// --- Delete action ---
+if (($input['action'] ?? '') === 'delete') {
+    $del_project_id = preg_replace('/[^a-z0-9-]/', '', strtolower($input['project_id'] ?? ''));
+    if (!$del_project_id) {
+        http_response_code(400);
+        echo json_encode(['error' => 'project_id required']);
+        exit;
+    }
+    $activeFile  = PROJECTS_DIR . '/' . $target_username . '/active/'  . $del_project_id . '.html';
+    $archiveDir  = PROJECTS_DIR . '/' . $target_username . '/archive/';
+    $archiveFile = $archiveDir . $del_project_id . '.html';
+    if (!file_exists($activeFile)) {
+        http_response_code(404);
+        echo json_encode(['error' => 'Active fundraiser not found']);
+        exit;
+    }
+    if (!is_dir($archiveDir)) mkdir($archiveDir, 0755, true);
+    if (!rename($activeFile, $archiveFile)) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Failed to archive fundraiser']);
+        exit;
+    }
+    echo json_encode(['success' => true, 'message' => 'Fundraiser archived']);
+    exit;
+}
+
 // Resolve project_id: if provided and file exists, edit it; otherwise auto-assign next free number
 $raw_project_id = preg_replace('/[^a-z0-9-]/', '', strtolower($input['project_id'] ?? ''));
 $userProjectDir  = PROJECTS_DIR . '/' . $target_username;
