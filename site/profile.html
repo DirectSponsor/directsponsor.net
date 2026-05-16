@@ -466,7 +466,7 @@ function populateForm(p) {
     document.getElementById('website').value       = p.website || '';
 
     // Recipient-only section
-    if (roles.indexOf('recipient') !== -1 || roles.indexOf('admin') !== -1) {
+    if (roles.indexOf('recipient') !== -1) {
         document.getElementById('recipient-section').style.display = 'block';
         document.getElementById('coinos-username').value    = p.coinos_username || '';
         document.getElementById('coinos-api-key').value      = p.coinos_api_key || '';
@@ -474,7 +474,7 @@ function populateForm(p) {
     }
 
     // Only show My Fundraisers section for recipients and admins
-    if (roles.indexOf('recipient') !== -1 || roles.indexOf('admin') !== -1) {
+    if (roles.indexOf('recipient') !== -1) {
         var uname = p.username || _username;
         if (uname) {
             loadUserProjects(uname);
