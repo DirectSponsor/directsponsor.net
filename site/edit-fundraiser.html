@@ -261,6 +261,11 @@ function dsLogout() {
             </select>
         </div>
 
+        <div class="form-group" id="hidden-fundraiser-wrap" style="display:none;">
+            <label><input type="checkbox" id="f-hidden"> Hidden fundraiser (admin only)</label>
+            <p class="hint">Not shown in public listings. Fully functional — use for testing features via direct URL.</p>
+        </div>
+
         <div style="margin-top:1em;">
             <button class="save-btn" id="save-btn" onclick="saveProject()">💾 Save Changes</button>
             <button type="button" id="delete-btn" onclick="deleteFundraiser()" style="display:none;margin-left:1.5em;background:none;border:1px solid #c00;color:#c00;padding:0.4em 1em;border-radius:0.3em;cursor:pointer;font-size:0.9em;">🗑 Delete fundraiser</button>
@@ -271,16 +276,15 @@ function dsLogout() {
 </div>
 
 <script>
-var _username = null;       // logged-in user (from JWT)
-var _targetUsername = null;  // whose fundraiser we're editing (may differ for admins)
+var _username = null;
 var _projectId = null;
 var _jwt = null;
 var _currentAmount = 0;
+var _isAdmin = false;
 
 document.addEventListener('DOMContentLoaded', function() {
     var params = new URLSearchParams(window.location.search);
     _projectId = params.get('project') || null;
-    var _userParam = params.get('user') || null;
 
     _jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
     if (!_jwt) {
@@ -304,32 +308,25 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Check recipient or admin role
+    // Check recipient role
     fetch('/api/simple-profile.php?action=profile&user_id='
           + encodeURIComponent(_userId) + '&username=' + encodeURIComponent(_username))
         .then(function(r) { return r.json(); })
         .then(function(data) {
             var profile = data.profile || {};
             var roles = profile.roles || [];
-            var isAdmin = roles.includes('admin');
-            var isRecipient = roles.includes('recipient');
-            if (!isRecipient && !isAdmin) {
+            _isAdmin = roles.includes('admin');
+            if (!roles.includes('recipient')) {
                 show('access-denied');
                 return;
             }
-            // Admins can target another user via ?user= param
-            _targetUsername = (isAdmin && _userParam && _userParam !== _username)
-                ? _userParam : _username;
-            // Show admin banner when editing someone else's fundraiser
-            if (_targetUsername !== _username) {
-                var banner = document.createElement('p');
-                banner.style.cssText = 'background:#fff3cd;border:1px solid #e6b800;padding:0.5em 0.8em;border-radius:0.3em;margin-bottom:0.5em;font-size:0.9em;';
-                banner.textContent = '🔧 Admin: editing fundraiser for ' + _targetUsername;
-                document.getElementById('edit-form-wrap').insertBefore(banner, document.getElementById('edit-form-wrap').firstChild);
-            }
-            // Auto-populate Coinos API key from profile (only if editing own)
-            if (isRecipient && profile.coinos_api_key && _targetUsername === _username) {
+            // Auto-populate Coinos API key from profile
+            if (profile.coinos_api_key) {
                 document.getElementById('f-coinos-api-key').value = profile.coinos_api_key;
+            }
+            // Show hidden checkbox only to admins
+            if (_isAdmin) {
+                document.getElementById('hidden-fundraiser-wrap').style.display = 'block';
             }
             loadProject();
         })
@@ -353,7 +350,7 @@ function loadProject() {
         show('edit-form-wrap');
         return;
     }
-    fetch('/api/fundraiser-api.php?action=get&id=' + encodeURIComponent(_projectId) + '&username=' + encodeURIComponent(_targetUsername))
+    fetch('/api/fundraiser-api.php?action=get&id=' + encodeURIComponent(_projectId) + '&username=' + encodeURIComponent(_username))
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success && data.fundraiser) {
@@ -379,7 +376,7 @@ function showCompletedView(f) {
     document.getElementById('completed-summary').textContent =
         raised + ' sats raised of ' + goal + ' sat goal.';
     document.getElementById('completed-view-link').href =
-        '/fundraiser.html?project=' + encodeURIComponent(_projectId) + '&user=' + encodeURIComponent(_targetUsername);
+        '/fundraiser.html?project=' + encodeURIComponent(_projectId) + '&user=' + encodeURIComponent(_username);
     show('completed-view');
 }
 
@@ -415,6 +412,7 @@ function populateForm(f) {
         (f.contact_info && f.contact_info.location) ? f.contact_info.location : '';
     document.getElementById('f-image-url').value       = f.image_url || '';
     document.getElementById('f-website-url').value     = f.website_url || '';
+    document.getElementById('f-hidden').checked        = (f.status === 'hidden');
     // Show existing image preview if available
     if (f.image_url) {
         document.getElementById('preview-img').src = f.image_url;
@@ -527,7 +525,7 @@ function deleteFundraiser() {
     fetch('/api/save-fundraiser.php', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ action: 'delete', project_id: _projectId, username: _targetUsername, jwt: _jwt })
+        body: JSON.stringify({ action: 'delete', project_id: _projectId, username: _username, jwt: _jwt })
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -561,18 +559,19 @@ function saveProject() {
 
     var body = {
         jwt:              _jwt,
-        username:         _targetUsername,
+        username:         _username,
         project_id:       _projectId || '',
         title:            document.getElementById('f-title').value.trim(),
         description:      document.getElementById('f-description').value.trim(),
         full_description: document.getElementById('f-full-description').innerHTML,
         target_amount:    document.getElementById('f-target-amount').value,
-        recipient_name:   _targetUsername,
+        recipient_name:   _username,
         location:         document.getElementById('f-location').value.trim(),
         website_url:      document.getElementById('f-website-url').value.trim(),
         image_url:        document.getElementById('f-image-url').value.trim(),
         category:         document.getElementById('f-category').value,
-        coinos_api_key:   document.getElementById('f-coinos-api-key').value.trim()
+        coinos_api_key:   document.getElementById('f-coinos-api-key').value.trim(),
+        status:           (_isAdmin && document.getElementById('f-hidden').checked) ? 'hidden' : 'active'
     };
 
     fetch('/api/save-fundraiser.php', {
@@ -593,7 +592,7 @@ function saveProject() {
             }
             status.textContent = '✅ Saved! Redirecting...';
             setTimeout(function() {
-                window.location.href = '/fundraiser.html?project=' + encodeURIComponent(_projectId) + '&user=' + encodeURIComponent(_targetUsername);
+                window.location.href = '/fundraiser.html?project=' + encodeURIComponent(_projectId) + '&user=' + encodeURIComponent(_username);
             }, 800);
         } else {
             status.textContent = data.error || 'Save failed.';

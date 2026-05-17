@@ -171,7 +171,7 @@ if ($action === 'list') {
                 if ($activeProject) {
                     list($projectId, $projectFile) = $activeProject;
                     $projectData = parseProjectFromHTML($projectFile, $projectId);
-                    if ($projectData) {
+                    if ($projectData && ($projectData['status'] ?? '') !== 'hidden') {
                         $projects[] = convertToFundraiserFormat($projectData);
                     }
                 }
