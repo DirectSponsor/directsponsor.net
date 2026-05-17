@@ -55,6 +55,11 @@
 
 
 <!-- include start social-layout-start.incl -->
+<script>
+if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && !sessionStorage.getItem('http-warn-dismissed')) {
+    document.write('<div id="http-warn" style="background:#fffbe6;border-bottom:1px solid #e6c800;padding:0.5em 1em;font-size:0.85em;text-align:center;">⚠️ You are on an unencrypted connection. Some features (like copying invoices) require HTTPS. <a href="' + window.location.href.replace(/^http:/,'https:') + '">Switch to HTTPS →</a> <button onclick="sessionStorage.setItem(\'http-warn-dismissed\',\'1\');document.getElementById(\'http-warn\').style.display=\'none\';" style="margin-left:1em;background:none;border:none;cursor:pointer;font-size:1em;" aria-label="Dismiss">✕</button></div>');
+}
+</script>
 <header class="site-header">
     <div class="header-content">
         <div class="logo">
@@ -266,7 +271,8 @@ function dsLogout() {
 </div>
 
 <script>
-var _username = null;
+var _username = null;       // logged-in user (from JWT)
+var _targetUsername = null;  // whose fundraiser we're editing (may differ for admins)
 var _projectId = null;
 var _jwt = null;
 var _currentAmount = 0;
@@ -274,6 +280,7 @@ var _currentAmount = 0;
 document.addEventListener('DOMContentLoaded', function() {
     var params = new URLSearchParams(window.location.search);
     _projectId = params.get('project') || null;
+    var _userParam = params.get('user') || null;
 
     _jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
     if (!_jwt) {
@@ -297,19 +304,31 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Check recipient role
+    // Check recipient or admin role
     fetch('/api/simple-profile.php?action=profile&user_id='
           + encodeURIComponent(_userId) + '&username=' + encodeURIComponent(_username))
         .then(function(r) { return r.json(); })
         .then(function(data) {
             var profile = data.profile || {};
             var roles = profile.roles || [];
-            if (!roles.includes('recipient')) {
+            var isAdmin = roles.includes('admin');
+            var isRecipient = roles.includes('recipient');
+            if (!isRecipient && !isAdmin) {
                 show('access-denied');
                 return;
             }
-            // Auto-populate Coinos API key from profile
-            if (profile.coinos_api_key) {
+            // Admins can target another user via ?user= param
+            _targetUsername = (isAdmin && _userParam && _userParam !== _username)
+                ? _userParam : _username;
+            // Show admin banner when editing someone else's fundraiser
+            if (_targetUsername !== _username) {
+                var banner = document.createElement('p');
+                banner.style.cssText = 'background:#fff3cd;border:1px solid #e6b800;padding:0.5em 0.8em;border-radius:0.3em;margin-bottom:0.5em;font-size:0.9em;';
+                banner.textContent = '🔧 Admin: editing fundraiser for ' + _targetUsername;
+                document.getElementById('edit-form-wrap').insertBefore(banner, document.getElementById('edit-form-wrap').firstChild);
+            }
+            // Auto-populate Coinos API key from profile (only if editing own)
+            if (isRecipient && profile.coinos_api_key && _targetUsername === _username) {
                 document.getElementById('f-coinos-api-key').value = profile.coinos_api_key;
             }
             loadProject();
@@ -334,7 +353,7 @@ function loadProject() {
         show('edit-form-wrap');
         return;
     }
-    fetch('/api/fundraiser-api.php?action=get&id=' + encodeURIComponent(_projectId) + '&username=' + encodeURIComponent(_username))
+    fetch('/api/fundraiser-api.php?action=get&id=' + encodeURIComponent(_projectId) + '&username=' + encodeURIComponent(_targetUsername))
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success && data.fundraiser) {
@@ -360,7 +379,7 @@ function showCompletedView(f) {
     document.getElementById('completed-summary').textContent =
         raised + ' sats raised of ' + goal + ' sat goal.';
     document.getElementById('completed-view-link').href =
-        '/fundraiser.html?project=' + encodeURIComponent(_projectId) + '&user=' + encodeURIComponent(_username);
+        '/fundraiser.html?project=' + encodeURIComponent(_projectId) + '&user=' + encodeURIComponent(_targetUsername);
     show('completed-view');
 }
 
@@ -508,7 +527,7 @@ function deleteFundraiser() {
     fetch('/api/save-fundraiser.php', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ action: 'delete', project_id: _projectId, username: _username, jwt: _jwt })
+        body: JSON.stringify({ action: 'delete', project_id: _projectId, username: _targetUsername, jwt: _jwt })
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -542,13 +561,13 @@ function saveProject() {
 
     var body = {
         jwt:              _jwt,
-        username:         _username,
+        username:         _targetUsername,
         project_id:       _projectId || '',
         title:            document.getElementById('f-title').value.trim(),
         description:      document.getElementById('f-description').value.trim(),
         full_description: document.getElementById('f-full-description').innerHTML,
         target_amount:    document.getElementById('f-target-amount').value,
-        recipient_name:   _username,
+        recipient_name:   _targetUsername,
         location:         document.getElementById('f-location').value.trim(),
         website_url:      document.getElementById('f-website-url').value.trim(),
         image_url:        document.getElementById('f-image-url').value.trim(),
@@ -574,7 +593,7 @@ function saveProject() {
             }
             status.textContent = '✅ Saved! Redirecting...';
             setTimeout(function() {
-                window.location.href = '/fundraiser.html?project=' + encodeURIComponent(_projectId) + '&user=' + encodeURIComponent(_username);
+                window.location.href = '/fundraiser.html?project=' + encodeURIComponent(_projectId) + '&user=' + encodeURIComponent(_targetUsername);
             }, 800);
         } else {
             status.textContent = data.error || 'Save failed.';

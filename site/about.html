@@ -56,6 +56,11 @@
 <!-- include end doctype-head.incl -->
 
 <!-- include start social-layout-start.incl -->
+<script>
+if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && !sessionStorage.getItem('http-warn-dismissed')) {
+    document.write('<div id="http-warn" style="background:#fffbe6;border-bottom:1px solid #e6c800;padding:0.5em 1em;font-size:0.85em;text-align:center;">⚠️ You are on an unencrypted connection. Some features (like copying invoices) require HTTPS. <a href="' + window.location.href.replace(/^http:/,'https:') + '">Switch to HTTPS →</a> <button onclick="sessionStorage.setItem(\'http-warn-dismissed\',\'1\');document.getElementById(\'http-warn\').style.display=\'none\';" style="margin-left:1em;background:none;border:none;cursor:pointer;font-size:1em;" aria-label="Dismiss">✕</button></div>');
+}
+</script>
 <header class="site-header">
     <div class="header-content">
         <div class="logo">
