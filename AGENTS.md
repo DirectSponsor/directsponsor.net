@@ -326,8 +326,8 @@ The core feature of DS, currently in design stage. Key facts for agents:
 
 ### What needs building
 - Sponsor tier management (active / standby / queued membership per recipient)
-- Monthly reminder dispatch + response-window tracking (via **email** — all sponsors have an address on the auth server; see `sponsorship-reminder-plan.md`)
-- Automatic active→standby→queued promotion logic
+- ~~Monthly reminder dispatch + response-window tracking~~ ✅ done 2026-05-28 — email reminders day 1/4/7, demotion day 8, Telegram admin alert; see `sponsorship-reminder-plan.md`
+- Slot model is full/available only — no promotion queue; admin handles replacement when Telegram alert fires
 - UI for sponsors to join a group, view their commitments, see recipient updates
 - UI for recipients to see their group composition
 

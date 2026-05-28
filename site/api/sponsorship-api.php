@@ -382,6 +382,7 @@ if ($method === 'POST' && $action === 'pay') {
     // Compute correct amount server-side: slots × $10 USD converted to sats
     // Client-supplied amount_sats is ignored — server controls the amount
     $usdOwed = $slots * 10;
+    // TODO: switch to Coinos rate API to avoid external dependency (Coinos already in use for invoicing)
     $priceResp = @file_get_contents('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
     if (!$priceResp) {
         http_response_code(503); echo json_encode(['error' => 'Could not fetch BTC price — try again in a moment']); exit;
