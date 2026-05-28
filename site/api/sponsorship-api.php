@@ -341,14 +341,11 @@ if ($method === 'POST' && $action === 'pay') {
     if (!$caller) { http_response_code(401); echo json_encode(['error' => 'Authentication required']); exit; }
 
     $recipient   = trim($input['recipient'] ?? '');
-    $amount_sats = (int)($input['amount_sats'] ?? 0);
-
     $month = trim($input['month'] ?? '');
     if (!preg_match('/^\d{4}-\d{2}$/', $month)) {
         http_response_code(400); echo json_encode(['error' => 'month required (YYYY-MM)']); exit;
     }
-    if (!$recipient)      { http_response_code(400); echo json_encode(['error' => 'recipient required']); exit; }
-    if ($amount_sats < 1) { http_response_code(400); echo json_encode(['error' => 'amount_sats required']); exit; }
+    if (!$recipient) { http_response_code(400); echo json_encode(['error' => 'recipient required']); exit; }
     if ($caller['username'] === $recipient) { http_response_code(400); echo json_encode(['error' => 'Cannot pay yourself']); exit; }
 
     // Server-side: month must be current or next only (no >1 month ahead)
@@ -382,6 +379,20 @@ if ($method === 'POST' && $action === 'pay') {
     $apiKey = $rp['coinos_api_key'] ?? null;
     if (!$apiKey) { http_response_code(422); echo json_encode(['error' => 'Recipient has no payment key configured']); exit; }
 
+    // Compute correct amount server-side: slots × $10 USD converted to sats
+    // Client-supplied amount_sats is ignored — server controls the amount
+    $usdOwed = $slots * 10;
+    $priceResp = @file_get_contents('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+    if (!$priceResp) {
+        http_response_code(503); echo json_encode(['error' => 'Could not fetch BTC price — try again in a moment']); exit;
+    }
+    $priceData = json_decode($priceResp, true);
+    $btcUsd = (float)($priceData['bitcoin']['usd'] ?? 0);
+    if ($btcUsd < 1000) {
+        http_response_code(503); echo json_encode(['error' => 'BTC price unavailable — try again in a moment']); exit;
+    }
+    $amount_sats = (int)round($usdOwed / $btcUsd * 100000000);
+
     // Sponsor display name
     $displayName = $caller['username'];
     $spGlob = glob(USERDATA_DIR . '/profiles/*-' . $caller['username'] . '.txt');
@@ -393,7 +404,7 @@ if ($method === 'POST' && $action === 'pay') {
     $memo  = 'Sponsorship ' . $month . ' — ' . $displayName . ' (' . $slots . ' slot' . ($slots > 1 ? 's' : '') . ')';
 
     $invoice_data = ['invoice' => [
-        'amount'  => $amount_sats,
+        'amount'  => $amount_sats,  // server-calculated: slots × $10 in sats
         'type'    => 'lightning',
         'memo'    => $memo,
         'webhook' => 'https://directsponsor.net/webhook.php',
