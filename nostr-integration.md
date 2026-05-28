@@ -41,20 +41,24 @@ ssh RN1 "journalctl -u strfry -f"
 - [ ] Tighten write policy to allowlist DS-issued pubkeys only
 - [ ] **User-facing Nostr docs** — explain that replies from Nostr users are visible on the site, but replying *back* to a Nostr user requires a Nostr client (Iris, Damus, Amethyst etc.) using the user's own key. DS users who want to engage in those threads will need their npub exported. Keep it simple — most users won't care, but power users will want to know.
 - [ ] Future: public relay on ES6 for wider Nostr network reach
+- [ ] **LNURL-pay / NIP-57 zap support** — see `lnurl-zap-integration.md` for full spec
 
 ---
 
 ## ⚠️ Architectural Decisions (read first)
 
-### Zaps are out of scope — by design
-Nostr zaps (NIP-57) allow anyone to send Lightning payments to a recipient's Lightning address directly from a Nostr client. We have **deliberately chosen not to track or integrate zaps** into the fundraiser system. Reasons:
+### Zaps — planned LNURL-pay integration
+Nostr zaps (NIP-57) allow Lightning payments from any Nostr client to a recipient's Lightning
+address. DS will support this via a thin LNURL-pay adapter that routes zap payments through the
+existing Coinos invoice flow — no node required, full DS accounting preserved.
 
-- Our fundraiser goal progress bar represents **accountable, tracked donations only** — donors who care about transparency use our donate modal, which creates an audit trail (ledger, webhook, goal progress).
-- Zaps bypass our invoice creation flow entirely, so we have no reliable way to associate a zap with a specific fundraiser without significant custom infrastructure.
-- Anyone can zap anyone's Lightning address at any time — that already works without any action from us.
-- Mixing untracked zaps into goal progress would undermine the accountability that is the whole point of DirectSponsor.
+**Key design decisions:**
+- DS generates the invoice (via Coinos API), so every zap is tracked in the audit ledger
+- Zaps are recorded as **general recipient income**, not against a specific fundraiser — fundraiser goal bars still count only modal-generated invoices, preserving exact accountability
+- Recipients get a Lightning Address at `username@directsponsor.net` usable in any Nostr client
+- On payment, `webhook.php` publishes a NIP-57 zap receipt (kind 9735) to the strfry relay
 
-**Action**: Fundraiser pages should include a small note making clear the progress bar reflects tracked donations only, so donors aren't confused if a recipient also receives zaps outside our system.
+**Full spec**: `lnurl-zap-integration.md`
 
 ### Auto-generated Nostr keypairs (future)
 When a user registers, we plan to generate a Nostr keypair server-side and store it in their profile file. Posts they publish on DirectSponsor will be broadcast to Nostr relays transparently — users don't need to know or care. If they later want to claim their Nostr identity with their own key (e.g. they open a Damus account), they can link it via signature verification. This keeps the "zero Nostr complexity" promise for regular users while still putting content into the Nostr ecosystem.

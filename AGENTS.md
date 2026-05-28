@@ -242,6 +242,7 @@ json.dump(d, open(f,'w'), indent=2)
 - **Apache vhost**: `/etc/apache2/sites-available/relay.directsponsor.net.conf` — HTTP/2 disabled for WS compatibility
 - **SSL**: Let's Encrypt via acme.sh, covers `directsponsor.net`, `www.directsponsor.net`, `relay.directsponsor.net`
 - **Full plan**: `nostr-integration.md`
+- **LNURL-pay / NIP-57 zap integration plan**: `lnurl-zap-integration.md` (not yet built)
 
 Useful commands:
 ```bash
@@ -325,7 +326,7 @@ The core feature of DS, currently in design stage. Key facts for agents:
 
 ### What needs building
 - Sponsor tier management (active / standby / queued membership per recipient)
-- Monthly reminder dispatch + response-window tracking
+- Monthly reminder dispatch + response-window tracking (via **email** — all sponsors have an address on the auth server; see `sponsorship-reminder-plan.md`)
 - Automatic active→standby→queued promotion logic
 - UI for sponsors to join a group, view their commitments, see recipient updates
 - UI for recipients to see their group composition
@@ -373,6 +374,8 @@ A group that violates these characteristics loses access to the DS network/brand
 - **Sponsorship group system** — see Sponsorship Groups section above
 - **Recipient group tools** — common fund accounting, coordinator log, decision docs (see Recipient Groups section above)
 - **Nostr deeper integration** — cross-node identity, flagging, fraud prevention (see `nostr-integration.md`)
+- **LNURL-pay / NIP-57 zap support** — routes Nostr zaps through Coinos, full DS accounting preserved (see `lnurl-zap-integration.md`)
+- **GitHub push checks → Telegram** — per-push CI on org repos (free Actions); plan in `satoshihost/monitors` → `github-push-checks.md`
 
 ## User Account Deletion
 

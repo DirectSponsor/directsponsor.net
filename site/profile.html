@@ -975,7 +975,7 @@ var _spPayPollTimer = null;
 var _spPayConfirmed = false;
 var _spInvoiceText  = '';
 
-var _SP_GRACE_DAY = 5; // days 1-5: current month still due; day 6+: next month
+var _SP_GRACE_DAY = 7; // days 1-7: current month still due; day 8+: next month
 function getDueMonth() {
     var now = new Date();
     var due = now.getDate() <= _SP_GRACE_DAY

@@ -186,10 +186,10 @@ Payments are per calendar month. The system tracks `last_paid_month` (YYYY-MM) p
 ### Sponsorship groups — Phase 3 and beyond
 
 - **Monthly payment flow**: ~~"Pay this month" button for active sponsors → Coinos invoice (same flow as fundraisers); payment recorded per-month per-sponsor in group file~~ ✅ done
-- **Reminder + response-window system**: monthly cron dispatches reminders (Telegram); tracks who has responded; non-responsive actives demoted after window closes
+- **Reminder + response-window system**: monthly cron dispatches reminders by **email** (all sponsors have an email address on the auth server); tracks who has responded; non-responsive actives demoted after window closes. See `sponsorship-reminder-plan.md` for full design.
 - **Automatic promotion logic**: active lapses → standby fills in → queued promoted to standby → next queued joins
 - **Recipient group tools**: common fund accounting (income/outgoings, all members visible), coordinator action log, group decision documentation
-- **Browser push / in-tab notifications**: Web Push API (service worker + VAPID keys) for payment arrival alerts to recipients. Decision: not needed for Phase 1 (no action required on join); revisit for Phase 2 when payments land. In-tab notifications (Notification API) are a simpler fallback if recipient has a tab open. Recipients who aren't on Telegram can use this instead.
+- **Browser push / in-tab notifications**: Web Push API (service worker + VAPID keys) for payment arrival alerts to recipients. Decision: not needed for Phase 1 (no action required on join); revisit for Phase 2 when payments land. In-tab notifications (Notification API) are a simpler fallback if recipient has a tab open.
 - **Network architecture**: DS is designed as independent nodes linked via Nostr — not a growing central platform. `directsponsor.net` is proof-of-concept. Deeper Nostr integration (cross-node identity, shared sponsor queues, flagging) is on the roadmap.
 
 Design principles (structural, not rules):

@@ -26,6 +26,10 @@ PROFILES_DIR = os.path.join(USERDATA, 'profiles')
 PROJECTS_DIR = os.path.join(USERDATA, 'projects')
 WEBHOOK_LOG  = os.path.join(USERDATA, 'logs/webhook.log')
 
+# Usernames to skip in HTML/profile checks (test accounts whose project files
+# may have been cleaned up but whose ledger entries remain).
+EXCLUDED_USERS = {'andytest2'}
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -270,6 +274,8 @@ html_issues = []
 
 for (recipient, project_id), txns in sorted(by_project.items()):
     if not recipient or not project_id:
+        continue
+    if recipient in EXCLUDED_USERS:
         continue
 
     ledger_sum = sum(t.get('amount_sats', 0) for t in txns)

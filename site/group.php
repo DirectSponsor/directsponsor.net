@@ -31,9 +31,9 @@ function fmtMonth($ym) {
     return ($months[(int)$p[1] - 1] ?? '') . ' ' . $p[0];
 }
 
-// Grace window: days 1-5 = current month due; day 6+ = next month due
+// Grace window: days 1-7 = current month due; day 8+ = next month due
 $today     = (int)date('j');
-$dueMonth  = $today <= 5 ? date('Y-m') : date('Y-m', strtotime('first day of next month'));
+$dueMonth  = $today <= 7 ? date('Y-m') : date('Y-m', strtotime('first day of next month'));
 
 $members     = $group ? ($group['members'] ?? []) : [];
 $need        = $group ? (int)($group['monthly_need_usd'] ?? 0) : 0;
