@@ -2,6 +2,66 @@
 // DirectSponsor Data Directory Configuration
 define('DS_DATA_DIR', '/var/www/directsponsor.net/userdata');
 define('PROJECTS_DIR', DS_DATA_DIR . '/projects');
+define('FX_CACHE_FILE', DS_DATA_DIR . '/fx-rates.json');
+define('FX_CACHE_TTL', 3600); // seconds — refresh rates once per hour
+
+function httpGet($url, $timeout = 5) {
+    if (ini_get('allow_url_fopen')) {
+        $ctx = stream_context_create(['http' => ['timeout' => $timeout, 'ignore_errors' => true]]);
+        return @file_get_contents($url, false, $ctx);
+    }
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => $timeout, CURLOPT_FOLLOWLOCATION => true]);
+        $r = curl_exec($ch); curl_close($ch);
+        return $r ?: false;
+    }
+    return false;
+}
+
+function getFxRates() {
+    static $mem = null;
+    if ($mem !== null) return $mem;
+    $stale = null;
+    if (file_exists(FX_CACHE_FILE)) {
+        $stale = json_decode(file_get_contents(FX_CACHE_FILE), true);
+        if ($stale && isset($stale['updated']) && (time() - $stale['updated']) < FX_CACHE_TTL) {
+            $mem = $stale;
+            return $mem;
+        }
+    }
+    // Fetch BTC/USD price
+    $btcUsd = 0;
+    $raw = httpGet('https://mempool.space/api/v1/prices');
+    if ($raw) { $j = json_decode($raw, true); $btcUsd = (float)($j['USD'] ?? 0); }
+    // Fetch all fiat rates relative to USD (free CDN-hosted API, no key required)
+    $usdRates = [];
+    $raw2 = httpGet('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json');
+    if ($raw2) { $j2 = json_decode($raw2, true); $usdRates = $j2['usd'] ?? []; }
+    if ($btcUsd > 0 && !empty($usdRates)) {
+        $new = ['updated' => time(), 'btc_usd' => $btcUsd, 'usd_rates' => $usdRates];
+        $tmp = FX_CACHE_FILE . '.tmp';
+        if (@file_put_contents($tmp, json_encode($new)) !== false) { @rename($tmp, FX_CACHE_FILE); }
+        $mem = $new;
+    } else {
+        $mem = $stale ?: ['updated' => 0, 'btc_usd' => 0, 'usd_rates' => []];
+    }
+    return $mem;
+}
+
+function fiatToSats($amount, $currency, $rates) {
+    $btcUsd = (float)($rates['btc_usd'] ?? 0);
+    if ($btcUsd <= 0 || $amount <= 0) return 0;
+    $cur = strtolower(trim($currency));
+    if ($cur === 'usd') {
+        $usdAmount = (float)$amount;
+    } else {
+        $rate = (float)($rates['usd_rates'][$cur] ?? 0); // units of currency per 1 USD
+        if ($rate <= 0) return 0;
+        $usdAmount = (float)$amount / $rate;
+    }
+    return (int)round($usdAmount / $btcUsd * 100000000);
+}
 
 /**
  * Fundraiser API v2 - Simplified
@@ -77,14 +137,26 @@ function parseProjectFromHTML($htmlFile, $projectId) {
         'location' => extractByComments($html, 'location', ''),
         'owner' => $owner,
         'filename' => basename($htmlFile),
-        'recent_donations' => parseRecentDonations($html)
+        'recent_donations'  => parseRecentDonations($html),
+        'goal_currency'     => extractByComments($html, 'goal-currency', ''),
+        'goal_fiat_amount'  => (float)extractByComments($html, 'goal-fiat-amount', '0'),
     ];
 }
 
 function convertToFundraiserFormat($projectData) {
     // Build direct URL to project HTML file
     $projectUrl = '/projects/' . ($projectData['owner'] ?? 'unknown') . '/' . $projectData['project_id'] . '.html';
-    
+
+    // Resolve goal in sats: use fiat goal if set, otherwise fall back to stored sats target
+    $goalCurrency   = trim($projectData['goal_currency'] ?? '');
+    $goalFiatAmount = (float)($projectData['goal_fiat_amount'] ?? 0);
+    $targetSats     = (int)($projectData['target_amount'] ?? 0);
+    if ($goalCurrency && $goalFiatAmount > 0) {
+        $rates    = getFxRates();
+        $calcSats = fiatToSats($goalFiatAmount, $goalCurrency, $rates);
+        if ($calcSats > 0) $targetSats = $calcSats;
+    }
+
     return [
         'id' => $projectData['project_id'],
         'url' => $projectUrl, // Direct link to standalone HTML file
@@ -93,7 +165,9 @@ function convertToFundraiserFormat($projectData) {
         'description' => $projectData['description'],
         'story' => $projectData['full_description'] ?: $projectData['description'],
         'owner_user_id' => $projectData['owner'] ?? 'Anonymous',
-        'goal_amount' => $projectData['target_amount'] ?? 0,
+        'goal_amount' => $targetSats,
+        'goal_currency'    => $goalCurrency,
+        'goal_fiat_amount' => $goalFiatAmount,
         'current_amount' => $projectData['current_amount'] ?? 0,
         'currency' => $projectData['currency'] ?? 'sats',
         'category' => $projectData['category'] ?? 'General',

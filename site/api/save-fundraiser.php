@@ -198,6 +198,8 @@ if (!file_exists($htmlFile)) {
 <!-- image-url --><!-- end image-url -->
 <!-- lightning-address --><!-- end lightning-address -->
 <!-- recent_donations --><!-- end recent_donations -->
+<!-- goal-currency --><!-- end goal-currency -->
+<!-- goal-fiat-amount --><!-- end goal-fiat-amount -->
 </body></html>';
     file_put_contents($htmlFile, $stub);
 }
@@ -245,6 +247,8 @@ $fields = [
     'category'         => $input['category']          ?? null,
     'status'           => $input['status']            ?? null,
     'coinos-api-key'   => $input['coinos_api_key']    ?? null,
+    'goal-currency'    => isset($input['goal_currency'])    ? strtoupper(preg_replace('/[^A-Za-z]/', '', $input['goal_currency'])) : null,
+    'goal-fiat-amount' => $input['goal_fiat_amount']  ?? null,
 ];
 
 foreach ($fields as $tag => $value) {

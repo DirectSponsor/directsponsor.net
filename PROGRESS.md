@@ -92,6 +92,78 @@ _Last updated: 2026-05-03 (session 9)_
 
 ---
 
+## Payment provider notes
+
+### Coinos outage — 2026-05-30
+**Symptom:** donors see "payment service not available" after ~10s delay.
+**Root cause confirmed from logs:** RN1 curl call to `https://coinos.io/api/invoice` times out with `0 bytes received` — TCP-level failure, not an API error. The Coinos website loads fine in a browser, which suggests the API endpoint (`coinos.io/api`) is on different infrastructure and is down or blocking RN1's IP.
+
+**Affected:** `maibelris/001` — all attempts at 11:15, 11:16, 15:48, 15:53 UTC all timed out identically.
+
+**Confirmed root cause (2026-05-30 ~17:15 UTC diagnostic):**
+Cloudflare bot-challenge is blocking RN1 (`104.168.38.197`) from reaching the API.
+
+- `curl -I https://coinos.io` → **HTTP 403** with `cf-mitigated: challenge` — Cloudflare is presenting a JS bot challenge that a headless server cannot pass
+- `curl -v https://coinos.io/api/info` → TLS handshake completes fine, HTTP/2 request is sent, then **hangs for 10s with 0 bytes** — Cloudflare holds the connection waiting for a browser challenge response that never comes
+- This is a server-side Cloudflare rule change on Coinos's end blocking API calls from non-browser user-agents/IPs
+
+**Resolved ~19:00 UTC same day** — Coinos lifted the CF restriction without any report needed. Payments confirmed working (2 test payments made). Total downtime ~8 hours.
+
+**Retained for reference in case it recurs** — if it does, use this message for Coinos support:
+> Our server (IP 104.168.38.197) can no longer reach your API. TLS connects fine but all HTTP requests hang. `curl -I https://coinos.io` from our server returns HTTP 403 with `cf-mitigated: challenge`. It appears Cloudflare is now blocking non-browser requests, which breaks server-to-server API calls. Can you whitelist server IPs or add a Cloudflare rule to allow API traffic without browser challenge?
+
+---
+
+### Self-hosted Lightning node — assessment
+
+**Previously tried and abandoned.** The blocker is not server cost but channel economics:
+
+- To be reliably reachable on Lightning you need well-connected channels, which means either opening channels with a large, well-connected node (costly fee) or tying up significant bitcoin in channels yourself
+- A node with poor connectivity means payments fail or route badly — worse UX than a custodial service
+- This is a structural problem with Lightning today: being your own node and being well-connected are both expensive
+
+**Long-term vision (noted for future):** each recipient project runs its own node — fully decentralised, no central custodian. This is the right direction but has two hard prerequisites:
+1. Running a node must become extremely cheap (server + channel management)
+2. Connectivity/routing must work without needing to pay for access to a large hub — i.e. Lightning (or a successor) reaches a state where everyone can be their own well-connected node at low cost
+
+Until both conditions are met, custodial services (Coinos, Blink) are the pragmatic choice. The platform should be designed so switching to self-hosted nodes later is possible per-project without a central migration — each `{id}-config.json` already has a `type` field for this reason.
+
+---
+
+### Blink (blink.sv) — alternative Lightning wallet provider
+
+**What it is:** Open-source custodial Lightning wallet originally built for Bitcoin Beach, El Salvador. Has a public API, works globally including Africa. Status page: https://blink.statuspage.io
+
+**API overview (as of 2026-05):**
+- GraphQL API at `https://api.blink.sv/graphql`
+- Auth: `X-API-KEY: blink_...` header (API keys from dashboard.blink.sv)
+- Create invoice: `lnInvoiceCreate` mutation → returns `paymentRequest` (bolt11) + `paymentHash`
+- Webhooks: registered per-account (not per-invoice) via `callbackEndpointAdd` GraphQL mutation or Blink Dashboard; event type `receive.lightning`; uses Svix (exponential backoff retries)
+- Webhook payload contains `walletId`, `paymentHash`, `settlementAmount`, `status`
+- Registration: phone number required (unavailable in US and some other countries)
+- Fees: free for intra-Blink; ~0.02% Lightning routing fees
+
+**Advantages over Coinos:**
+- Designed for developing-world use (El Salvador → Africa); anecdotally more stable
+- Svix-backed webhooks with automatic retries (Coinos webhooks have no retry)
+- Status page exists for monitoring
+- Open source (Galoy stack) — can self-host eventually
+
+**Disadvantages / differences requiring code changes:**
+- GraphQL vs REST — bigger rewrite of `project-donations-api.php` and `webhook.php`
+- Webhook is per-account, not per-invoice: can't embed a `secret` in the invoice. Webhook auth uses Svix-signed payloads (HMAC) instead
+- Webhook identifies the recipient by `walletId` — need a lookup table: `walletId → username` (stored in each `{id}-config.json`)
+- No `memo` field in webhook payload — matching to pending donation must be done by `paymentHash`
+- Phone number required to sign up — potential barrier for some recipients
+
+**Implementation plan when ready:**
+1. Add `"type": "blink"` support to `{id}-config.json` (store `api_key` + `wallet_id`)
+2. New invoice path in `project-donations-api.php`: GraphQL `lnInvoiceCreate`, same return shape
+3. Update `webhook.php` to handle Blink's payload structure alongside existing Coinos format
+4. Each recipient registers at dashboard.blink.sv, adds `https://directsponsor.net/webhook.php` as callback endpoint once
+
+---
+
 ## Data structure
 ```
 /var/www/directsponsor.net/userdata/

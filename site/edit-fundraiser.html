@@ -215,8 +215,46 @@ function dsLogout() {
         </div>
 
         <div class="form-group">
-            <label for="f-target-amount">Funding Goal (sats)</label>
-            <input type="number" id="f-target-amount" min="1000" step="1000" required placeholder="e.g. 60000">
+            <label for="f-goal-currency">Goal Currency</label>
+            <input type="text" id="f-goal-currency" list="currency-options"
+                   maxlength="10" autocomplete="off" placeholder="Type or pick, e.g. GHS"
+                   style="text-transform:uppercase;max-width:12em;"
+                   oninput="this.value=this.value.toUpperCase()">
+            <datalist id="currency-options">
+                <option value="USD" label="US Dollar"></option>
+                <option value="EUR" label="Euro"></option>
+                <option value="GBP" label="British Pound"></option>
+                <option value="AUD" label="Australian Dollar"></option>
+                <option value="CAD" label="Canadian Dollar"></option>
+                <option value="GHS" label="Ghana Cedi"></option>
+                <option value="NGN" label="Nigerian Naira"></option>
+                <option value="KES" label="Kenyan Shilling"></option>
+                <option value="ZAR" label="South African Rand"></option>
+                <option value="UGX" label="Ugandan Shilling"></option>
+                <option value="TZS" label="Tanzanian Shilling"></option>
+                <option value="ETB" label="Ethiopian Birr"></option>
+                <option value="ZMW" label="Zambian Kwacha"></option>
+                <option value="RWF" label="Rwandan Franc"></option>
+                <option value="MWK" label="Malawian Kwacha"></option>
+                <option value="XOF" label="West African CFA Franc"></option>
+                <option value="EGP" label="Egyptian Pound"></option>
+                <option value="MAD" label="Moroccan Dirham"></option>
+                <option value="INR" label="Indian Rupee"></option>
+                <option value="PHP" label="Philippine Peso"></option>
+                <option value="IDR" label="Indonesian Rupiah"></option>
+                <option value="BDT" label="Bangladeshi Taka"></option>
+                <option value="PKR" label="Pakistani Rupee"></option>
+                <option value="MXN" label="Mexican Peso"></option>
+                <option value="BRL" label="Brazilian Real"></option>
+                <option value="COP" label="Colombian Peso"></option>
+            </datalist>
+            <p class="hint">Type the 3-letter currency code or pick from the list. Not seeing yours? Just type it.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="f-goal-fiat-amount">Goal Amount</label>
+            <input type="number" id="f-goal-fiat-amount" min="1" step="any" required placeholder="e.g. 500">
+            <p class="hint">The amount you need in the currency above. Donors always pay in Bitcoin — the sats target adjusts automatically as the BTC price changes.</p>
         </div>
 
         <div class="form-group">
@@ -407,7 +445,8 @@ function populateForm(f) {
     document.getElementById('f-title').value           = f.title || '';
     document.getElementById('f-description').value     = f.description || '';
     document.getElementById('f-full-description').innerHTML = f.story || f.description || '';
-    document.getElementById('f-target-amount').value   = f.goal_amount || '';
+    document.getElementById('f-goal-currency').value    = f.goal_currency || '';
+    document.getElementById('f-goal-fiat-amount').value  = f.goal_fiat_amount || '';
     document.getElementById('f-location').value        =
         (f.contact_info && f.contact_info.location) ? f.contact_info.location : '';
     document.getElementById('f-image-url').value       = f.image_url || '';
@@ -547,10 +586,12 @@ function deleteFundraiser() {
 function saveProject() {
     var btn = document.getElementById('save-btn');
     var status = document.getElementById('save-status');
-    var title = document.getElementById('f-title').value.trim();
-    var amount = document.getElementById('f-target-amount').value;
-    if (!title) { document.getElementById('save-status').textContent = 'Please enter a project title.'; return; }
-    if (!amount || parseInt(amount) < 1000) { document.getElementById('save-status').textContent = 'Please enter a funding goal (minimum 1000 sats).'; return; }
+    var title       = document.getElementById('f-title').value.trim();
+    var currency    = document.getElementById('f-goal-currency').value.trim().toUpperCase();
+    var fiatAmount  = parseFloat(document.getElementById('f-goal-fiat-amount').value);
+    if (!title) { status.textContent = 'Please enter a project title.'; return; }
+    if (!currency) { status.textContent = 'Please enter a currency for your goal (e.g. GHS or USD).'; return; }
+    if (!fiatAmount || fiatAmount <= 0) { status.textContent = 'Please enter a goal amount greater than zero.'; return; }
 
     btn.disabled = true;
     btn.textContent = 'Saving...';
@@ -564,7 +605,8 @@ function saveProject() {
         title:            document.getElementById('f-title').value.trim(),
         description:      document.getElementById('f-description').value.trim(),
         full_description: document.getElementById('f-full-description').innerHTML,
-        target_amount:    document.getElementById('f-target-amount').value,
+        goal_currency:    currency,
+        goal_fiat_amount: fiatAmount,
         recipient_name:   _username,
         location:         document.getElementById('f-location').value.trim(),
         website_url:      document.getElementById('f-website-url').value.trim(),
