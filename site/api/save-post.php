@@ -13,11 +13,21 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 define('USERDATA_DIR', '/var/www/directsponsor.net/userdata');
 
-function nostr_publish_ws($event_json, $host, $port) {
-    $sock = @stream_socket_client("tcp://$host:$port", $errno, $errstr, 5);
+function nostr_publish_ws($event_json, $host, $port, $ssl = false) {
+    $scheme = $ssl ? 'ssl' : 'tcp';
+    $ctx = $ssl ? stream_context_create(['ssl' => [
+        'verify_peer'      => true,
+        'verify_peer_name' => true,
+        'SNI_enabled'      => true,
+        'peer_name'        => $host,
+    ]]) : null;
+    $sock = $ctx
+        ? @stream_socket_client("$scheme://$host:$port", $errno, $errstr, 5, STREAM_CLIENT_CONNECT, $ctx)
+        : @stream_socket_client("$scheme://$host:$port", $errno, $errstr, 5);
     if (!$sock) return false;
+    $wsHost = $ssl ? $host : "$host:$port";
     $key = base64_encode(random_bytes(16));
-    $handshake = "GET / HTTP/1.1\r\nHost: $host:$port\r\nUpgrade: websocket\r\n"
+    $handshake = "GET / HTTP/1.1\r\nHost: $wsHost\r\nUpgrade: websocket\r\n"
         . "Connection: Upgrade\r\nSec-WebSocket-Key: $key\r\nSec-WebSocket-Version: 13\r\n\r\n";
     fwrite($sock, $handshake);
     $response = '';
@@ -181,6 +191,14 @@ if ($profileGlob) {
                 file_put_contents($postFile, json_encode($post, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             }
             nostr_publish_ws(trim($signedJson), '127.0.0.1', 7777);
+            $external_relays = [
+                ['host' => 'relay.damus.io',   'port' => 443, 'ssl' => true],
+                ['host' => 'relay.primal.net', 'port' => 443, 'ssl' => true],
+                ['host' => 'nos.lol',          'port' => 443, 'ssl' => true],
+            ];
+            foreach ($external_relays as $r) {
+                nostr_publish_ws(trim($signedJson), $r['host'], $r['port'], $r['ssl']);
+            }
         }
     }
 }

@@ -227,6 +227,54 @@ or removed.
 
 ---
 
+## Live Deployment Status (updated 2026-06-03)
+
+The system is **fully built and working**. Confirmed end-to-end test on 2026-06-03.
+
+### What's running on RN1
+- Script: `/root/scripts/sponsorship-reminders.py`
+- Cron: installed in root's crontab (verified via `crontab -l`)
+- Log: `/var/log/ds-reminders.log`
+- Groups: `/var/www/directsponsor.net/userdata/sponsorship-groups/`
+
+### Notification secret — correct file paths
+The shared secret must exist in **two places**:
+
+| Server | Path | Permissions |
+|--------|------|-------------|
+| RN1 (104.168.38.197) | `/root/.ds-notify-secret` | `600 root:root` |
+| es3-auth (86.38.200.119) | `/etc/ds-notify-secret` | `640 root:apache` |
+
+> **Note**: The auth server's PHP (`send-notification.php`) reads from `/etc/ds-notify-secret`
+> (not `/root/`) because PHP-FPM runs as `apache` and cannot enter `/root` (dir is `0550`).
+> This was fixed 2026-06-03. If you ever rebuild the auth server, recreate it:
+> ```bash
+> echo 'YOUR_SECRET' > /etc/ds-notify-secret && chown root:apache /etc/ds-notify-secret && chmod 640 /etc/ds-notify-secret
+> ```
+
+---
+
+## Restoring a Sponsor After Demotion
+
+If a sponsor misses a payment (or you run a test cycle deliberately), use:
+
+**Script**: `/root/scripts/restore-sponsor.py` on RN1
+
+```bash
+python3 /root/scripts/restore-sponsor.py kelvin andytest2        # 1 slot
+python3 /root/scripts/restore-sponsor.py evans  andytest2 2      # 2 slots
+```
+
+What it does:
+- Resets `slots` to the given number (or previous value if omitted)
+- Sets `last_paid_month` to the current month (so no reminders fire immediately)
+- Clears `reminder_state` entirely
+
+The sponsor is immediately active again — no other steps needed. If the username was
+fully removed from the group file, the script re-adds them as a fresh entry.
+
+---
+
 ## References
 
 - Payment flow: `site/api/sponsorship-api.php` (`pay` action)
