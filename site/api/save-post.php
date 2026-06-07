@@ -151,6 +151,11 @@ file_put_contents($postFile, json_encode($post, JSON_PRETTY_PRINT | JSON_UNESCAP
 
 // Nostr: get or create keypair, sign event, import to relay
 $nostrPubkey = null;
+$external_relays = [
+    ['host' => 'relay.damus.io',   'port' => 443, 'ssl' => true],
+    ['host' => 'relay.primal.net', 'port' => 443, 'ssl' => true],
+    ['host' => 'nos.lol',          'port' => 443, 'ssl' => true],
+];
 $profileGlob = glob(USERDATA_DIR . '/profiles/*-' . $callerUsername . '.txt');
 if ($profileGlob) {
     $profileFile = $profileGlob[0];
@@ -166,6 +171,25 @@ if ($profileGlob) {
     }
     if (!empty($profile['nostr_privkey'])) {
         $nostrPubkey = $profile['nostr_pubkey'];
+        if (empty($profile['nostr_metadata_published'])) {
+            $kind0Event = json_encode([
+                'kind'       => 0,
+                'created_at' => time(),
+                'tags'       => [],
+                'content'    => json_encode(['name' => $callerUsername, 'nip05' => $callerUsername . '@directsponsor.net'], JSON_UNESCAPED_UNICODE),
+            ], JSON_UNESCAPED_UNICODE);
+            $kind0Signed = shell_exec('/usr/bin/python3 /opt/strfry/nostr-sign.py sign '
+                . escapeshellarg($profile['nostr_privkey']) . ' '
+                . escapeshellarg($kind0Event) . ' 2>/dev/null');
+            if ($kind0Signed) {
+                nostr_publish_ws(trim($kind0Signed), '127.0.0.1', 7777);
+                foreach ($external_relays as $r) {
+                    nostr_publish_ws(trim($kind0Signed), $r['host'], $r['port'], $r['ssl']);
+                }
+                $profile['nostr_metadata_published'] = true;
+                file_put_contents($profileFile, json_encode($profile, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            }
+        }
         $content = $title ? $title . "\n\n" . $intro : $intro;
         if ($body) $content .= "\n\n" . strip_tags($body);
         if ($image_url) {
@@ -191,11 +215,6 @@ if ($profileGlob) {
                 file_put_contents($postFile, json_encode($post, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             }
             nostr_publish_ws(trim($signedJson), '127.0.0.1', 7777);
-            $external_relays = [
-                ['host' => 'relay.damus.io',   'port' => 443, 'ssl' => true],
-                ['host' => 'relay.primal.net', 'port' => 443, 'ssl' => true],
-                ['host' => 'nos.lol',          'port' => 443, 'ssl' => true],
-            ];
             foreach ($external_relays as $r) {
                 nostr_publish_ws(trim($signedJson), $r['host'], $r['port'], $r['ssl']);
             }
