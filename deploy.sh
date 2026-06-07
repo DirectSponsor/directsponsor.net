@@ -282,6 +282,8 @@ main() {
         --include='favicon.ico' \
         --include='robots.txt' \
         --include='.htaccess' \
+        --include='.well-known/' \
+        --include='.well-known/**' \
         --exclude='includes/' \
         --exclude='build.sh' \
         --exclude='deploy*.sh' \
