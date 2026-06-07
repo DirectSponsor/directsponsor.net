@@ -240,6 +240,11 @@ function dsLogout() {
             <label for="website">Website</label>
             <input type="url" id="website" placeholder="https://...">
         </div>
+        <div class="form-row">
+            <label for="lightning-address">Lightning Address</label>
+            <input type="text" id="lightning-address" placeholder="you@coinos.io or any lightning address">
+            <p class="field-hint">Lets anyone send you Lightning tips (zaps) via Nostr clients like Iris or Primal. Optional.</p>
+        </div>
     </div>
 
     <div class="project-card profile-section" id="recipient-section" style="display:none;">
@@ -254,11 +259,6 @@ function dsLogout() {
             <label for="coinos-api-key">Coinos API Key</label>
             <input type="password" id="coinos-api-key" placeholder="Paste your Coinos API token here">
             <p class="field-hint">From coinos.io → Settings → API. Used to receive donations into your projects. Keep this private.</p>
-        </div>
-        <div class="form-row">
-            <label for="lightning-address">Lightning Address (optional)</label>
-            <input type="text" id="lightning-address" placeholder="you@coinos.io or any lightning address">
-            <p class="field-hint">Alternative Lightning address if not using Coinos directly.</p>
         </div>
     </div>
 

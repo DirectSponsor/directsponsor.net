@@ -3,6 +3,49 @@
 define('DS_DATA_DIR', '/var/www/directsponsor.net/userdata');
 define('USERDATA_DIR', DS_DATA_DIR);
 
+function nostr_build_kind0_content($profile, $username) {
+    $meta = ['name' => $username, 'nip05' => $username . '@directsponsor.net'];
+    if (!empty($profile['display_name']))      $meta['display_name'] = $profile['display_name'];
+    if (!empty($profile['bio']))               $meta['about']        = trim(strip_tags($profile['bio']));
+    if (!empty($profile['website']))           $meta['website']      = $profile['website'];
+    if (!empty($profile['lightning_address'])) $meta['lud16']        = $profile['lightning_address'];
+    $avatar = $profile['avatar'] ?? '';
+    if (strpos($avatar, 'uploaded:') === 0)    $meta['picture']     = substr($avatar, 9);
+    return json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+}
+
+function nostr_publish_ws($event_json, $host, $port, $ssl = false) {
+    $scheme = $ssl ? 'ssl' : 'tcp';
+    $ctx = $ssl ? stream_context_create(['ssl' => [
+        'verify_peer' => true, 'verify_peer_name' => true,
+        'SNI_enabled' => true, 'peer_name' => $host,
+    ]]) : null;
+    $sock = $ctx
+        ? @stream_socket_client("$scheme://$host:$port", $errno, $errstr, 5, STREAM_CLIENT_CONNECT, $ctx)
+        : @stream_socket_client("$scheme://$host:$port", $errno, $errstr, 5);
+    if (!$sock) return false;
+    $wsHost = $ssl ? $host : "$host:$port";
+    $key = base64_encode(random_bytes(16));
+    fwrite($sock, "GET / HTTP/1.1\r\nHost: $wsHost\r\nUpgrade: websocket\r\n"
+        . "Connection: Upgrade\r\nSec-WebSocket-Key: $key\r\nSec-WebSocket-Version: 13\r\n\r\n");
+    $resp = '';
+    while (!feof($sock)) { $resp .= fread($sock, 1024); if (strpos($resp, "\r\n\r\n") !== false) break; }
+    if (strpos($resp, '101') === false) { fclose($sock); return false; }
+    $msg = '["EVENT",' . $event_json . ']';
+    $len = strlen($msg); $mask = random_bytes(4); $masked = '';
+    for ($i = 0; $i < $len; $i++) $masked .= chr(ord($msg[$i]) ^ ord($mask[$i % 4]));
+    $frame = ($len <= 125) ? chr(0x81).chr(0x80|$len).$mask.$masked : chr(0x81).chr(0xFE).pack('n',$len).$mask.$masked;
+    fwrite($sock, $frame);
+    stream_set_timeout($sock, 2); fread($sock, 256); fclose($sock);
+    return true;
+}
+
+$nostr_external_relays = [
+    ['host' => 'relay.damus.io',   'port' => 443, 'ssl' => true],
+    ['host' => 'relay.primal.net', 'port' => 443, 'ssl' => true],
+    ['host' => 'nos.lol',          'port' => 443, 'ssl' => true],
+];
+
 /**
  * DirectSponsor Simple Profile API
  * 
@@ -472,6 +515,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'profile') {
     
     // Save updated data
     if (saveProfileData($profileFile, $data)) {
+        // Re-publish Nostr Kind 0 metadata if this user has a keypair
+        if (!empty($data['nostr_privkey']) && !empty($data['username'])) {
+            global $nostr_external_relays;
+            $kind0Event = json_encode(['kind' => 0, 'created_at' => time(), 'tags' => [],
+                'content' => nostr_build_kind0_content($data, $data['username'])], JSON_UNESCAPED_UNICODE);
+            $kind0Signed = shell_exec('/usr/bin/python3 /opt/strfry/nostr-sign.py sign '
+                . escapeshellarg($data['nostr_privkey']) . ' '
+                . escapeshellarg($kind0Event) . ' 2>/dev/null');
+            if ($kind0Signed) {
+                nostr_publish_ws(trim($kind0Signed), '127.0.0.1', 7777);
+                foreach ($nostr_external_relays as $r) {
+                    nostr_publish_ws(trim($kind0Signed), $r['host'], $r['port'], $r['ssl']);
+                }
+            }
+        }
         echo json_encode([
             'success' => true,
             'message' => 'Profile updated successfully',

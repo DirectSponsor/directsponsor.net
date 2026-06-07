@@ -13,6 +13,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 define('USERDATA_DIR', '/var/www/directsponsor.net/userdata');
 
+function nostr_build_kind0_content($profile, $username) {
+    $meta = ['name' => $username, 'nip05' => $username . '@directsponsor.net'];
+    if (!empty($profile['display_name']))     $meta['display_name'] = $profile['display_name'];
+    if (!empty($profile['bio']))              $meta['about']        = trim(strip_tags($profile['bio']));
+    if (!empty($profile['website']))          $meta['website']      = $profile['website'];
+    if (!empty($profile['lightning_address'])) $meta['lud16']       = $profile['lightning_address'];
+    $avatar = $profile['avatar'] ?? '';
+    if (strpos($avatar, 'uploaded:') === 0)   $meta['picture']     = substr($avatar, 9);
+    return json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+}
+
 function nostr_publish_ws($event_json, $host, $port, $ssl = false) {
     $scheme = $ssl ? 'ssl' : 'tcp';
     $ctx = $ssl ? stream_context_create(['ssl' => [
@@ -176,7 +187,7 @@ if ($profileGlob) {
                 'kind'       => 0,
                 'created_at' => time(),
                 'tags'       => [],
-                'content'    => json_encode(['name' => $callerUsername, 'nip05' => $callerUsername . '@directsponsor.net'], JSON_UNESCAPED_UNICODE),
+                'content'    => nostr_build_kind0_content($profile, $callerUsername),
             ], JSON_UNESCAPED_UNICODE);
             $kind0Signed = shell_exec('/usr/bin/python3 /opt/strfry/nostr-sign.py sign '
                 . escapeshellarg($profile['nostr_privkey']) . ' '
