@@ -209,7 +209,7 @@ function loadProfileData($profileFile, $userId, $username = '') {
         $data = json_decode(file_get_contents($profileFile), true);
         if ($data && is_array($data)) {
             // Ensure all required fields exist
-            return array_merge([
+            $data = array_merge([
                 'user_id' => $userId,
                 'level' => 1,
                 'username' => '',
@@ -234,6 +234,13 @@ function loadProfileData($profileFile, $userId, $username = '') {
                 'public_profile' => false,
                 'last_profile_update' => time()
             ], $data);
+            // Backfill username if blank but a hint is available
+            if (empty($data['username']) && !empty($username)) {
+                $data['username'] = $username;
+                if (empty($data['display_name'])) $data['display_name'] = $username;
+                saveProfileData($profileFile, $data);
+            }
+            return $data;
         }
     }
     

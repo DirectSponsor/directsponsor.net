@@ -550,7 +550,8 @@ async function updateUserMenuDisplayName(userMenuButton, fallbackUsername) {
         }
         
         // Try to get display name and avatar from profile
-        const response = await fetch(`api/simple-profile.php?action=profile&user_id=${combinedUserId}`);
+        const username = getValidUsername();
+        const response = await fetch(`api/simple-profile.php?action=profile&user_id=${combinedUserId}&username=${encodeURIComponent(username)}`);
         if (response.ok) {
             const data = await response.json();
             if (data.success && data.profile) {
