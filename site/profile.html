@@ -210,6 +210,23 @@ function dsLogout() {
     <div class="project-card profile-section">
         <h2>📝 Public Info</h2>
         <div class="form-row">
+            <label>Profile Picture</label>
+            <div style="display:flex;gap:0.75em;align-items:flex-start;">
+                <div id="picture-preview" style="width:3em;height:3em;border-radius:50%;overflow:hidden;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <span id="picture-placeholder" style="font-size:1.5em;">&#128100;</span>
+                    <img id="picture-img" style="display:none;width:100%;height:100%;object-fit:cover;" alt="">
+                </div>
+                <div>
+                    <input type="hidden" id="picture" value="">
+                    <button type="button" onclick="document.getElementById('picture-file').click()" class="btn-small">&#128247; Upload photo</button>
+                    <button type="button" id="picture-remove-btn" onclick="removePicture()" class="btn-small" style="display:none;">Remove</button>
+                    <input type="file" id="picture-file" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;">
+                    <span id="picture-status" class="field-hint"></span>
+                </div>
+            </div>
+            <p class="field-hint">Square images work best. Also used as your Nostr profile picture.</p>
+        </div>
+        <div class="form-row">
             <label for="display-name">Display Name</label>
             <input type="text" id="display-name" placeholder="How you appear to other users">
         </div>
@@ -502,6 +519,11 @@ function populateForm(p) {
         document.getElementById('lightning-address').value  = p.lightning_address || '';
     }
 
+    // Picture
+    var pic = p.picture || '';
+    document.getElementById('picture').value = pic;
+    showPicture(pic);
+
     // Nostr section
     if (p.nostr_pubkey) {
         document.getElementById('nostr-section').style.display = 'block';
@@ -704,6 +726,7 @@ function saveProfile() {
 
     var update = {
         user_id:          _userId,
+        picture:          document.getElementById('picture').value.trim(),
         display_name:     document.getElementById('display-name').value.trim(),
         bio:              normBio,
         location:         document.getElementById('location').value.trim(),
@@ -736,6 +759,49 @@ function saveProfile() {
         status.textContent = 'Network error.';
         status.className = 'status-msg error';
     });
+}
+
+// Picture upload handling
+document.getElementById('picture-file').addEventListener('change', function() {
+    var file = this.files[0];
+    if (!file) return;
+    var status = document.getElementById('picture-status');
+    status.textContent = 'Uploading...';
+    var fd = new FormData();
+    fd.append('image', file);
+    fd.append('project_id', 'profile-avatar');
+    fd.append('username', _username || 'unknown');
+    fetch('/api/upload-project-image.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.success) {
+                document.getElementById('picture').value = d.image_url;
+                showPicture(d.image_url);
+                status.textContent = '';
+            } else {
+                status.textContent = 'Upload failed: ' + (d.error || 'Unknown');
+            }
+            document.getElementById('picture-file').value = '';
+        })
+        .catch(function() { status.textContent = 'Upload failed.'; });
+});
+
+function showPicture(url) {
+    if (url) {
+        document.getElementById('picture-img').src = url;
+        document.getElementById('picture-img').style.display = 'block';
+        document.getElementById('picture-placeholder').style.display = 'none';
+        document.getElementById('picture-remove-btn').style.display = 'inline';
+    } else {
+        document.getElementById('picture-img').style.display = 'none';
+        document.getElementById('picture-placeholder').style.display = 'block';
+        document.getElementById('picture-remove-btn').style.display = 'none';
+    }
+}
+
+function removePicture() {
+    document.getElementById('picture').value = '';
+    showPicture('');
 }
 
 function hexToBech32(hrp, hex) {

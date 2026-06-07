@@ -19,8 +19,7 @@ function nostr_build_kind0_content($profile, $username) {
     if (!empty($profile['bio']))              $meta['about']        = trim(strip_tags($profile['bio']));
     if (!empty($profile['website']))          $meta['website']      = $profile['website'];
     if (!empty($profile['lightning_address'])) $meta['lud16']       = $profile['lightning_address'];
-    $avatar = $profile['avatar'] ?? '';
-    if (strpos($avatar, 'uploaded:') === 0)   $meta['picture']     = substr($avatar, 9);
+    if (!empty($profile['picture']))          $meta['picture']     = $profile['picture'];
     return json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 

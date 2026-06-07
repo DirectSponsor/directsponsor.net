@@ -9,8 +9,7 @@ function nostr_build_kind0_content($profile, $username) {
     if (!empty($profile['bio']))               $meta['about']        = trim(strip_tags($profile['bio']));
     if (!empty($profile['website']))           $meta['website']      = $profile['website'];
     if (!empty($profile['lightning_address'])) $meta['lud16']        = $profile['lightning_address'];
-    $avatar = $profile['avatar'] ?? '';
-    if (strpos($avatar, 'uploaded:') === 0)    $meta['picture']     = substr($avatar, 9);
+    if (!empty($profile['picture']))           $meta['picture']      = $profile['picture'];
     return json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 
@@ -199,7 +198,7 @@ function searchProfiles($query, $limit = 10) {
                 'user_id' => $data['user_id'],
                 'username' => $data['username'],
                 'display_name' => $data['display_name'] ?? $data['username'],
-                'avatar' => $data['avatar'] ?? '👤',
+                'picture' => $data['picture'] ?? '',
                 'roles' => $data['roles'] ?? ['member']
             ];
             
@@ -257,7 +256,7 @@ function loadProfileData($profileFile, $userId, $username = '') {
                 'level' => 1,
                 'username' => '',
                 'display_name' => '',
-                'avatar' => '👤',
+                'picture' => '',
                 'email' => '',
                 'bio' => '',
                 'location' => '',
@@ -283,6 +282,13 @@ function loadProfileData($profileFile, $userId, $username = '') {
                 if (empty($data['display_name'])) $data['display_name'] = $username;
                 saveProfileData($profileFile, $data);
             }
+            // Migrate legacy 'avatar' field to 'picture'
+            if (!array_key_exists('picture', $data) && !empty($data['avatar'])) {
+                $av = $data['avatar'];
+                $data['picture'] = (strpos($av, 'uploaded:') === 0) ? substr($av, 9) : (strpos($av, 'http') === 0 ? $av : '');
+                unset($data['avatar']);
+                saveProfileData($profileFile, $data);
+            }
             return $data;
         }
     }
@@ -296,7 +302,7 @@ function loadProfileData($profileFile, $userId, $username = '') {
             'level' => 1,
             'username' => $authProfile['username'] ?? $username,
             'display_name' => $authProfile['display_name'] ?? $authProfile['username'] ?? '',
-            'avatar' => $authProfile['avatar'] ?? '👤',
+            'picture' => $authProfile['picture'] ?? '',
             'email' => '',
             'bio' => $authProfile['bio'] ?? '',
             'location' => $authProfile['location'] ?? '',
@@ -329,7 +335,7 @@ function loadProfileData($profileFile, $userId, $username = '') {
         'level' => 1,
         'username' => $username,
         'display_name' => '',
-        'avatar' => '👤',
+        'picture' => '',
         'email' => '',
         'bio' => '',
         'location' => '',
@@ -435,7 +441,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'public_profile') {
         'profile' => [
             'username'     => $pubData['username']     ?? $pubUsername,
             'display_name' => $pubData['display_name'] ?? '',
-            'avatar'       => $pubData['avatar']       ?? '👤',
+            'picture'      => $pubData['picture']      ?? '',
             'bio'          => $pubData['bio']          ?? '',
             'location'     => $pubData['location']     ?? '',
             'website'      => $pubData['website']      ?? '',
@@ -501,7 +507,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'profile') {
     $data = loadProfileData($profileFile, $userId);
     
     // Update fields (only allow safe fields to be updated) - roles excluded for security
-    $allowedFields = ['username', 'display_name', 'avatar', 'email', 'bio', 'location', 'website', 'settings', 'public_profile', 'coinos_username', 'coinos_api_key', 'lightning_address'];
+    $allowedFields = ['username', 'display_name', 'picture', 'email', 'bio', 'location', 'website', 'settings', 'public_profile', 'coinos_username', 'coinos_api_key', 'lightning_address'];
     foreach ($allowedFields as $field) {
         if (isset($input[$field])) {
             if ($field === 'settings' && is_array($input[$field])) {

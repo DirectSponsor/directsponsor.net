@@ -556,14 +556,8 @@ async function updateUserMenuDisplayName(userMenuButton, fallbackUsername) {
             const data = await response.json();
             if (data.success && data.profile) {
                 const displayName = data.profile.display_name || data.profile.username || fallbackUsername;
-                const avatar = data.profile.avatar || '👤';
-                
-                // For navigation, show camera emoji for uploaded images (too complex for nav)
-                if (avatar.startsWith('uploaded:')) {
-                    userMenuButton.textContent = `📷 ${displayName}`;
-                } else {
-                    userMenuButton.textContent = `${avatar} ${displayName}`;
-                }
+                const picture = data.profile.picture || '';
+                userMenuButton.textContent = (picture ? `📷` : `👤`) + ` ${displayName}`;
                 return;
             }
         }
