@@ -262,6 +262,30 @@ function dsLogout() {
         </div>
     </div>
 
+    <div class="project-card profile-section" id="nostr-section" style="display:none;">
+        <h2>&#128273; Nostr Identity</h2>
+        <p class="hint-text">Your posts are published to the Nostr network under this identity. Import your key into Nostr clients (Iris, Primal, Damus) to post from there too.</p>
+        <div class="form-row">
+            <label>Public Key (npub)</label>
+            <div style="display:flex;gap:0.5em;align-items:center;">
+                <input type="text" id="nostr-npub" readonly style="font-family:monospace;font-size:0.78em;flex:1;">
+                <button type="button" onclick="copyNostrKey('nostr-npub','npub-copy-status')" class="btn-small">Copy</button>
+            </div>
+            <span id="npub-copy-status" class="field-hint"></span>
+            <p class="field-hint">Share this so others can find you on Nostr.</p>
+        </div>
+        <div class="form-row">
+            <label>Private Key (nsec)</label>
+            <div style="display:flex;gap:0.5em;align-items:center;">
+                <input type="password" id="nostr-nsec" readonly style="font-family:monospace;font-size:0.78em;flex:1;" placeholder="Click Reveal to show">
+                <button type="button" id="nsec-reveal-btn" onclick="revealNsec()" class="btn-small">Reveal</button>
+                <button type="button" id="nsec-copy-btn" onclick="copyNostrKey('nostr-nsec','nsec-copy-status')" class="btn-small" style="display:none;">Copy</button>
+            </div>
+            <span id="nsec-copy-status" class="field-hint"></span>
+            <p class="field-hint" style="color:#c00;">&#9888;&#65039; Never share this with anyone. Use it to import your identity into Nostr clients.</p>
+        </div>
+    </div>
+
     <div class="project-card">
         <button class="save-btn" id="save-btn" onclick="saveProfile()">Save Changes</button>
         <span class="status-msg" id="save-status"></span>
@@ -477,6 +501,13 @@ function populateForm(p) {
         document.getElementById('coinos-api-key').value      = p.coinos_api_key || '';
         document.getElementById('lightning-address').value  = p.lightning_address || '';
     }
+
+    // Nostr section
+    if (p.nostr_pubkey) {
+        document.getElementById('nostr-section').style.display = 'block';
+        document.getElementById('nostr-npub').value = hexToBech32('npub', p.nostr_pubkey);
+    }
+    if (p.nostr_privkey) { document._nostrPrivkey = p.nostr_privkey; }
 
     // Only show My Fundraisers section for recipients and admins
     if (roles.indexOf('recipient') !== -1) {
@@ -704,6 +735,61 @@ function saveProfile() {
         btn.textContent = 'Save Changes';
         status.textContent = 'Network error.';
         status.className = 'status-msg error';
+    });
+}
+
+function hexToBech32(hrp, hex) {
+    var CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+    var GEN = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+    function polymod(v) {
+        var c = 1;
+        for (var i = 0; i < v.length; i++) {
+            var top = c >> 25;
+            c = (c & 0x1ffffff) << 5 ^ v[i];
+            for (var j = 0; j < 5; j++) { if ((top >> j) & 1) c ^= GEN[j]; }
+        }
+        return c;
+    }
+    function hrpExpand(h) {
+        var r = [], i;
+        for (i = 0; i < h.length; i++) r.push(h.charCodeAt(i) >> 5);
+        r.push(0);
+        for (i = 0; i < h.length; i++) r.push(h.charCodeAt(i) & 31);
+        return r;
+    }
+    function convertbits(data, from, to) {
+        var acc = 0, bits = 0, ret = [], maxv = (1 << to) - 1;
+        for (var i = 0; i < data.length; i++) {
+            acc = (acc << from) | data[i]; bits += from;
+            while (bits >= to) { bits -= to; ret.push((acc >> bits) & maxv); }
+        }
+        if (bits > 0) ret.push((acc << (to - bits)) & maxv);
+        return ret;
+    }
+    var bytes = [];
+    for (var i = 0; i < hex.length; i += 2) bytes.push(parseInt(hex.substr(i, 2), 16));
+    var data = convertbits(bytes, 8, 5);
+    var exp = hrpExpand(hrp);
+    var chk = polymod(exp.concat(data).concat([0,0,0,0,0,0])) ^ 1;
+    var cs = [0,1,2,3,4,5].map(function(i) { return (chk >> (5 * (5 - i))) & 31; });
+    return hrp + '1' + data.concat(cs).map(function(d) { return CHARSET[d]; }).join('');
+}
+
+function revealNsec() {
+    if (!document._nostrPrivkey) return;
+    document.getElementById('nostr-nsec').type = 'text';
+    document.getElementById('nostr-nsec').value = hexToBech32('nsec', document._nostrPrivkey);
+    document.getElementById('nsec-reveal-btn').style.display = 'none';
+    document.getElementById('nsec-copy-btn').style.display = 'inline';
+}
+
+function copyNostrKey(id, statusId) {
+    var val = document.getElementById(id).value;
+    if (!val) return;
+    navigator.clipboard.writeText(val).then(function() {
+        var s = document.getElementById(statusId);
+        s.textContent = 'Copied!';
+        setTimeout(function() { s.textContent = ''; }, 2000);
     });
 }
 </script>

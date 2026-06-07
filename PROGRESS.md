@@ -1,5 +1,5 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-05-03 (session 9)_
+_Last updated: 2026-06-07 (session 10)_
 
 ## What's done and live
 
@@ -327,7 +327,15 @@ Design principles (structural, not rules):
 - **RN1 SSH broken after single-key migration** — `IdentityFile` line was missing from RN1 entry in `~/.ssh/config`; fixed by adding `IdentityFile ~/.ssh/id_rsa`. Also needed to add `id_rsa.pub` to RN1's `authorized_keys` via web panel
 - **CSS list styling** — global `ul { list-style: none }` was overriding bullets in WYSIWYG/post body. Fixed (2026-04-03): removed the global reset; content-page emoji lists use `class="plain-list"` instead; `.wysiwyg-body ul/ol` and `.post-body ul/ol` explicitly set `list-style: disc/decimal`. All post/wysiwyg styles now live in `directsponsor-compact.css`, no page-level `<style>` blocks.
 - **Apache strips Authorization header** — JWT from `Authorization: Bearer ...` header is dropped by Apache. Workaround: send JWT in request body as `jwt` field; `save-post.php` and `save-fundraiser.php` both check body as fallback.
+- **Profile `username` field blank on creation** (fixed 2026-06-07): profile files were created with the correct `{id}-{username}.txt` filename but `"username": ""` in the JSON. Cause: `site-utils.js` called `simple-profile.php?action=profile` without passing `username`, so `getUsername()` returned `""` and the new-profile path wrote a blank field. Fixed by (1) passing `username` in the profile fetch in `site-utils.js`, and (2) adding a backfill in `loadProfileData()` that patches and saves the file if `username` is blank but a hint is now available. Admin search (`searchProfiles`) matches on the JSON field, so users with blank usernames were invisible to search.
+- **`.well-known/` excluded from deploy** (fixed 2026-06-07): `deploy.sh` rsync had `--exclude='.*'` which excluded the `.well-known/` directory. Fixed by adding `--include='.well-known/'` and `--include='.well-known/**'` before the exclude rule.
 - **Ledger stored recipient as donor_username** (fixed 2026-04-08): `webhook.php` line 412 used `$donation['username']` (= recipient) instead of `$donation['donor_username']` (= actual donor) when writing the ledger entry. Fixed to `$donation['donor_username']`. Historical entries where donor==recipient in the ledger are flagged as "suspect" by the reconcile script — they are pre-fix test/self-donations lost to the glob bug, not a financial integrity issue.
+
+### Session 10 — Nostr visibility + profile username fix (2026-06-07)
+- **External relay broadcasting**: `save-post.php` now broadcasts every new post to `relay.damus.io`, `relay.primal.net`, and `nos.lol` in addition to the private relay. Added SSL support to `nostr_publish_ws()`.
+- **Kind 0 metadata**: `save-post.php` publishes a kind 0 event (username + NIP-05 identity) on a user's first post. Controlled by `nostr_metadata_published` flag in profile file — fires once per user, then skipped. Covers both new and existing accounts (triggers on next post).
+- **NIP-05 verification**: `site/.well-known/nostr.php` serves `username → pubkey` mappings for all DS users. Accessible at `https://directsponsor.net/.well-known/nostr.json` (Apache rewrite in SSL vhost). Deploy script updated to include `.well-known/` (was excluded by `--exclude='.*'`).
+- **Profile username backfill**: `simple-profile.php` now backfills blank `username` in existing profile files when a hint is available. `site-utils.js` now passes `username` in the profile fetch so the hint reaches the server. Root cause: profile files were created with correct filename but blank JSON `username` field.
 
 ### Session 8 — Post notifications (2026-04-27)
 - Created `@DSSitesCheckBot` (Telegram) — general-purpose site alerts bot

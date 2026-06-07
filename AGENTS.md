@@ -239,6 +239,9 @@ json.dump(d, open(f,'w'), indent=2)
 - **Write policy**: `/opt/strfry/write-policy.py` — currently open (accepts all); to be tightened to DS-issued pubkeys once production-ready
 - **Signing helper**: `/opt/strfry/nostr-sign.py` — pure Python BIP340 Schnorr; used by `save-post.php`
 - **Per-user keypairs**: generated on first post, stored as `nostr_privkey` / `nostr_pubkey` in profile `.txt` file
+- **External relay broadcasting**: new posts sent to `relay.damus.io`, `relay.primal.net`, `nos.lol` (SSL WebSocket) in addition to local relay
+- **Kind 0 metadata**: published on a user's first-ever post; sets `name` + `nip05` so username shows in Nostr clients instead of hex pubkey. Controlled by `nostr_metadata_published` flag in profile file.
+- **NIP-05**: `/.well-known/nostr.json` served by `site/.well-known/nostr.php` (Apache rewrite in SSL vhost); lists all users with a `nostr_pubkey` in their profile
 - **Apache vhost**: `/etc/apache2/sites-available/relay.directsponsor.net.conf` — HTTP/2 disabled for WS compatibility
 - **SSL**: Let's Encrypt via acme.sh, covers `directsponsor.net`, `www.directsponsor.net`, `relay.directsponsor.net`
 - **Full plan**: `nostr-integration.md`
