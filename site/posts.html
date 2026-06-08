@@ -224,6 +224,9 @@ function dsLogout() {
 <!-- Single post full view -->
 <div id="single-post-wrap" style="display:none;"></div>
 
+<!-- Nostr replies section (shown in single post view when nostr_event_id exists) -->
+<div id="nostr-replies-wrap" style="display:none;"></div>
+
 <!-- Comments section (shown in single post view) -->
 <div id="comments-wrap" style="display:none;">
     <div class="post-card" id="comments-inner">
@@ -547,6 +550,7 @@ function loadSinglePost(username, postId) {
             if (p.title) document.title = p.title + ' - DirectSponsor';
             document.getElementById('comments-wrap').style.display = '';
             loadComments(_viewUser, _viewPostId);
+            if (p.nostr_event_id) loadNostrReplies(p.nostr_event_id);
         })
         .catch(function() { wrap.innerHTML = '<p>Could not load post.</p>'; });
 }
@@ -699,6 +703,77 @@ function deleteComment(commentId, postUser, postId) {
     .then(function(d) {
         if (d.success) { loadComments(postUser, postId); }
         else { alert(d.error || 'Could not delete comment.'); }
+    });
+}
+
+// --- Nostr replies ---
+
+var _nostrSockets = [];
+
+function loadNostrReplies(eventId) {
+    var wrap = document.getElementById('nostr-replies-wrap');
+    if (!wrap || !eventId) return;
+    wrap.style.display = '';
+    wrap.innerHTML = '<div class="post-card" style="color:var(--text-muted);font-size:0.9em;">Looking for Nostr replies…</div>';
+
+    var relays = ['wss://relay.damus.io', 'wss://relay.primal.net', 'wss://nos.lol'];
+    var collected = {};
+    var subId = 'ds-' + Math.random().toString(36).substr(2, 8);
+    var done = false;
+    var completed = 0;
+
+    function render() {
+        var items = Object.values(collected);
+        items.sort(function(a, b) { return a.created_at - b.created_at; });
+        if (items.length === 0) { wrap.style.display = 'none'; return; }
+        var html = '<div class="post-card"><h3 style="margin:0 0 0.8em;font-size:1em;">🌐 Nostr replies (' + items.length + ')</h3>';
+        items.forEach(function(ev) {
+            var date = new Date(ev.created_at * 1000).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'});
+            var author = ev.pubkey.substr(0, 10) + '…';
+            html += '<div style="margin-bottom:0.7em;padding-bottom:0.7em;border-bottom:1px solid var(--border);">' +
+                '<div style="font-size:0.82em;color:var(--text-muted);margin-bottom:0.2em;"><strong>' + esc(author) + '</strong> &middot; ' + date + '</div>' +
+                '<div style="font-size:0.95em;">' + escHtml(ev.content) + '</div>' +
+                '</div>';
+        });
+        html += '<p style="font-size:0.78em;color:var(--text-muted);margin:0.5em 0 0;">Replies from the Nostr network &middot; ' +
+            '<a href="https://njump.me/' + esc(eventId) + '" target="_blank" rel="noopener">View on njump.me →</a></p>';
+        html += '</div>';
+        wrap.innerHTML = html;
+    }
+
+    function finish() {
+        if (done) return;
+        done = true;
+        render();
+        _nostrSockets.forEach(function(ws) { try { ws.close(); } catch(e) {} });
+        _nostrSockets = [];
+    }
+
+    var timeout = setTimeout(finish, 8000);
+
+    relays.forEach(function(url) {
+        try {
+            var ws = new WebSocket(url);
+            _nostrSockets.push(ws);
+            ws.onopen = function() {
+                ws.send(JSON.stringify(['REQ', subId, {kinds: [1], '#e': [eventId], limit: 50}]));
+            };
+            ws.onmessage = function(e) {
+                try {
+                    var msg = JSON.parse(e.data);
+                    if (msg[0] === 'EVENT' && msg[1] === subId && msg[2] && msg[2].id) {
+                        collected[msg[2].id] = msg[2];
+                    } else if (msg[0] === 'EOSE') {
+                        ws.close();
+                        completed++;
+                        if (completed >= relays.length) { clearTimeout(timeout); finish(); }
+                    }
+                } catch(ex) {}
+            };
+            ws.onerror = ws.onclose = function() {
+                if (!done) { completed++; if (completed >= relays.length) { clearTimeout(timeout); finish(); } }
+            };
+        } catch(ex) { completed++; }
     });
 }
 
