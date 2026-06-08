@@ -83,26 +83,58 @@ if (!file_exists($uploadDir)) {
     }
 }
 
-// Use simple project ID as filename
-$filename = $projectId . '.' . $extension;
+// Convert to WebP (except GIF) using GD — 65% quality, max 1200px wide
+$convertToWebp = ($mimeType !== 'image/gif') && function_exists('imagewebp');
+
+if ($convertToWebp) {
+    $src = null;
+    if ($mimeType === 'image/jpeg' || $mimeType === 'image/jpg') {
+        $src = imagecreatefromjpeg($uploadedFile['tmp_name']);
+    } elseif ($mimeType === 'image/png') {
+        $src = imagecreatefrompng($uploadedFile['tmp_name']);
+    } elseif ($mimeType === 'image/webp') {
+        $src = imagecreatefromwebp($uploadedFile['tmp_name']);
+    }
+
+    if ($src) {
+        $origW = imagesx($src);
+        $origH = imagesy($src);
+        $maxW  = 1200;
+        if ($origW > $maxW) {
+            $newW = $maxW;
+            $newH = (int)round($origH * $maxW / $origW);
+        } else {
+            $newW = $origW;
+            $newH = $origH;
+        }
+        $dst = imagecreatetruecolor($newW, $newH);
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
+        imagedestroy($src);
+
+        $filename   = $projectId . '.webp';
+        $targetPath = $uploadDir . $filename;
+        $ok = imagewebp($dst, $targetPath, 65);
+        imagedestroy($dst);
+
+        if ($ok) {
+            $imageUrl = "/project-images/{$cleanUsername}/images/{$filename}";
+            echo json_encode(['success' => true, 'image_url' => $imageUrl, 'filename' => $filename]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to encode image as WebP']);
+        }
+        exit;
+    }
+}
+
+// Fallback: save original file as-is (GIF, or if GD WebP unavailable)
+$filename   = $projectId . '.' . $extension;
 $targetPath = $uploadDir . $filename;
-
-error_log('DEBUG upload: projectId=' . $projectId);
-error_log('DEBUG upload: filename=' . $filename);
-error_log('DEBUG upload: targetPath=' . $targetPath);
-
-// File will be automatically overwritten if it exists
-
-// Move uploaded file
+error_log('DEBUG upload: projectId=' . $projectId . '; filename=' . $filename . '; targetPath=' . $targetPath);
 if (move_uploaded_file($uploadedFile['tmp_name'], $targetPath)) {
-    // Return the web-accessible URL via Apache Alias
     $imageUrl = "/project-images/{$cleanUsername}/images/{$filename}";
-    
-    echo json_encode([
-        'success' => true,
-        'image_url' => $imageUrl,
-        'filename' => $filename
-    ]);
+    echo json_encode(['success' => true, 'image_url' => $imageUrl, 'filename' => $filename]);
 } else {
     echo json_encode(['success' => false, 'error' => 'Failed to save uploaded file']);
 }
