@@ -9,7 +9,11 @@ function nostr_build_kind0_content($profile, $username) {
     if (!empty($profile['bio']))               $meta['about']        = trim(strip_tags($profile['bio']));
     if (!empty($profile['website']))           $meta['website']      = $profile['website'];
     if (!empty($profile['lightning_address'])) $meta['lud16']        = $profile['lightning_address'];
-    if (!empty($profile['picture']))           $meta['picture']      = $profile['picture'];
+    if (!empty($profile['picture'])) {
+        $pic = $profile['picture'];
+        if (strpos($pic, 'http') !== 0) $pic = 'https://directsponsor.net' . $pic;
+        $meta['picture'] = $pic;
+    }
     return json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 

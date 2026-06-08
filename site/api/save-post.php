@@ -19,7 +19,11 @@ function nostr_build_kind0_content($profile, $username) {
     if (!empty($profile['bio']))              $meta['about']        = trim(strip_tags($profile['bio']));
     if (!empty($profile['website']))          $meta['website']      = $profile['website'];
     if (!empty($profile['lightning_address'])) $meta['lud16']       = $profile['lightning_address'];
-    if (!empty($profile['picture']))          $meta['picture']     = $profile['picture'];
+    if (!empty($profile['picture'])) {
+        $pic = $profile['picture'];
+        if (strpos($pic, 'http') !== 0) $pic = 'https://directsponsor.net' . $pic;
+        $meta['picture'] = $pic;
+    }
     return json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 
@@ -181,12 +185,14 @@ if ($profileGlob) {
     }
     if (!empty($profile['nostr_privkey'])) {
         $nostrPubkey = $profile['nostr_pubkey'];
-        if (empty($profile['nostr_metadata_published'])) {
+        $kind0Content = nostr_build_kind0_content($profile, $callerUsername);
+        $kind0Hash = md5($kind0Content);
+        if (($profile['nostr_metadata_hash'] ?? '') !== $kind0Hash) {
             $kind0Event = json_encode([
                 'kind'       => 0,
                 'created_at' => time(),
                 'tags'       => [],
-                'content'    => nostr_build_kind0_content($profile, $callerUsername),
+                'content'    => $kind0Content,
             ], JSON_UNESCAPED_UNICODE);
             $kind0Signed = shell_exec('/usr/bin/python3 /opt/strfry/nostr-sign.py sign '
                 . escapeshellarg($profile['nostr_privkey']) . ' '
@@ -196,7 +202,7 @@ if ($profileGlob) {
                 foreach ($external_relays as $r) {
                     nostr_publish_ws(trim($kind0Signed), $r['host'], $r['port'], $r['ssl']);
                 }
-                $profile['nostr_metadata_published'] = true;
+                $profile['nostr_metadata_hash'] = $kind0Hash;
                 file_put_contents($profileFile, json_encode($profile, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             }
         }

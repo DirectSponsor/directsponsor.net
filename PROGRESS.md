@@ -336,6 +336,13 @@ Design principles (structural, not rules):
 - **Kind 0 metadata**: `save-post.php` publishes a kind 0 event (username + NIP-05 identity) on a user's first post. Controlled by `nostr_metadata_published` flag in profile file — fires once per user, then skipped. Covers both new and existing accounts (triggers on next post).
 - **NIP-05 verification**: `site/.well-known/nostr.php` serves `username → pubkey` mappings for all DS users. Accessible at `https://directsponsor.net/.well-known/nostr.json` (Apache rewrite in SSL vhost). Deploy script updated to include `.well-known/` (was excluded by `--exclude='.*'`).
 - **Profile username backfill**: `simple-profile.php` now backfills blank `username` in existing profile files when a hint is available. `site-utils.js` now passes `username` in the profile fetch so the hint reaches the server. Root cause: profile files were created with correct filename but blank JSON `username` field.
+- **`avatar` → `picture` refactor**: renamed the profile field to match Nostr's field name; dropped the `uploaded:` prefix hack; plain URL stored directly. Auto-migration in `loadProfileData()` converts existing profiles on first load. Added a working profile picture upload UI to `profile.html` (circular preview, upload, remove). Picture now propagates to Nostr `picture` field in Kind 0 on every profile save.
+- **Lightning address moved to all users**: previously recipient-only; now in Public Info section so any user can set it (for Nostr zaps via `lud16`).
+
+### Nostr identity design note
+- **NIP-05 handle** (`andy@directsponsor.net`) is a convenience label — server-dependent, breaks if the domain lapses, but is just a pointer
+- **Keypair** (`nostr_privkey` / `nostr_pubkey`) is the actual identity — cryptographic, portable, server-independent. Users own it forever and can import it into any Nostr client
+- This reinforces the decentralised node model: each DS node issues its own `username@node.tld` handles, but all users' Nostr identities are portable and interoperable across nodes
 
 ### Session 8 — Post notifications (2026-04-27)
 - Created `@DSSitesCheckBot` (Telegram) — general-purpose site alerts bot
