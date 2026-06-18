@@ -285,11 +285,15 @@ function updateProjectHtml($htmlFile, $donation, $amountSats) {
         }
         
         // Add to recent donations list (keep last 10)
+        $msgHtml = !empty($donation['donor_message'])
+            ? "\n                <span class=\"donation-message\">" . htmlspecialchars($donation['donor_message']) . "</span>"
+            : '';
         $donationHtml = sprintf(
-            "            <li>\n                <strong>%s</strong> donated <strong>%d sats</strong>\n                <span class=\"donation-time\">%s</span>\n            </li>\n",
+            "            <li>\n                <strong>%s</strong> donated <strong>%d sats</strong>\n                <span class=\"donation-time\">%s</span>%s\n            </li>\n",
             htmlspecialchars($donation['donor_name']),
             $amountSats,
-            date('M j, Y')
+            date('M j, Y'),
+            $msgHtml
         );
         
         if (preg_match('/<!-- recent_donations -->(.*?)<!-- end recent_donations -->/s', $html, $matches)) {

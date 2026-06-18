@@ -621,6 +621,7 @@ function populateFundraiser(d) {
             const li = document.createElement('li');
             var text = '⚡ ' + (don.amount || '?').toLocaleString() + ' sats — ' + (don.note || 'Anonymous');
             if (don.date) text += ' <span class="color-muted" style="font-size:0.85em;">(' + don.date + ')</span>';
+            if (don.donor_message) text += '<br><span style="font-size:0.9em;color:#555;font-style:italic;">' + don.donor_message + '</span>';
             li.innerHTML = text;
             list.appendChild(li);
         });
@@ -700,6 +701,7 @@ function requestInvoice() {
     }
     var donorNameField = document.getElementById('donor-name').value.trim();
     var donorName = donorNameField || donorUsername || '';
+    var donorMessage = document.getElementById('donor-message').value.trim();
     fetch('/api/project-donations-api.php', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -709,7 +711,8 @@ function requestInvoice() {
             project_id: window._currentProject,
             amount: amount,
             donor_name: donorName,
-            donor_username: donorUsername
+            donor_username: donorUsername,
+            message: donorMessage
         })
     })
     .then(r => r.json())
@@ -816,6 +819,9 @@ function pollPayment(invoiceId) {
             </div>
             <div class="amount-input-wrap" style="margin-top:0.5em;">
                 <input type="text" id="donor-name" placeholder="Your name (optional)" style="width:100%;padding:0.4em 0.6em;border:1px solid #ddd;border-radius:0.3em;font-size:0.95em;">
+            </div>
+            <div class="amount-input-wrap" style="margin-top:0.5em;">
+                <input type="text" id="donor-message" placeholder="Add a message (optional)" maxlength="100" style="width:100%;padding:0.4em 0.6em;border:1px solid #ddd;border-radius:0.3em;font-size:0.95em;">
             </div>
             <button id="generate-btn" class="donate-btn" onclick="requestInvoice()">Generate Invoice</button>
             <p class="error-msg" id="modal-error"></p>

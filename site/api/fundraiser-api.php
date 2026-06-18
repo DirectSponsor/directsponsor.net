@@ -95,8 +95,12 @@ function parseRecentDonations($html) {
         if (preg_match('/<span[^>]*class=["\']donation-time["\'][^>]*>([^<]+)<\/span>/i', $item, $m)) {
             $date = trim($m[1]);
         }
+        $message = '';
+        if (preg_match('/<span[^>]*class=["\']donation-message["\'][^>]*>([^<]+)<\/span>/i', $item, $m)) {
+            $message = trim($m[1]);
+        }
         if ($amount > 0) {
-            $donations[] = ['note' => $name ?: 'Anonymous', 'amount' => $amount, 'date' => $date];
+            $donations[] = ['note' => $name ?: 'Anonymous', 'amount' => $amount, 'date' => $date, 'donor_message' => $message];
         }
     }
     return $donations;
