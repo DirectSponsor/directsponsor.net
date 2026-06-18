@@ -458,11 +458,12 @@ function processProjectDonation($donation, $foundIndex, $webhookData) {
             $profileData = json_decode(file_get_contents($profileGlob[0]), true) ?: [];
             if (!isset($profileData['donations_made'])) $profileData['donations_made'] = [];
             $profileData['donations_made'][] = [
-                'timestamp'   => date('Y-m-d H:i:s'),
-                'project_id'  => $donation['project_id'],
-                'recipient'   => $projectInfo['username'] ?? null,
-                'amount_sats' => $amountSats,
-                'donor_name'  => $donation['donor_name'],
+                'timestamp'    => date('Y-m-d H:i:s'),
+                'project_id'   => $donation['project_id'],
+                'recipient'    => $projectInfo['username'] ?? null,
+                'amount_sats'  => $amountSats,
+                'donor_name'   => $donation['donor_name'],
+                'donor_message' => $donation['donor_message'] ?? '',
             ];
             file_put_contents($profileGlob[0], json_encode($profileData, JSON_PRETTY_PRINT));
             logWebhook("Appended donation to donor profile: $donorUsername");

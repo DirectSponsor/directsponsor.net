@@ -304,6 +304,11 @@ function dsLogout() {
     </div>
 
     <div class="project-card">
+        <label style="display:flex;align-items:center;gap:0.6em;cursor:pointer;font-size:0.95em;">
+            <input type="checkbox" id="donations-public">
+            Show my donations publicly on my profile
+        </label>
+        <p class="field-hint" style="margin:0.3em 0 0.8em 1.6em;">Allow anyone visiting your profile to see the donations you've made.</p>
         <button class="save-btn" id="save-btn" onclick="saveProfile()">Save Changes</button>
         <span class="status-msg" id="save-status"></span>
     </div>
@@ -405,6 +410,26 @@ document.addEventListener('DOMContentLoaded', function() {
     loadProfile(_userId, _username);
 });
 
+function renderPublicDonations(donations) {
+    var section = document.createElement('div');
+    section.className = 'project-card profile-section';
+    section.innerHTML = '<h2>⚡ Donations Made</h2>';
+    var ul = document.createElement('ul');
+    ul.className = 'plain-list';
+    ul.style.margin = '0';
+    donations.forEach(function(d) {
+        var li = document.createElement('li');
+        li.className = 'donation-item';
+        var date = d.timestamp ? d.timestamp.split(' ')[0] : '';
+        var recipient = d.recipient ? ' → <a href="fundraiser.html?project=' + encodeURIComponent(d.project_id) + '&user=' + encodeURIComponent(d.recipient) + '">' + d.recipient + ' #' + d.project_id + '</a>' : ' project #' + d.project_id;
+        var msg = d.donor_message ? '<br><span style="font-size:0.9em;color:#555;font-style:italic;">' + d.donor_message + '</span>' : '';
+        li.innerHTML = '<strong>' + parseInt(d.amount_sats).toLocaleString() + ' sats</strong>' + recipient + (date ? ' <span class="color-muted">(' + date + ')</span>' : '') + msg;
+        ul.appendChild(li);
+    });
+    section.appendChild(ul);
+    document.querySelector('.profile-wrap') && document.querySelector('.profile-wrap').appendChild(section);
+}
+
 function loadPublicProfile(username) {
     try {
         var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
@@ -418,7 +443,7 @@ function loadPublicProfile(username) {
             }
         }
     } catch(e) {}
-    fetch('/api/simple-profile.php?action=public_profile&username=' + encodeURIComponent(username))
+    fetch('/api/simple-profile.php?action=public_profile&username=' + encodeURIComponent(username) + '&include_donations=1')
         .then(function(r) { return r.json(); })
         .then(function(data) {
             document.getElementById('profile-loading').style.display = 'none';
@@ -441,6 +466,9 @@ function loadPublicProfile(username) {
             // Load their projects into the public section
             loadPublicProjects(username);
             loadPublicSponsorship(username);
+            if (p.donations_public && data.donations && data.donations.length) {
+                renderPublicDonations(data.donations);
+            }
         })
         .catch(function() {
             document.getElementById('profile-loading').style.display = 'none';
@@ -510,6 +538,7 @@ function populateForm(p) {
     document.getElementById('bio').innerHTML       = p.bio || '';
     document.getElementById('location').value      = p.location || '';
     document.getElementById('website').value       = p.website || '';
+    document.getElementById('donations-public').checked = !!p.donations_public;
 
     // Recipient-only section
     if (roles.indexOf('recipient') !== -1) {
@@ -568,7 +597,8 @@ function loadMyDonations() {
             li.className = 'donation-item';
             var date = d.timestamp ? d.timestamp.split(' ')[0] : '';
             var recipient = d.recipient ? ' → <a href="fundraiser.html?project=' + encodeURIComponent(d.project_id) + '&user=' + encodeURIComponent(d.recipient) + '">' + d.recipient + ' #' + d.project_id + '</a>' : ' project #' + d.project_id;
-            li.innerHTML = '<strong>' + parseInt(d.amount_sats).toLocaleString() + ' sats</strong>' + recipient + (date ? ' <span class="color-muted">(' + date + ')</span>' : '');
+            var msg = d.donor_message ? '<br><span style="font-size:0.9em;color:#555;font-style:italic;">' + d.donor_message + '</span>' : '';
+            li.innerHTML = '<strong>' + parseInt(d.amount_sats).toLocaleString() + ' sats</strong>' + recipient + (date ? ' <span class="color-muted">(' + date + ')</span>' : '') + msg;
             list.appendChild(li);
         });
     })
@@ -731,9 +761,10 @@ function saveProfile() {
         bio:              normBio,
         location:         document.getElementById('location').value.trim(),
         website:          document.getElementById('website').value.trim(),
-        coinos_username:  document.getElementById('coinos-username').value.trim(),
-        coinos_api_key:   document.getElementById('coinos-api-key').value.trim(),
-        lightning_address: document.getElementById('lightning-address').value.trim()
+        coinos_username:    document.getElementById('coinos-username').value.trim(),
+        coinos_api_key:     document.getElementById('coinos-api-key').value.trim(),
+        lightning_address:  document.getElementById('lightning-address').value.trim(),
+        donations_public:   document.getElementById('donations-public').checked
     };
 
     fetch('/api/simple-profile.php?action=update_profile', {

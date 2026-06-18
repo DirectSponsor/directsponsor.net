@@ -440,18 +440,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'public_profile') {
         exit;
     }
     $pubData = json_decode(file_get_contents($pubFile), true) ?: [];
+    $donationsPublic = !empty($pubData['donations_public']);
+    $includeDonations = isset($_GET['include_donations']) && $donationsPublic;
+    $donationsList = [];
+    if ($includeDonations) {
+        $raw = $pubData['donations_made'] ?? [];
+        usort($raw, function($a, $b) { return strcmp($b['timestamp'], $a['timestamp']); });
+        $donationsList = $raw;
+    }
     echo json_encode([
-        'success' => true,
-        'profile' => [
-            'username'     => $pubData['username']     ?? $pubUsername,
-            'display_name' => $pubData['display_name'] ?? '',
-            'picture'      => $pubData['picture']      ?? '',
-            'bio'          => $pubData['bio']          ?? '',
-            'location'     => $pubData['location']     ?? '',
-            'website'      => $pubData['website']      ?? '',
-            'roles'        => $pubData['roles']        ?? ['member'],
-            'joined_date'  => $pubData['joined_date']  ?? null,
-        ]
+        'success'   => true,
+        'profile'   => [
+            'username'         => $pubData['username']         ?? $pubUsername,
+            'display_name'     => $pubData['display_name']     ?? '',
+            'picture'          => $pubData['picture']          ?? '',
+            'bio'              => $pubData['bio']              ?? '',
+            'location'         => $pubData['location']         ?? '',
+            'website'          => $pubData['website']          ?? '',
+            'roles'            => $pubData['roles']            ?? ['member'],
+            'joined_date'      => $pubData['joined_date']      ?? null,
+            'donations_public' => $donationsPublic,
+        ],
+        'donations' => $donationsList,
     ]);
     exit;
 }
@@ -511,7 +521,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'profile') {
     $data = loadProfileData($profileFile, $userId);
     
     // Update fields (only allow safe fields to be updated) - roles excluded for security
-    $allowedFields = ['username', 'display_name', 'picture', 'email', 'bio', 'location', 'website', 'settings', 'public_profile', 'coinos_username', 'coinos_api_key', 'lightning_address'];
+    $allowedFields = ['username', 'display_name', 'picture', 'email', 'bio', 'location', 'website', 'settings', 'public_profile', 'coinos_username', 'coinos_api_key', 'lightning_address', 'donations_public'];
     foreach ($allowedFields as $field) {
         if (isset($input[$field])) {
             if ($field === 'settings' && is_array($input[$field])) {
