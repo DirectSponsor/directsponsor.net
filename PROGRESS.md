@@ -196,6 +196,9 @@ Until both conditions are met, custodial services (Coinos, Blink) are the pragma
 - Grant & Annegret (Desert Farm): on hold — see above
 
 ### Future
+- **Per-fundraiser Open Graph meta tags** — static pages already have per-page `og:title`/`og:description`/`og:image` via the `#TITLE#`/`#DESC#`/`#OGIMAGE#` substitution system. Dynamic pages (`fundraiser.html?project=X&user=Y`) serve generic site-wide OG tags because social media crawlers don't run JavaScript.
+  - **Step 1 (do this):** thin `fundraiser.php` wrapper — reads `?project=`+`?user=` params, parses comment-tags server-side (`title`, `short-description`, `image-url`), injects correct `og:title`/`og:description`/`og:image` into `<head>`, then serves the same frontend HTML. Medium effort; reuses `extractByComments()` logic from `fundraiser-api.php`. Same pattern applies to posts (`posts.html?user=X&post_id=Y`).
+  - **Step 2 (optional polish):** branded composite OG image — overlay title + "X sats raised of Y" on the project photo using PHP GD (usually pre-installed, no external deps). Services like opengraph.xyz do this commercially; we could replicate it. Cache generated images in `userdata/og-cache/`. Low priority vs. Step 1 which already gives each fundraiser its own real photo + title in the preview.
 - **Reconciliation script** (done — cron Sunday 3am on RN1, Telegram alert via DS_AuthBot to satoshihost-alerts group)
 - **Nostr integration** — see `nostr-integration.md` for full plan; deeper integration (cross-node identity, flagging, fraud prevention) still pending
 - **PHP error alerting** — use `set_error_handler()` + `error_log()` in the API files to catch unexpected errors, with a lightweight cron (or triggered script) that tails `/var/log/` and fires a Telegram alert via DSSitesCheckBot. No external dependencies; pure PHP + cron + existing bot.
