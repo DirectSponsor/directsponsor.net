@@ -34,13 +34,18 @@ if ($project && $user) {
             $t = trim(strip_tags($m[1]));
             if ($t) $ogTitle = $t . ' - DirectSponsor';
         }
-        if (preg_match('/<!-- short-description -->(.*?)<!-- end short-description -->/s', $html, $m)) {
-            $d = trim(strip_tags($m[1]));
-            if ($d) $ogDesc = mb_strimwidth($d, 0, 200, '…');
+        foreach (['short-description', 'description'] as $dtag) {
+            if (preg_match('/<!-- ' . $dtag . ' -->(.*?)<!-- end ' . $dtag . ' -->/s', $html, $m)) {
+                $d = trim(strip_tags($m[1]));
+                if ($d) { $ogDesc = mb_strimwidth($d, 0, 200, '…'); break; }
+            }
         }
         if (preg_match('/<!-- image-url -->(.*?)<!-- end image-url -->/', $html, $m)) {
             $img = trim($m[1]);
-            if ($img) $ogImage = $img;
+            if ($img) {
+                if (str_starts_with($img, '/')) $img = 'https://directsponsor.net' . $img;
+                $ogImage = $img;
+            }
         }
         break;
     }
