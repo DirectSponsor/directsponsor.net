@@ -37,7 +37,7 @@ if ($project && $user) {
         foreach (['short-description', 'description'] as $dtag) {
             if (preg_match('/<!-- ' . $dtag . ' -->(.*?)<!-- end ' . $dtag . ' -->/s', $html, $m)) {
                 $d = trim(strip_tags($m[1]));
-                if ($d) { $ogDesc = mb_strimwidth($d, 0, 200, '…'); break; }
+                if ($d) { $ogDesc = strlen($d) > 200 ? substr($d, 0, 197) . '…' : $d; break; }
             }
         }
         if (preg_match('/<!-- image-url -->(.*?)<!-- end image-url -->/', $html, $m)) {
