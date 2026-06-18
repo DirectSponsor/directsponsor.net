@@ -476,27 +476,41 @@ function getProjectParam() {
 
 function videoUrlToEmbed(url) {
     url = url.trim();
-    var yt = url.match(/(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    var yt = url.match(/^https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     if (yt) return 'https://www.youtube.com/embed/' + yt[1];
-    var od = url.match(/^https?:\/\/(?:www\.)?odysee\.com(\/@[^?#]+)/);
+    var od = url.match(/^https?:\/\/(?:www\.)?odysee\.com(\/\@[^?#]+)/);
     if (od) return 'https://odysee.com/$/embed' + od[1];
     return null;
 }
 
+function makeVideoWrap(embedUrl) {
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin:1em 0;';
+    var iframe = document.createElement('iframe');
+    iframe.src = embedUrl;
+    iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:0;';
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.setAttribute('loading', 'lazy');
+    wrap.appendChild(iframe);
+    return wrap;
+}
+
 function renderVideoEmbeds(container) {
     container.querySelectorAll('p, div').forEach(function(el) {
+        if (el.querySelector('p, div')) return;
         var text = el.textContent.trim();
         var embedUrl = videoUrlToEmbed(text);
-        if (!embedUrl) return;
-        var wrap = document.createElement('div');
-        wrap.style.cssText = 'position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin:1em 0;';
-        var iframe = document.createElement('iframe');
-        iframe.src = embedUrl;
-        iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:0;';
-        iframe.setAttribute('allowfullscreen', '');
-        iframe.setAttribute('loading', 'lazy');
-        wrap.appendChild(iframe);
-        el.replaceWith(wrap);
+        if (embedUrl) {
+            el.replaceWith(makeVideoWrap(embedUrl));
+            return;
+        }
+        var urls = text.match(/https?:\/\/\S+/g);
+        if (!urls) return;
+        var ref = el;
+        urls.forEach(function(u) {
+            var eu = videoUrlToEmbed(u);
+            if (eu) { ref.insertAdjacentElement('afterend', makeVideoWrap(eu)); ref = ref.nextElementSibling; }
+        });
     });
 }
 

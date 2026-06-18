@@ -517,7 +517,7 @@ function fmt(cmd, val) {
 
 function videoUrlToEmbed(url) {
     url = url.trim();
-    var yt = url.match(/(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    var yt = url.match(/^https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     if (yt) return 'https://www.youtube.com/embed/' + yt[1];
     var od = url.match(/^https?:\/\/(?:www\.)?odysee\.com(\/@[^?#]+)/);
     if (od) return 'https://odysee.com/$/embed' + od[1];
