@@ -120,6 +120,8 @@ JSON stored in `{userId}-{username}.txt`:
 | File | Purpose |
 |------|---------||
 | `site/fundraiser.html` | Individual fundraiser page + donate modal |
+| `site/fundraiser.php` | Thin wrapper: injects per-fundraiser OG meta tags (title, description, image) for social crawlers; Apache rewrites `fundraiser.html?project=X&user=Y` here via `.htaccess` |
+| `site/.htaccess` | Apache rewrite: sends `fundraiser.html?project=` requests to `fundraiser.php` |
 | `site/fundraisers.html` | Fundraiser listing (API-driven tiles) |
 | `site/edit-fundraiser.html` | Recipient fundraiser create/edit form |
 | `site/profile.html` | User profile (own + public view) + donations made |
@@ -209,6 +211,7 @@ json.dump(d, open(f,'w'), indent=2)
 - **Coinos API key format** — Bearer JWT. Keys can expire; if invoice creation returns `user not provided`, the key needs regenerating from Coinos account settings
 - **RN1 SSH config** — `IdentityFile ~/.ssh/id_rsa` must be present in the RN1 entry in `~/.ssh/config`; `id_rsa.pub` must be in RN1's `authorized_keys`
 - **`donor_name` fallback** — if no explicit name given, falls back to `donor_username`, then `Anonymous`
+- **`mbstring` not installed on RN1** — use `strlen()`/`substr()` instead of `mb_strlen()`/`mb_strimwidth()` etc. in all PHP files.
 - **Apache strips Authorization header** — JWT sent as `Authorization: Bearer ...` is dropped. Both `save-post.php` and `save-fundraiser.php` check `$input['jwt']` as fallback; frontend sends JWT in request body too
 - **CSS list reset** — global `ul { list-style: none }` was removed (2026-04-03). Emoji/nav lists that need markers stripped must use `class="plain-list"`. WYSIWYG and post body lists use explicit `list-style: disc/decimal` in `directsponsor-compact.css`
 - **Nostr: strfry DB not writable by www-data** — `/var/lib/strfry/db/` is owned by root; PHP-FPM (`www-data`) cannot run `strfry import` directly. Instead, `save-post.php` publishes events via raw WebSocket to `127.0.0.1:7777` (strfry's internal port), bypassing Apache and file permissions entirely. Do not attempt to fix this with sudo or chown — the WS approach is cleaner.

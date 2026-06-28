@@ -42,14 +42,6 @@ function logWebhook($message, $level = 'INFO') {
 }
 
 /**
- * Verify webhook signature
- */
-function verifyWebhookSignature($payload, $signature) {
-    $expectedSignature = 'sha256=' . hash_hmac('sha256', $payload, WEBHOOK_SECRET);
-    return hash_equals($expectedSignature, $signature);
-}
-
-/**
  * Load JSON data from file with locking
  */
 function loadJsonData($filepath) {
@@ -607,15 +599,6 @@ try {
     $rawPayload = file_get_contents('php://input');
     logWebhook("Webhook received, payload length: " . strlen($rawPayload));
     
-    // Verify signature if provided
-    $signature = $_SERVER['HTTP_X_COINOS_SIGNATURE'] ?? $_SERVER['HTTP_X_WEBHOOK_SIGNATURE'] ?? null;
-    if ($signature && !verifyWebhookSignature($rawPayload, $signature)) {
-        logWebhook("Invalid webhook signature", 'ERROR');
-        http_response_code(401);
-        echo json_encode(['error' => 'Invalid signature']);
-        exit;
-    }
-    
     // Parse JSON payload
     $webhookData = json_decode($rawPayload, true);
     if (json_last_error() !== JSON_ERROR_NONE) {
@@ -624,8 +607,16 @@ try {
         echo json_encode(['error' => 'Invalid JSON']);
         exit;
     }
-    
-    logWebhook("Webhook data parsed: " . json_encode($webhookData));
+
+    // Verify secret — Coinos sends it in the body, not as an HTTP header
+    if (!isset($webhookData['secret']) || !hash_equals(WEBHOOK_SECRET, $webhookData['secret'])) {
+        logWebhook("Missing or invalid webhook secret", 'ERROR');
+        http_response_code(401);
+        echo json_encode(['error' => 'Unauthorized']);
+        exit;
+    }
+
+    logWebhook("Webhook data parsed: [secret redacted]");
     
     // Process payment confirmation
     if (processPaymentConfirmation($webhookData)) {
