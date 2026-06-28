@@ -269,7 +269,7 @@ if ($action === 'list') {
     }
 } else if ($action === 'get') {
     // Get specific project by ID (searches all users, or specific user if username given)
-    $fundraiserId = $_GET['id'] ?? '';
+    $fundraiserId = preg_replace('/[^a-z0-9_-]/i', '', $_GET['id'] ?? '');
     $hintUsername = preg_replace('/[^a-z0-9_-]/i', '', $_GET['username'] ?? '');
     
     if (!$fundraiserId) {
