@@ -303,14 +303,18 @@ try {
                     echo json_encode(['error' => 'Missing project_id or amount']);
                     exit;
                 }
-                
+
+                $safe_project_id      = preg_replace('/[^a-z0-9\-]/', '', strtolower($input['project_id']));
+                $safe_username        = preg_replace('/[^a-z0-9_\-]/', '', strtolower($input['username'] ?? ''));
+                $safe_donor_username  = preg_replace('/[^a-z0-9_\-]/', '', strtolower($input['donor_username'] ?? ''));
+
                 $result = createProjectInvoice(
-                    $input['project_id'],
+                    $safe_project_id,
                     (int)$input['amount'],
                     $input['donor_name'] ?? '',
                     $input['message'] ?? '',
-                    $input['donor_username'] ?? null,
-                    $input['username'] ?? null
+                    $safe_donor_username ?: null,
+                    $safe_username ?: null
                 );
                 echo json_encode($result);
                 break;

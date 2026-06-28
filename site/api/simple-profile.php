@@ -388,7 +388,7 @@ $action = $_GET['action'] ?? '';
 // Handle search action separately (it has its own auth check)
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'search') {
     // SEARCH USERS - Find users by partial username (admin only)
-    $requesterId = getUserId();
+    $requesterId = preg_replace('/[^a-z0-9_\-]/i', '', getUserId() ?? '');
     if (!$requesterId) {
         http_response_code(401);
         echo json_encode(['error' => 'Authentication required']);
@@ -467,7 +467,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'public_profile') {
 }
 
 // For all other actions, require authentication
-$userId = getUserId();
+$userId = preg_replace('/[^a-z0-9_\-]/i', '', getUserId() ?? '');
 $usernameHint = getUsername();
 if (!$userId) {
     http_response_code(401);
@@ -624,7 +624,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'profile') {
     $input = json_decode(file_get_contents('php://input'), true);
     
     // Load current admin's profile to check permissions
-    if (strpos($userId, '-') !== false) {
+    if (strpos((string)$userId, '-') !== false) {
         $adminProfileFile = USERDATA_DIR . "/profiles/{$userId}.txt";
     } else {
         $glob = glob(USERDATA_DIR . "/profiles/{$userId}-*.txt");
@@ -639,7 +639,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'profile') {
         exit;
     }
     
-    $targetUserId = $input['target_user_id'] ?? '';
+    $targetUserId = preg_replace('/[^a-z0-9_\-]/i', '', $input['target_user_id'] ?? '');
     $operation = $input['operation'] ?? ''; // 'add' or 'remove'
     $role = $input['role'] ?? '';
     
@@ -650,7 +650,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'profile') {
     }
     
     // Load target user's profile
-    if (strpos($targetUserId, '-') !== false) {
+    if (strpos((string)$targetUserId, '-') !== false) {
         $targetProfileFile = USERDATA_DIR . "/profiles/{$targetUserId}.txt";
     } else {
         $glob = glob(USERDATA_DIR . "/profiles/{$targetUserId}-*.txt");

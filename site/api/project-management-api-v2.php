@@ -19,45 +19,17 @@ if (!$input) {
 $action = $input['action'] ?? '';
 
 try {
+    $write_actions = ['update_project', 'create_project', 'create_draft_project', 'get_project', 'list_user_projects'];
+    if (in_array($action, $write_actions)) {
+        http_response_code(410);
+        echo json_encode(['success' => false, 'error' => 'This endpoint is no longer active. Use save-fundraiser.php.']);
+        exit;
+    }
+
     switch ($action) {
-        case 'get_project':
-            $projectId = $input['project_id'] ?? '';
-            $username = $input['username'] ?? '';
-            
-            // Require authentication to load project data for editing
-            if (empty($username)) {
-                echo json_encode(['success' => false, 'error' => 'Username required']);
-                break;
-            }
-            
-            // Check if user can edit this project before showing data
-            if (!canUserEditProject($username, $projectId)) {
-                echo json_encode(['success' => false, 'error' => 'Access denied']);
-                break;
-            }
-            
-            echo json_encode(getProjectData($projectId));
-            break;
-            
-        case 'update_project':
-            echo json_encode(updateProject($input));
-            break;
-            
-    case 'create_project':
-        echo json_encode(createProject($input));
-        break;
-    
-    case 'create_draft_project':
-        echo json_encode(createDraftProject($input));
-        break;
-    
-    case 'list_user_projects':
-        echo json_encode(listUserProjects($input));
-        break;
-    
     case 'get_project_public':
         // Public endpoint - no auth required
-        $projectId = $input['project_id'] ?? '';
+        $projectId = preg_replace('/[^a-z0-9\-]/i', '', $input['project_id'] ?? '');
         echo json_encode(getProjectData($projectId));
         break;
             
