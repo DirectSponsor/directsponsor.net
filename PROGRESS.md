@@ -264,9 +264,9 @@ Payments are per calendar month. The system tracks `last_paid_month` (YYYY-MM) p
   - Grace window: **7 days** (days 1–7 pay current month; day 8+ pays next month)
   - Reminders: email on day 1, 4, 7 via auth server `send-notification.php` endpoint
   - Demotion: day 8 cron sets `slots=0`, emails sponsor + recipient, Telegram alert to admin
-  - Amount: **server-enforced** — `slots × $10` converted to sats via CoinGecko price API; client-supplied amount ignored
+  - Amount: **server-enforced** — `slots × $10` converted to sats via mempool.space price API; client-supplied amount ignored
   - Double payment: blocked server-side (payments history check)
-  - ⚠️ TODO: switch BTC price source from CoinGecko to Coinos rate API (same call already in flight for invoice creation, avoids external dependency)
+  - BTC price source: `mempool.space/api/v1/prices` (curl, IPv4-forced) — switched from CoinGecko 2026-07-01 after rate-limit errors blocked payments
   - Slot model: **full or available** — no waitlist/queue; if slot opens, admin notified via Telegram, recipient finds replacement through own network
 - **Automatic promotion logic**: not needed — slot model is full/available only; admin handles replacement manually when Telegram alert fires
 - **Recipient group tools**: common fund accounting (income/outgoings, all members visible), coordinator action log, group decision documentation

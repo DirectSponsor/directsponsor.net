@@ -96,6 +96,8 @@ $nostr_external_relays = [
  * @date 2025-08-31
  */
 
+require_once __DIR__ . '/jwt-verify.php';
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -388,12 +390,13 @@ $action = $_GET['action'] ?? '';
 // Handle search action separately (it has its own auth check)
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'search') {
     // SEARCH USERS - Find users by partial username (admin only)
-    $requesterId = preg_replace('/[^a-z0-9_\-]/i', '', getUserId() ?? '');
-    if (!$requesterId) {
+    $_sc = getCallerFromJwt([]);  // JWT must be in Authorization header for GET
+    if (!$_sc) {
         http_response_code(401);
         echo json_encode(['error' => 'Authentication required']);
         exit;
     }
+    $requesterId = preg_replace('/[^a-z0-9_\-]/i', '', $_sc['user_id']);
     
     // Determine requester's profile file
     if (strpos($requesterId, '-') !== false) {
@@ -466,13 +469,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'public_profile') {
     exit;
 }
 
-// For all other actions, require authentication
-$userId = preg_replace('/[^a-z0-9_\-]/i', '', getUserId() ?? '');
-$usernameHint = getUsername();
-if (!$userId) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Authentication required']);
-    exit;
+// For POST actions require a verified JWT — prevents identity forgery
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $_postBody = json_decode(file_get_contents('php://input'), true) ?: [];
+    $_caller   = getCallerFromJwt($_postBody);
+    if (!$_caller) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Authentication required']);
+        exit;
+    }
+    $userId       = preg_replace('/[^a-z0-9_\-]/i', '', $_caller['user_id']);
+    $usernameHint = $_caller['username'];
+} else {
+    // GET actions: user_id from query param is acceptable (read-only own-profile)
+    $userId = preg_replace('/[^a-z0-9_\-]/i', '', getUserId() ?? '');
+    $usernameHint = getUsername();
+    if (!$userId) {
+        http_response_code(401);
+        echo json_encode(['error' => 'Authentication required']);
+        exit;
+    }
 }
 
 // Determine profile file path

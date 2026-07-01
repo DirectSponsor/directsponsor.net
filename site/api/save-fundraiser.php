@@ -13,7 +13,6 @@
 define('DS_DATA_DIR', '/var/www/directsponsor.net/userdata');
 define('PROJECTS_DIR', DS_DATA_DIR . '/projects');
 define('USERDATA_DIR', DS_DATA_DIR);
-define('JWT_SECRET', getenv('JWT_SECRET') ?: 'hybrid_fresh_2025_secret_key');
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -34,34 +33,14 @@ if (!$input) {
     exit;
 }
 
-// --- Auth: verify JWT from Authorization header or body ---
-$jwt = null;
-$authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-if (preg_match('/Bearer\s+(.+)/i', $authHeader, $m)) {
-    $jwt = $m[1];
-} elseif (!empty($input['jwt'])) {
-    $jwt = $input['jwt'];
-}
+require_once __DIR__ . '/jwt-verify.php';
 
-$callerUsername = null;
-$callerId = null;
+// --- Auth: verify JWT (HMAC signature checked) ---
+$caller         = getCallerFromJwt($input);
+$callerUsername = $caller ? $caller['username'] : null;
+$callerId       = $caller ? $caller['user_id']  : null;
 
-if ($jwt) {
-    $parts = explode('.', $jwt);
-    if (count($parts) === 3) {
-        $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
-        if ($payload) {
-            $callerUsername = $payload['username'] ?? $payload['sub'] ?? null;
-            $callerId       = $payload['user_id'] ?? $payload['sub'] ?? null;
-        }
-    }
-}
-
-if (!$callerUsername && !empty($input['username'])) {
-    $callerUsername = $input['username'];
-}
-
-if (!$callerUsername) {
+if (!$callerUsername || !$callerId) {
     http_response_code(401);
     echo json_encode(['error' => 'Authentication required']);
     exit;

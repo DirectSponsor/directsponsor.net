@@ -10,30 +10,7 @@ define('USERDATA_DIR', '/var/www/directsponsor.net/userdata');
 define('GROUPS_DIR',   USERDATA_DIR . '/sponsorship-groups');
 define('SLOT_VALUE_USD', 10);  // Each sponsorship slot = $10/month
 
-// ---------------------------------------------------------------------------
-// Auth helpers
-// ---------------------------------------------------------------------------
-
-function getCallerFromJwt($input) {
-    $jwt = null;
-    $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-    if (preg_match('/Bearer\s+(.+)/', $authHeader, $m)) $jwt = $m[1];
-    if (!$jwt && !empty($input['jwt'])) $jwt = $input['jwt'];
-
-    if (!$jwt) return null;
-
-    $parts = explode('.', $jwt);
-    if (count($parts) !== 3) return null;
-
-    $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
-    if (!$payload) return null;
-
-    $username = $payload['username'] ?? null;
-    $userId   = $payload['user_id'] ?? $payload['sub'] ?? null;
-    if (!$username || !$userId) return null;
-
-    return ['username' => $username, 'user_id' => $userId];
-}
+require_once __DIR__ . '/jwt-verify.php';
 
 function getProfileRoles($username) {
     $glob = glob(USERDATA_DIR . '/profiles/*-' . preg_quote($username, '/') . '.txt');

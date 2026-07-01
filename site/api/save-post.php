@@ -72,32 +72,12 @@ if (!$input) {
     exit;
 }
 
-// Auth
-$jwt = null;
-$authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-if (preg_match('/Bearer\s+(.+)/', $authHeader, $m)) $jwt = $m[1];
+require_once __DIR__ . '/jwt-verify.php';
 
-$callerUsername = null;
-$callerId = null;
-
-if (!$jwt && !empty($input['jwt'])) {
-    $jwt = $input['jwt'];
-}
-
-if ($jwt) {
-    $parts = explode('.', $jwt);
-    if (count($parts) === 3) {
-        $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
-        if ($payload) {
-            $callerUsername = $payload['username'] ?? null;
-            $callerId       = $payload['user_id'] ?? $payload['sub'] ?? null;
-        }
-    }
-}
-
-if (!$callerUsername && !empty($input['username'])) {
-    $callerUsername = $input['username'];
-}
+// Auth — verified JWT required
+$caller         = getCallerFromJwt($input);
+$callerUsername = $caller ? $caller['username'] : null;
+$callerId       = $caller ? $caller['user_id']  : null;
 
 if (!$callerUsername || !$callerId) {
     http_response_code(401);

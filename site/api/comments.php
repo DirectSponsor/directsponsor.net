@@ -9,15 +9,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit; }
 define('USERDATA_DIR', '/var/www/directsponsor.net/userdata');
 define('COMMENTS_DIR', USERDATA_DIR . '/comments');
 
-// --- Helpers ---
+require_once __DIR__ . '/jwt-verify.php';
 
-function jwtUsername($jwt) {
-    if (!$jwt) return null;
-    $parts = explode('.', $jwt);
-    if (count($parts) !== 3) return null;
-    $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
-    return $payload['username'] ?? null;
-}
+// --- Helpers ---
 
 function commentsFile($postAuthor, $postId) {
     $a = preg_replace('/[^a-z0-9_-]/', '', strtolower($postAuthor));
@@ -65,12 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $jwt = null;
-    $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-    if (preg_match('/Bearer\s+(.+)/', $authHeader, $m)) $jwt = $m[1];
-    if (!$jwt && !empty($input['jwt'])) $jwt = $input['jwt'];
-
-    $author = jwtUsername($jwt);
+    $caller = getCallerFromJwt($input);
+    $author = $caller ? $caller['username'] : null;
     if (!$author) {
         http_response_code(401);
         echo json_encode(['error' => 'Login required to comment']);
