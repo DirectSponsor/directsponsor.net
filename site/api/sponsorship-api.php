@@ -382,13 +382,20 @@ if ($method === 'POST' && $action === 'pay') {
     // Compute correct amount server-side: slots × $10 USD converted to sats
     // Client-supplied amount_sats is ignored — server controls the amount
     $usdOwed = $slots * 10;
-    // TODO: switch to Coinos rate API to avoid external dependency (Coinos already in use for invoicing)
-    $priceResp = @file_get_contents('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+    $priceCurl = curl_init();
+    curl_setopt_array($priceCurl, [
+        CURLOPT_URL            => 'https://mempool.space/api/v1/prices',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4,
+    ]);
+    $priceResp = curl_exec($priceCurl);
+    curl_close($priceCurl);
     if (!$priceResp) {
         http_response_code(503); echo json_encode(['error' => 'Could not fetch BTC price — try again in a moment']); exit;
     }
     $priceData = json_decode($priceResp, true);
-    $btcUsd = (float)($priceData['bitcoin']['usd'] ?? 0);
+    $btcUsd = (float)($priceData['USD'] ?? 0);
     if ($btcUsd < 1000) {
         http_response_code(503); echo json_encode(['error' => 'BTC price unavailable — try again in a moment']); exit;
     }

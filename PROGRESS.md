@@ -1,5 +1,5 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-06-07 (session 10)_
+_Last updated: 2026-06-28 (session 11)_
 
 ## What's done and live
 
@@ -332,6 +332,22 @@ Design principles (structural, not rules):
 - **Profile `username` field blank on creation** (fixed 2026-06-07): profile files were created with the correct `{id}-{username}.txt` filename but `"username": ""` in the JSON. Cause: `site-utils.js` called `simple-profile.php?action=profile` without passing `username`, so `getUsername()` returned `""` and the new-profile path wrote a blank field. Fixed by (1) passing `username` in the profile fetch in `site-utils.js`, and (2) adding a backfill in `loadProfileData()` that patches and saves the file if `username` is blank but a hint is now available. Admin search (`searchProfiles`) matches on the JSON field, so users with blank usernames were invisible to search.
 - **`.well-known/` excluded from deploy** (fixed 2026-06-07): `deploy.sh` rsync had `--exclude='.*'` which excluded the `.well-known/` directory. Fixed by adding `--include='.well-known/'` and `--include='.well-known/**'` before the exclude rule.
 - **Ledger stored recipient as donor_username** (fixed 2026-04-08): `webhook.php` line 412 used `$donation['username']` (= recipient) instead of `$donation['donor_username']` (= actual donor) when writing the ledger entry. Fixed to `$donation['donor_username']`. Historical entries where donor==recipient in the ledger are flagged as "suspect" by the reconcile script — they are pre-fix test/self-donations lost to the glob bug, not a financial integrity issue.
+
+### Session 11 — Security audit (2026-06-28)
+
+Full security audit completed. All issues fixed and live-verified.
+
+**1. Webhook authentication (critical — fixed)**
+- Root cause: Coinos sends the shared secret in the **JSON body** (`"secret": "..."`) not as an HTTP header. The existing header-based check (`HTTP_X_COINOS_SIGNATURE`) was dead code — the webhook was completely unauthenticated.
+- Fix: removed header check and dead `verifyWebhookSignature()` function; added `hash_equals(WEBHOOK_SECRET, $webhookData['secret'])` check after JSON parse.
+- Also: the raw payload (including plaintext secret) was being logged to `webhook.log` — fixed to log `[secret redacted]` instead.
+- Live-tested: curl with no secret → 401; real payment → processed successfully.
+
+**2. Path traversal fixes**
+- `simple-profile.php`: `$userId` from GET/POST params was going unsanitised into file paths. Fixed: `preg_replace('/[^a-z0-9_\-]/i', '', ...)` applied to `$userId`, `$targetUserId`, and `$requesterId` at point of retrieval.
+- `project-donations-api.php`: `project_id` and `username` from POST body were unsanitised. Fixed: stripped to `[a-z0-9_\-]` before passing to `createProjectInvoice()`.
+- `fundraiser-api.php`: `$_GET['id']` (`$fundraiserId`) was unsanitised in file paths (low severity — `.html` suffix limited exploitability). Fixed: same strip pattern applied.
+- `project-management-api-v2.php`: legacy API with no JWT auth on write actions, and `project-editor.js` (its only consumer) is not included by any HTML page. All write actions now return 410 Gone. `get_project_public` kept but `$projectId` sanitised.
 
 ### Session 10 — Nostr visibility + profile username fix (2026-06-07)
 - **External relay broadcasting**: `save-post.php` now broadcasts every new post to `relay.damus.io`, `relay.primal.net`, and `nos.lol` in addition to the private relay. Added SSL support to `nostr_publish_ws()`.
