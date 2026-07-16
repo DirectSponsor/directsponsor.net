@@ -1,5 +1,5 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-06-28 (session 11)_
+_Last updated: 2026-07-01 (session 12)_
 
 ## What's done and live
 
@@ -333,6 +333,19 @@ Design principles (structural, not rules):
 - **`.well-known/` excluded from deploy** (fixed 2026-06-07): `deploy.sh` rsync had `--exclude='.*'` which excluded the `.well-known/` directory. Fixed by adding `--include='.well-known/'` and `--include='.well-known/**'` before the exclude rule.
 - **Ledger stored recipient as donor_username** (fixed 2026-04-08): `webhook.php` line 412 used `$donation['username']` (= recipient) instead of `$donation['donor_username']` (= actual donor) when writing the ledger entry. Fixed to `$donation['donor_username']`. Historical entries where donor==recipient in the ledger are flagged as "suspect" by the reconcile script — they are pre-fix test/self-donations lost to the glob bug, not a financial integrity issue.
 
+### Session 12 — JWT signature verification (2026-07-01)
+
+**Root cause (critical — fixed):** All write-capable API endpoints (`sponsorship-api.php`, `save-fundraiser.php`, `save-post.php`, `comments.php`, `simple-profile.php`) were decoding JWT payloads with `base64_decode` only — **no HMAC signature check**. Any attacker could forge a token claiming to be any user, bypass all role checks, and redirect donations (by changing the Coinos API key on a fundraiser), post as any user, or grant themselves admin.
+
+**Fix:**
+- New `site/api/jwt-verify.php`: shared `verifyJwt($jwt)` + `getCallerFromJwt($input)` — performs proper HMAC-SHA256 signature check using `hash_equals()` (timing-safe) before trusting any payload claim.
+- JWT secret (`simple_secret_2025`) stored server-only at `/etc/ds-jwt-secret` (owner: `root`, group: `www-data`, mode: `640`) — never in git.
+- All five affected endpoints now `require_once 'jwt-verify.php'` and use `getCallerFromJwt()`.
+- `simple-profile.php` POST actions now require a verified JWT (identity from JWT, not GET/POST params); `search` (admin-only GET) also requires JWT in Authorization header.
+- Removed hardcoded `define('JWT_SECRET', ...)` from `save-fundraiser.php`.
+- `save-post.php` username fallback from POST body also removed (was allowing arbitrary identity claims).
+- `save-fundraiser.php` was already wired to a non-existent `jwt-verify.php` — creating the file with real verification completes that fix.
+
 ### Session 11 — Security audit (2026-06-28)
 
 Full security audit completed. All issues fixed and live-verified.
@@ -397,5 +410,6 @@ Full security audit completed. All issues fixed and live-verified.
 | `site/api/simple-profile.php` | Profile CRUD + role management + my_donations |
 | `site/styles/directsponsor-compact.css` | Single stylesheet (all styles incl. posts/wysiwyg) |
 | `site/cms/includes/social-layout-start.incl` | Shared nav (logo=home, Fundraisers, Posts, About) |
+| `site/api/jwt-verify.php` | Shared JWT HMAC-SHA256 verification (reads secret from `/etc/ds-jwt-secret`) |
 | `build.sh` | Build includes |
 | `deploy.sh` | Rsync to RN1 |

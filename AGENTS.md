@@ -131,7 +131,7 @@ JSON stored in `{userId}-{username}.txt`:
 | `site/api/fundraiser-api.php` | Fundraiser data reader (parses comment-tags) |
 | `site/api/save-fundraiser.php` | Fundraiser save endpoint (creates/updates fundraiser HTML + config.json) |
 | `site/api/simple-profile.php` | Profile CRUD + role management + `my_donations` action |
-| `site/api/auth-proxy.php` | Proxies JWT validation to auth server |
+| `site/api/jwt-verify.php` | Shared JWT HMAC-SHA256 verification (reads secret from `/etc/ds-jwt-secret`) |
 | `site/cms/includes/social-layout-start.incl` | Shared nav (login link, user menu) — included in all pages |
 | `site/styles/directsponsor-compact.css` | Main stylesheet |
 | `build.sh` | Build script (processes CMS includes) |
@@ -160,6 +160,10 @@ JSON stored in `{userId}-{username}.txt`:
 - JWT tokens from `https://auth.directsponsor.org/jwt-login.php`
 - Stored in `sessionStorage` / `localStorage` as `jwt`
 - Decoded client-side to get `username`, `user_id`
+- **Server-side: all write-capable APIs verify the JWT HMAC-SHA256 signature** via `site/api/jwt-verify.php` before trusting any payload claim
+- JWT secret lives at `/etc/ds-jwt-secret` on RN1 — `root:www-data 640` — never in git
+  - Source: `$jwt_secret` in `/var/www/auth.directsponsor.org/public_html/config.local.php` on `es3-auth`
+  - To set/rotate: `ssh es3-auth "grep jwt_secret /var/www/auth.directsponsor.org/public_html/config.local.php"` → `ssh RN1 "echo 'SECRET' > /etc/ds-jwt-secret && chmod 640 /etc/ds-jwt-secret && chown root:www-data /etc/ds-jwt-secret"`
 - Roles checked server-side from profile file (not from JWT)
 - Default role: `member`. Additional roles (`recipient`, `admin`) assigned manually via SSH or admin UI
 
