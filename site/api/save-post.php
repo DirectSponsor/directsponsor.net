@@ -65,6 +65,59 @@ function nostr_publish_ws($event_json, $host, $port, $ssl = false) {
     return true;
 }
 
+function extract_first_url($text) {
+    $plain = strip_tags($text);
+    if (preg_match('#https?://[^\s<>"\']+#i', $plain, $m)) {
+        return rtrim($m[0], '.,;:!?)]}');
+    }
+    return null;
+}
+
+function fetch_link_preview($url) {
+    $parts = parse_url($url);
+    if (!$parts || !in_array($parts['scheme'] ?? '', ['http', 'https'])) return null;
+    $host = $parts['host'] ?? '';
+    if (!$host) return null;
+    $ip = gethostbyname($host);
+    if ($ip !== $host && filter_var($ip, FILTER_VALIDATE_IP,
+        FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) return null;
+
+    $ctx = stream_context_create(['http' => [
+        'method'        => 'GET',
+        'timeout'       => 5,
+        'header'        => "User-Agent: Mozilla/5.0 (compatible; DS-LinkPreview/1.0)\r\n",
+        'max_redirects' => 3,
+        'ignore_errors' => true,
+    ]]);
+    $html = @file_get_contents($url, false, $ctx, 0, 60000);
+    if (!$html) return null;
+
+    $get_og = function($html, $prop) {
+        if (preg_match('/<meta[^>]+property=["\']' . preg_quote($prop, '/') . '["\'][^>]+content=["\']([^"\']*)/i', $html, $m)) return $m[1];
+        if (preg_match('/<meta[^>]+content=["\']([^"\']*)["\'][^>]+property=["\']' . preg_quote($prop, '/') . '["\'][^>]*/i', $html, $m)) return $m[1];
+        return '';
+    };
+
+    $title       = html_entity_decode($get_og($html, 'og:title'), ENT_QUOTES, 'UTF-8');
+    $description = html_entity_decode($get_og($html, 'og:description'), ENT_QUOTES, 'UTF-8');
+    $image       = $get_og($html, 'og:image');
+
+    if (!$title && preg_match('/<title[^>]*>([^<]+)<\/title>/i', $html, $m))
+        $title = html_entity_decode(trim($m[1]), ENT_QUOTES, 'UTF-8');
+    if (!$description && preg_match('/<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']*)/i', $html, $m))
+        $description = html_entity_decode($m[1], ENT_QUOTES, 'UTF-8');
+
+    if (!$title && !$image) return null;
+
+    return [
+        'url'         => $url,
+        'title'       => mb_substr($title, 0, 200),
+        'description' => mb_substr($description, 0, 300),
+        'image'       => $image,
+        'domain'      => $host,
+    ];
+}
+
 $input = json_decode(file_get_contents('php://input'), true);
 if (!$input) {
     http_response_code(400);
@@ -140,6 +193,9 @@ if ($post_id) {
         'updated'   => $ts,
     ];
 }
+
+$previewUrl = extract_first_url($intro . ' ' . $body);
+$post['link_preview'] = $previewUrl ? fetch_link_preview($previewUrl) : null;
 
 file_put_contents($postFile, json_encode($post, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 

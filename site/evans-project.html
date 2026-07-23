@@ -45,6 +45,18 @@
             var newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
             window.history.replaceState({}, '', newUrl);
         }
+        // Purge any stored JWT that has expired so pages show "login required"
+        // rather than silently failing on server-side verification.
+        var stored = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+        if (stored) {
+            try {
+                var exp = JSON.parse(atob(stored.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).exp;
+                if (exp && exp < Math.floor(Date.now() / 1000)) {
+                    sessionStorage.removeItem('jwt');
+                    localStorage.removeItem('jwt');
+                }
+            } catch(e) {}
+        }
     })();
     </script>
 </head>

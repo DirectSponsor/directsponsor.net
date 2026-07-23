@@ -38,6 +38,7 @@ if ($action === 'feed') {
                     'intro'         => $data['intro'] ?? '',
                     'has_body'      => !empty($data['body']),
                     'image_url'     => $data['image_url'] ?? '',
+                    'link_preview'  => $data['link_preview'] ?? null,
                     'created'       => $data['created'] ?? 0,
                     'updated'       => $data['updated'] ?? 0,
                     'comment_count' => commentCount($uname, $pid),
@@ -99,6 +100,7 @@ if ($action === 'user_posts') {
                 'intro'         => $data['intro'] ?? '',
                 'has_body'      => !empty($data['body']),
                 'image_url'     => $data['image_url'] ?? '',
+                'link_preview'  => $data['link_preview'] ?? null,
                 'created'       => $data['created'] ?? 0,
                 'comment_count' => commentCount($uname, $pid),
             ];

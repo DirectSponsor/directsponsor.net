@@ -1,5 +1,5 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-07-01 (session 12)_
+_Last updated: 2026-07-16 (session 13)_
 
 ## What's done and live
 
@@ -388,6 +388,18 @@ Full security audit completed. All issues fixed and live-verified.
 - Three checks: (1) ledger entries missing from donor profiles, (2) profile `donations_made` missing from ledger, (3) project HTML `current-amount` vs ledger sum
 - Found and fixed the `donor_username` ledger bug above
 - Reconciliation result: **0 genuine discrepancies**. 17 historical suspect entries (pre-fix test payments, all explainable). 1 HTML amount mismatch on `andytest2/004` (+100 sats, test data, not a concern).
+
+---
+
+## Session 13 (2026-07-16) — Bug fix: stale JWT causing silent auth failure
+
+**Bug:** Recipients (e.g. Evans) could see the edit-fundraiser form but got "Authentication required" on submit.
+
+**Root cause:** The July 1 security update added proper HMAC-SHA256 + expiry verification to all write APIs (`save-fundraiser.php` etc). However, the client-side role/profile check is a plain GET with no JWT verification — so a user with an expired JWT in `localStorage` from a prior session could still see the form, but the server correctly rejected the expired token on save.
+
+**Fix:** Added a client-side expiry check in `cms/includes/doctype-head.incl`. On every page load, if the stored JWT is expired it is immediately purged from both `sessionStorage` and `localStorage`. The user then sees "Login required" instead of a form that silently fails on submit.
+
+**Note:** Any user who was logged in before July 1 (when HMAC verification was introduced) may have had a pre-existing stale token in `localStorage`. The fix handles all of them automatically on their next page load.
 
 ---
 

@@ -46,6 +46,18 @@
             var newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
             window.history.replaceState({}, '', newUrl);
         }
+        // Purge any stored JWT that has expired so pages show "login required"
+        // rather than silently failing on server-side verification.
+        var stored = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+        if (stored) {
+            try {
+                var exp = JSON.parse(atob(stored.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).exp;
+                if (exp && exp < Math.floor(Date.now() / 1000)) {
+                    sessionStorage.removeItem('jwt');
+                    localStorage.removeItem('jwt');
+                }
+            } catch(e) {}
+        }
     })();
     </script>
 </head>
@@ -508,8 +520,9 @@ function buildCard(p) {
     var html = '<div class="post-card-meta">By <a href="profile.html?user=' + esc(p.username) + '">' + esc(p.username) + '</a> &middot; ' + date + '</div>';
     if (p.title) html += '<h2><a href="posts.html?user=' + esc(p.username) + '&post_id=' + esc(p.post_id) + '">' + esc(p.title) + '</a></h2>';
     if (p.image_url) html += '<div class="post-image"><img src="' + esc(p.image_url) + '" alt="" loading="lazy"></div>';
-    html += '<p class="post-intro">' + escHtml(p.intro) + '</p>';
-    if (p.has_body) html += '<div class="read-more"><a href="posts.html?user=' + esc(p.username) + '&post_id=' + esc(p.post_id) + '">Read more →</a></div>';
+    html += '<p class="post-intro">' + linkify(p.intro) + '</p>';
+    if (p.link_preview) html += buildLinkPreview(p.link_preview);
+    if (p.has_body) html += '<div class="read-more"><a href="posts.html?user=' + esc(p.username) + '&post_id=' + esc(p.post_id) + '">Read more →</a></div>'; 
     var cCount = p.comment_count || 0;
     var cLabel = cCount > 0 ? '💬 ' + cCount + ' ' + (cCount === 1 ? 'comment' : 'comments') : '💬 Comment';
     html += '<div style="margin-top:0.4em;font-size:0.85em;"><a href="posts.html?user=' + esc(p.username) + '&post_id=' + esc(p.post_id) + '" style="color:var(--text-muted);text-decoration:none;">' + cLabel + '</a></div>';
@@ -540,7 +553,8 @@ function loadSinglePost(username, postId) {
             if (p.title) html += '<h1>' + esc(p.title) + '</h1>';
             html += '<div class="post-card-meta">By <a href="profile.html?user=' + esc(p.username) + '">' + esc(p.username) + '</a> &middot; ' + date + '</div>';
             if (p.image_url) html += '<div class="post-image" style="margin:0.6em 0;"><img src="' + esc(p.image_url) + '" alt="" style="max-width:100%;border-radius:0.3em;"></div>';
-            html += '<p class="post-intro">' + escHtml(p.intro) + '</p>';
+            html += '<p class="post-intro">' + linkify(p.intro) + '</p>';
+            if (p.link_preview) html += buildLinkPreview(p.link_preview);
             if (p.body) html += '<div class="post-body">' + p.body + '</div>';
             if (_username && p.username === _username) {
                 html += '<div style="margin-top:0.8em;"><button onclick="editPost(\'' + esc(p.post_id) + '\',\'' + esc(p.username) + '\')" style="background:none;border:none;color:var(--link);cursor:pointer;font-size:0.9em;padding:0;text-decoration:underline;">✏️ Edit this post</button></div>';
@@ -782,6 +796,27 @@ function esc(s) {
 }
 function escHtml(s) {
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+function linkify(s) {
+    var parts = String(s || '').split(/(https?:\/\/[^\s<>"']+)/g);
+    return parts.map(function(part, i) {
+        if (i % 2 === 1) {
+            var clean = part.replace(/[.,;:!?)\]]+$/, '');
+            return '<a href="' + esc(clean) + '" target="_blank" rel="noopener">' + esc(clean) + '</a>';
+        }
+        return escHtml(part);
+    }).join('');
+}
+function buildLinkPreview(lp) {
+    if (!lp || (!lp.title && !lp.image)) return '';
+    var html = '<a href="' + esc(lp.url) + '" class="link-preview" target="_blank" rel="noopener">';
+    if (lp.image) html += '<div class="link-preview-image"><img src="' + esc(lp.image) + '" alt="" loading="lazy"></div>';
+    html += '<div class="link-preview-text">';
+    if (lp.title) html += '<div class="link-preview-title">' + esc(lp.title) + '</div>';
+    if (lp.description) html += '<div class="link-preview-desc">' + esc(lp.description) + '</div>';
+    if (lp.domain) html += '<div class="link-preview-domain">' + esc(lp.domain) + '</div>';
+    html += '</div></a>';
+    return html;
 }
 </script>
 
