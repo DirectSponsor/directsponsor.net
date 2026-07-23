@@ -809,13 +809,13 @@ function linkify(s) {
 }
 function buildLinkPreview(lp) {
     if (!lp || (!lp.title && !lp.image)) return '';
-    var html = '<a href="' + esc(lp.url) + '" class="link-preview" target="_blank" rel="noopener">';
+    var html = '<div class="link-preview">';
     if (lp.image) html += '<div class="link-preview-image"><img src="' + esc(lp.image) + '" alt="" loading="lazy"></div>';
     html += '<div class="link-preview-text">';
-    if (lp.title) html += '<div class="link-preview-title">' + esc(lp.title) + '</div>';
+    if (lp.title) html += '<div class="link-preview-title"><a href="' + esc(lp.url) + '" target="_blank" rel="noopener">' + esc(lp.title) + '</a></div>';
     if (lp.description) html += '<div class="link-preview-desc">' + esc(lp.description) + '</div>';
     if (lp.domain) html += '<div class="link-preview-domain">' + esc(lp.domain) + '</div>';
-    html += '</div></a>';
+    html += '</div></div>';
     return html;
 }
 </script>

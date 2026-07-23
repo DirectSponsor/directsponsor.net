@@ -111,8 +111,8 @@ function fetch_link_preview($url) {
 
     return [
         'url'         => $url,
-        'title'       => mb_substr($title, 0, 200),
-        'description' => mb_substr($description, 0, 300),
+        'title'       => substr($title, 0, 200),
+        'description' => substr($description, 0, 300),
         'image'       => $image,
         'domain'      => $host,
     ];
