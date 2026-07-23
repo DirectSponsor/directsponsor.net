@@ -66,7 +66,8 @@ function nostr_publish_ws($event_json, $host, $port, $ssl = false) {
 }
 
 function extract_first_url($text) {
-    $plain = strip_tags($text);
+    $spaced = preg_replace('#<(br|p|div|li|h[1-6])[^>]*>#i', ' ', $text);
+    $plain  = strip_tags($spaced);
     if (preg_match('#https?://[^\s<>"\']+#i', $plain, $m)) {
         return rtrim($m[0], '.,;:!?)]}');
     }
@@ -85,7 +86,7 @@ function fetch_link_preview($url) {
     $ctx = stream_context_create(['http' => [
         'method'        => 'GET',
         'timeout'       => 5,
-        'header'        => "User-Agent: Mozilla/5.0 (compatible; DS-LinkPreview/1.0)\r\n",
+        'header'        => "User-Agent: facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)\r\n",
         'max_redirects' => 3,
         'ignore_errors' => true,
     ]]);
@@ -106,6 +107,11 @@ function fetch_link_preview($url) {
         $title = html_entity_decode(trim($m[1]), ENT_QUOTES, 'UTF-8');
     if (!$description && preg_match('/<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']*)/i', $html, $m))
         $description = html_entity_decode($m[1], ENT_QUOTES, 'UTF-8');
+
+    $blocked = ['just a moment', 'checking your browser', 'attention required', 'access denied', 'ddos protection'];
+    foreach ($blocked as $b) {
+        if (stripos($title, $b) !== false) return ['url' => $url, 'domain' => $host, 'blocked' => true];
+    }
 
     if (!$title && !$image) return null;
 

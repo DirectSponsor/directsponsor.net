@@ -808,7 +808,9 @@ function linkify(s) {
     }).join('');
 }
 function buildLinkPreview(lp) {
-    if (!lp || (!lp.title && !lp.image)) return '';
+    if (!lp) return '';
+    if (lp.blocked) return '<div class="link-preview" style="font-size:0.82em;color:var(--text-muted);">🔒 Preview blocked by Cloudflare — <a href="' + esc(lp.url) + '" target="_blank" rel="noopener">' + esc(lp.domain) + '</a></div>';
+    if (!lp.title && !lp.image) return '';
     var url = esc(lp.url);
     var html = '<div class="link-preview">';
     if (lp.image) html += '<a href="' + url + '" target="_blank" rel="noopener"><img src="' + esc(lp.image) + '" alt="" loading="lazy" style="max-width:100%;max-height:20em;height:auto;display:block;margin-bottom:0.4em;"></a>';
