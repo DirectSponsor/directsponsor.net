@@ -248,6 +248,7 @@ if ($profileGlob) {
                 file_put_contents($profileFile, json_encode($profile, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             }
         }
+        $dsPostUrl = 'https://directsponsor.net/posts.html?user=' . $callerUsername . '&post_id=' . $post['post_id'];
         $content = $title ? $title . "\n\n" . $intro : $intro;
         if ($body) $content .= "\n\n" . strip_tags($body);
         if ($image_url) {
@@ -256,10 +257,11 @@ if ($profileGlob) {
                 : 'https://directsponsor.net' . $image_url;
             $content .= "\n\n" . $absImage;
         }
+        $content .= "\n\n" . $dsPostUrl;
         $nostrEvent = json_encode([
             'kind'       => 1,
             'created_at' => $post['created'] ?? time(),
-            'tags'       => [['r', 'https://directsponsor.net/posts.html?user=' . $callerUsername . '&post_id=' . $post['post_id']]],
+            'tags'       => [['r', $dsPostUrl]],
             'content'    => $content,
         ], JSON_UNESCAPED_UNICODE);
         $signedJson = shell_exec('/usr/bin/python3 /opt/strfry/nostr-sign.py sign '

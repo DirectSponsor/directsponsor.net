@@ -268,6 +268,11 @@ function dsLogout() {
 
 <script>
 (function() {
+    function escHtml(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
     fetch('/api/fundraiser-api.php?action=list')
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -286,13 +291,13 @@ function dsLogout() {
                 var goal   = parseInt(p.goal_amount || p.target_amount) || 0;
                 var pct    = goal > 0 ? Math.min(100, Math.round(raised / goal * 100)) : 0;
                 var img    = p.image_url
-                    ? '<img src="' + p.image_url + '" alt="' + (p.title || '') + '" loading="lazy">'
+                    ? '<img src="' + escHtml(p.image_url) + '" alt="' + escHtml(p.title) + '" loading="lazy">'
                     : '';
                 var tileUrl = 'fundraiser.html?project=' + encodeURIComponent(p.id) + '&user=' + encodeURIComponent(p.owner_user_id);
                 html += '<a href="' + tileUrl + '" class="project-tile">' + img +
                     '<div class="project-tile-body">' +
-                    '<h3>' + (p.title || 'Untitled') + '</h3>' +
-                    '<div class="recipient">Recipient: ' + (p.recipient || p.owner_user_id || '—') + '</div>' +
+                    '<h3>' + escHtml(p.title || 'Untitled') + '</h3>' +
+                    '<div class="recipient">Recipient: ' + escHtml(p.recipient || p.owner_user_id || '—') + '</div>' +
                     '<div class="tile-progress-track"><div class="tile-progress-fill" style="width:' + pct + '%"></div></div>' +
                     '<div class="tile-stats">' + raised.toLocaleString() + ' / ' + goal.toLocaleString() + ' sats (' + pct + '%)</div>' +
                     '</div></a>';
