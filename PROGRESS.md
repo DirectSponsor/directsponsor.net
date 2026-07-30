@@ -1,5 +1,5 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-07-16 (session 13)_
+_Last updated: 2026-07-28 (session 14)_
 
 ## What's done and live
 
@@ -388,6 +388,38 @@ Full security audit completed. All issues fixed and live-verified.
 - Three checks: (1) ledger entries missing from donor profiles, (2) profile `donations_made` missing from ledger, (3) project HTML `current-amount` vs ledger sum
 - Found and fixed the `donor_username` ledger bug above
 - Reconciliation result: **0 genuine discrepancies**. 17 historical suspect entries (pre-fix test payments, all explainable). 1 HTML amount mismatch on `andytest2/004` (+100 sats, test data, not a concern).
+
+---
+
+## Session 14 (2026-07-28) — Nostr testing & post preview fix
+
+### Verified working
+- `kelvin@directsponsor.net` NIP-05 resolves correctly (`/.well-known/nostr.json` Apache rewrite confirmed live)
+- kelvin's kind 0 metadata event is on the local strfry relay with full profile (name, nip05, display_name, about, website)
+- andytest2 kind 0 confirmed on relay; profile page npub/nsec reveal UI already built and working
+- **Recommended test client: primal.net** (not iris.to — unmaintained). Direct profile URL: `https://primal.net/p/<npub>`
+- andytest2 npub: `npub1xml526kk4ckmj2ed0sd07ukx7ypq8k5ye4nj8j5vp8rsh5szez4qqyysg5`
+- Keypair is only generated when user saves their first post on DS — blank profiles have no Nostr identity yet
+
+### Fix: DS post URL now inline in Nostr event content (`save-post.php`)
+- **Problem:** old posts published to Nostr had no preview card in Primal; DS post URL was only in the `r` tag (machine-readable, not rendered)
+- **Fix:** DS post URL now appended as a bare URL on its own line in the event `content` — Nostr clients fetch our OG meta tags from it and render a preview card (title, description, image)
+- `r` tag kept alongside for machine-readable relay hints — no duplication
+- Deployed 2026-07-26. Old posts need a re-save to republish their Nostr event with the URL included.
+
+### Known display issues in Primal (needs research)
+- **Profile image not showing** — kind 0 includes `picture` field but Primal isn't rendering it; unclear if it's a relay propagation delay, a field name issue, or Primal-specific behaviour
+- **Post text renders as one line** — DS post body is HTML; when stripped to plaintext for the Nostr event content (`strip_tags()`), newlines from the HTML structure are lost. Nostr clients treat `\n` as line breaks but our stripped content likely collapses to a single block.
+- **General problem:** Nostr clients vary widely in what they render — images, formatting, link previews, NIP-05 badges. There is no single "correct" output; need to research what the major clients (Primal, Damus, Amethyst, Snort) each support and find the best compromise.
+- **Research needed before fixing:** check NIP-94 (file metadata), NIP-23 (long-form), and whether kind 1 is even the right event type for DS posts (which have title + body, more like articles). Also check how `strip_tags()` output can preserve paragraph breaks.
+- **Key question: kind 1 vs kind 30023 (NIP-23 long-form)** — DS posts have a title + rich body, which is exactly what NIP-23 is designed for. Kind 1 is for short social notes. Switching to kind 30023 would give proper title rendering in clients that support it (Primal does), and the formatting issue largely goes away because the body is expected to be Markdown rather than stripped plaintext. This is probably the most important research item before doing any further Nostr post formatting work.
+
+### Next step: LNURL-pay endpoint for zaps
+- Users cannot accept zaps yet — no LNURL-pay endpoint
+- **No Lightning node needed** — thin PHP file calls Coinos API (same as donate modal)
+- Endpoint needed: `/.well-known/lnurlp/{username}` → reads user's Coinos API key → returns LNURL metadata / bolt11 invoice
+- Spec in `lnurl-zap-integration.md`
+- Webhook already handles payments; zap receipts (kind 9735) to be published on payment confirmation
 
 ---
 
