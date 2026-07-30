@@ -209,6 +209,7 @@ json.dump(d, open(f,'w'), indent=2)
 
 ## Known Gotchas
 
+- **`.incl` files are read-only (chmod 444)** — `site/cms/includes/*.incl` are intentionally read-only. To edit one: `chmod u+w <file>` → make changes → `chmod u-w <file>` → `bash build.sh site && bash deploy.sh --auto`. The comment at the top of each `.incl` file also reminds you of this.
 - **Profile glob pattern** — profile files are `{id}-{username}.txt`; webhook glob must be `*-{username}.txt`
 - **`my_donations` API needs query params** — `getUserId()` reads GET/POST params, not Authorization header; `loadMyDonations()` must pass `user_id` and `username` as query params
 - **`recent_donations` block required** — stub in `save-fundraiser.php` includes it; old files must be patched: `sed -i 's|</body>|<!-- recent_donations --><!-- end recent_donations -->\n</body>|' <file>`

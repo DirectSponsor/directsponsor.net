@@ -1,119 +1,78 @@
-# DirectSponsor.net - Main Charity Platform
+# DirectSponsor.net
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/DirectSponsor/directsponsor.net)
 
 **Live site: [directsponsor.net](https://directsponsor.net/)**
 
-## 🎯 Purpose
-The primary DirectSponsor platform - a charity website built with DS-CMS that showcases peer-to-peer sponsorship of verified projects. Acts as a bridge between a normal website log-in and the nostr network enabling existing nostr users to join as well as those who have never heard of nostr.
+## Purpose
+Peer-to-peer support platform using Bitcoin Lightning payments. Connects sponsors directly with verified recipients — no intermediaries hold funds. Two mechanisms: **fundraisers** (one-off campaigns) and **sponsorship groups** (ongoing monthly commitments, the primary feature). All payments go directly recipient-to-recipient via Coinos Lightning wallets.
 
-## 🏗️ Structure
+## Structure
 ```
-net-site/
-├── core/                    # Main DS-CMS working directory
-│   ├── includes/           # Reusable HTML components
-│   ├── styles/             # CSS files
-│   ├── images/             # Site images (to be created)
-│   ├── evans-content/      # Scraped Evans project content
-│   ├── Namibia-content/    # Grant & Annegret project content
-│   ├── *.html              # Page source files
-│   ├── build.sh            # Build script
-│   └── deploy-*.sh         # Deployment scripts
-└── README.md               # This file
+directsponsor.net/
+├── site/                        # Source files
+│   ├── cms/includes/            # Shared HTML snippets (.incl) — read-only, see below
+│   ├── cms/templates/           # Page templates (.tmpl)
+│   ├── api/                     # PHP API endpoints
+│   ├── styles/                  # CSS (single stylesheet: directsponsor-compact.css)
+│   ├── images/                  # Site images
+│   ├── js/                      # JavaScript
+│   ├── scripts/                 # Utility JS
+│   └── *.html / *.php           # Pages
+├── build.sh                     # Compiles includes into HTML
+├── deploy.sh                    # Rsyncs built files to production
+├── AGENTS.md                    # AI assistant guidance
+├── PROGRESS.md                  # Session notes and bug history
+└── README.md                    # This file
 ```
 
-## 🌐 Live Site
+## Live Site
 - **URL**: https://directsponsor.net
-- **Status**: ✅ Live and functional
-- **Hosting**: DirectAdmin shared hosting
-- **SSL**: Active and properly configured
+- **Server**: RN1 — `root@104.168.38.197`, web root `/var/www/directsponsor.net/html/`
+- **SSL**: Active
 
-## 📸 Image Optimization
-- **Smart optimization**: Automatic resizing and compression for uploads
-- **See**: [IMAGE_OPTIMIZATION.md](IMAGE_OPTIMIZATION.md) for details
+## Development Workflow
 
-## 🛠️ Development Workflow
-
-### Making Changes
 ```bash
-cd /home/andy/Documents/websites/Warp/projects/directsponsor/net-site/core
+# Edit source files in site/ or site/cms/includes/
+# NOTE: .incl files are read-only — chmod u+w <file> before editing, chmod u-w after
 
-# Edit HTML files as needed
-# Build the site
-./build.sh
-
-# Deploy to production
-./deploy-safe.sh --auto
+bash build.sh site       # Compile includes into HTML
+bash deploy.sh --auto    # Rsync to RN1 (userdata/ is protected)
 ```
 
-### Key Features
-- **BBEdit-style includes**: Modular template system
-- **Automated deployment**: One-command deployment
-- **Permission management**: Auto-fixes file permissions
-- **Backup system**: Automatic backups during builds
+## Pages
+- **index.html** — Homepage
+- **fundraisers.html** — All active fundraisers (API-driven)
+- **fundraiser.html** — Individual fundraiser + donate modal (`?project=ID&user=USERNAME`)
+- **posts.html** — Post feed; write box for logged-in users
+- **profile.html** — Own profile (edit) or public profile (`?user=USERNAME`)
+- **edit-fundraiser.html** — Create/edit fundraiser (recipients only)
+- **admin.html** — Role management UI (admins only)
+- **about.html**, **contact.html**, **how-to-donate.html**, **sponsorships.html**, **changelog.html**
 
-## 📋 Current Pages
-- ✅ **index.html** - Homepage with hero section
-- ✅ **projects.html** - Evans' and Grant & Annegret's projects
-- ✅ **about.html** - Mission and approach
-- ✅ **contact.html** - Contact form
-- ✅ **how-it-works.html** - Process explanation
+## Key APIs (`site/api/`)
+- `fundraiser-api.php` — list / get / user_projects
+- `project-donations-api.php` — creates Coinos Lightning invoice
+- `webhook.php` — payment confirmation; updates fundraiser HTML, advances queue, logs donation
+- `save-fundraiser.php` — creates/updates fundraiser HTML + config.json
+- `simple-profile.php` — profile CRUD, role management, my_donations
+- `save-post.php` / `posts-api.php` — post creation and feed
+- `jwt-verify.php` — shared HMAC-SHA256 JWT verification
 
-## 🎯 Current Status (June 23, 2025)
+## Authentication
+JWT tokens issued by `auth.directsponsor.org`. Stored in `sessionStorage`/`localStorage`. All write-capable APIs verify the JWT signature server-side. Roles (`member`, `recipient`, `admin`) are stored in profile files on the server, not in the JWT.
 
-### ✅ Completed
-- Basic site structure and navigation
-- Template system working perfectly
-- Deployment automation
-- Permission issues resolved
-- HTML validation and clean output
+## Data Storage
+File-based, no database. All user data lives under `/var/www/directsponsor.net/userdata/` on RN1 and is never overwritten by deployments.
 
-### 🔄 In Progress
-- Visual improvements and imagery
-- Content organization and enhancement
-- Project photo integration
-
-### 📋 Next Priorities
-1. **Images directory structure** - Organize project photos
-2. **Visual enhancements** - Hero sections, project thumbnails
-3. **Content polish** - Better copy and presentation
-4. **Advanced features** - Progress tracking, galleries
-
-## 🔧 Technical Notes
-
-### Build System
-- Uses DS-CMS template processing
-- Automatically handles include files
-- Sets proper file permissions (644)
-- Creates backup files (.bak)
-
-### Deployment
-- SSH-based deployment to DirectAdmin
-- Automatic permission fixing
-- File compression and optimization
-- Safety verification before deployment
-
-### File Permissions
-- **HTML/CSS files**: 644 (-rw-r--r--)
-- **Directories**: 755 (drwxr-xr-x)
-- **Scripts**: 755 (executable)
-
-## 🎨 Design System
-
-### Current Theme
-- Clean, professional appearance
-- Blue/white color scheme
-- Mobile-responsive design
-- Fast loading, minimal dependencies
-
-### Components
-- Header with dropdown navigation
-- Project cards with verification badges
-- Hero sections on each page
-- Footer with links and branding
+## Technical Notes
+- **No framework CSS** — handcrafted `directsponsor-compact.css`, CSS table layout, `em`/`%` units
+- **Vanilla JS only** — no build pipeline, no npm
+- **HTTP/2** enabled on RN1 (mpm_event + php8.4-fpm)
+- **Backups** — `/root/backup-rn1-directsponsor.sh` runs every 6h → two offsite servers; monitored with Telegram alerts
+- **Nostr relay** — strfry on RN1 at `wss://relay.directsponsor.net`; per-user keypairs generated on first post
 
 ---
 
-**Working Directory**: `/home/andy/Documents/websites/Warp/projects/directsponsor/net-site/core`
-**Last Updated**: June 23, 2025
-**Status**: Active development, live site functional
+**Last updated**: July 2026
