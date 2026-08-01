@@ -217,6 +217,9 @@ Key points to cover:
 - The system tracks cumulative sats received; it doesn't track your wallet balance. Withdrawing does not reset your fundraiser progress.
 - Goal is shown as "X sats (≈ Y [local currency])" — the sat number varies with BTC price but the local currency amount is the fixed target.
 
+### Cleanup (once all old fundraisers complete)
+- **Remove Tier 2 & 3 fallbacks from `webhook.php`** — once `evans/002` and `andytest2/001` complete (both lack `current-fiat-amount`), all active fundraisers will use Tier 1 fiat tracking. At that point, the live-rate-fiat (Tier 2) and sats-only (Tier 3) branches in the goal-check can be deleted, simplifying the code. Check: any fundraiser without `<!-- current-fiat-amount -->` in its HTML is a candidate — run `grep -rL 'current-fiat-amount' /var/www/directsponsor.net/userdata/projects/*/active/` on RN1 to confirm none remain before removing.
+
 ### Future
 - **Per-fundraiser Open Graph meta tags** ✅ Step 1 done (2026-06-18) — `site/fundraiser.php` wrapper + `site/.htaccess` rewrite. Apache transparently routes `fundraiser.html?project=X&user=Y` through the PHP wrapper, which reads `title`, `description`/`short-description`, and `image-url` from the fundraiser's comment-tags and injects correct OG tags server-side. Works for all existing fundraisers automatically. Static pages already had per-page OG tags via the `#TITLE#`/`#DESC#`/`#OGIMAGE#` substitution system.
   - **Step 2 (optional polish):** branded composite OG image — overlay title + "X sats raised of Y" on the project photo using PHP GD. Services like opengraph.xyz do this commercially; we could replicate it. Low priority.
