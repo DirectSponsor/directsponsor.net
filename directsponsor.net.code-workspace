@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../auth-server"
+		},
+		{
+			"path": "../roflfaucet"
 		}
 	],
 	"settings": {}

@@ -206,6 +206,16 @@ Until both conditions are met, custodial services (Coinos, Blink) are the pragma
 
 ### Soon
 - Grant & Annegret (Desert Farm): on hold — see above
+- **maibelris next fundraiser** — no `002.html` queued; they need to create a new one via edit-fundraiser.html if they want another round
+
+### Recipient guidance page (needed before onboarding more recipients)
+Key points to cover:
+- **Withdraw immediately when your fundraiser completes** — Coinos has a built-in facility to convert sats to local currency (GHS, KES, etc.) and receive via mobile money. Do this within hours of completion, not days.
+- **Why:** the goal is denominated in your local currency, but the sats sit in a custodial wallet. BTC price moves between receipt and conversion mean you might get slightly more or less than the goal amount if you wait. Converting immediately eliminates that risk.
+- **For savings clubs (susu-style):** the pot accumulates week by week. The round's recipient should NOT touch the wallet until the fundraiser goal completes — then withdraw everything at once. Contributors are separate from the current recipient.
+- **For ongoing sponsorship recipients:** withdraw and convert regularly (e.g. each time a meaningful amount arrives). Don't hold sats speculatively.
+- The system tracks cumulative sats received; it doesn't track your wallet balance. Withdrawing does not reset your fundraiser progress.
+- Goal is shown as "X sats (≈ Y [local currency])" — the sat number varies with BTC price but the local currency amount is the fixed target.
 
 ### Future
 - **Per-fundraiser Open Graph meta tags** ✅ Step 1 done (2026-06-18) — `site/fundraiser.php` wrapper + `site/.htaccess` rewrite. Apache transparently routes `fundraiser.html?project=X&user=Y` through the PHP wrapper, which reads `title`, `description`/`short-description`, and `image-url` from the fundraiser's comment-tags and injects correct OG tags server-side. Works for all existing fundraisers automatically. Static pages already had per-page OG tags via the `#TITLE#`/`#DESC#`/`#OGIMAGE#` substitution system.

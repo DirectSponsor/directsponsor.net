@@ -179,6 +179,7 @@ if (!file_exists($htmlFile)) {
 <!-- recent_donations --><!-- end recent_donations -->
 <!-- goal-currency --><!-- end goal-currency -->
 <!-- goal-fiat-amount --><!-- end goal-fiat-amount -->
+<!-- current-fiat-amount -->0<!-- end current-fiat-amount -->
 </body></html>';
     file_put_contents($htmlFile, $stub);
 }
