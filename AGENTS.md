@@ -88,13 +88,16 @@ The goal is always expressed in **local fiat currency** — that is the canonica
 - `goal-fiat-amount` — the target in that currency, e.g. `12500`
 - `target-amount` — a sats snapshot set at creation time; used as a **display fallback** when no fiat goal is set. Not used for completion when fiat goal is present.
 - `current-amount` — cumulative sats received (plain integer, no commas)
+- `current-fiat-amount` — cumulative fiat received, **locked at the rate in effect at each donation's receipt time**. Never drifts with price changes. Used as the primary completion signal when present.
 
-**Completion logic** (in `webhook.php`):
-1. If `goal-currency` and `goal-fiat-amount` are set → convert fiat target to sats at the **current live rate** using `fiatToSats()`. If the live rate is unavailable, fall back to `target-amount`.
-2. If neither is set → use `target-amount` directly (sats-only fundraisers).
-3. When `current-amount >= computed target` → move file to `completed/`, advance queue.
+**Completion logic** (in `webhook.php`) — three tiers:
+1. **Tier 1 (preferred):** `current-fiat-amount >= goal-fiat-amount` — uses locked-in fiat values, immune to BTC price changes. Active when `current-fiat-amount` tag exists in the HTML.
+2. **Tier 2 (fallback):** convert `goal-fiat-amount` → sats at live rate, compare against `current-amount`. Minor drift possible. Used for older fundraisers without the `current-fiat-amount` tag.
+3. **Tier 3 (legacy):** compare `current-amount` against static `target-amount`. For sats-only fundraisers with no fiat goal.
 
-This ensures the displayed target (also computed live in `fundraiser-api.php`) and the completion threshold are always the same number.
+When goal is reached → file moved to `completed/`, queue advances.
+
+The `current-fiat-amount` tag is written by the webhook on every donation, accumulating the fiat equivalent at that moment's rate. New fundraisers (created after this change) have the tag from the start; old ones fall back to Tier 2.
 
 **FX rate caching:** rates are cached in `userdata/fx-rates.json` for 1 hour (fetched from mempool.space + jsdelivr). No external call is made if the cache is fresh.
 
@@ -111,6 +114,7 @@ All project data is stored in HTML comment tags:
 <!-- goal-fiat-amount -->12500<!-- end goal-fiat-amount -->
 <!-- target-amount -->1285281<!-- end target-amount -->
 <!-- current-amount -->0<!-- end current-amount -->
+<!-- current-fiat-amount -->0<!-- end current-fiat-amount -->
 <!-- status -->active<!-- end status -->
 <!-- location -->Ghana<!-- end location -->
 <!-- website-url --><!-- end website-url -->
