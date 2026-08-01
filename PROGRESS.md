@@ -1,5 +1,5 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-07-28 (session 14)_
+_Last updated: 2026-08-01 (session 15)_
 
 ## What's done and live
 
@@ -40,8 +40,8 @@ _Last updated: 2026-07-28 (session 14)_
 1. Donor opens modal → name field auto-filled from JWT (editable); guests can type a name or leave blank
 2. Picks amount → JS decodes JWT to get `donor_username` and reads name field → `project-donations-api.php` POSTs to Coinos API
 3. Invoice + QR shown in modal, with Copy Invoice button
-4. Webhook fires → `webhook.php` updates `current-amount` in project HTML, appends `<li>` to `<!-- recent_donations -->` block
-5. If `current-amount >= target-amount`: file moved to `completed/`, next queued project becomes active
+4. Webhook fires → `webhook.php` updates `current-amount` (plain integer, no commas) in project HTML, appends `<li>` to `<!-- recent_donations -->` block
+5. Goal check: if `goal-currency` + `goal-fiat-amount` are set, convert fiat target to sats at **current live rate** (same logic as fundraiser-api.php display); else fall back to `target-amount`. When `current-amount >= computed target`: file moved to `completed/`, next queued project becomes active.
 6. Overpayment shown on project page; no sats lost
 7. `donor_username` written to `donations_made` in donor's profile file (for profile history)
 8. `transaction-ledger.json` updated as audit trail
@@ -52,6 +52,7 @@ _Last updated: 2026-07-28 (session 14)_
 - On goal reached: webhook auto-moves to `username/completed/`, next becomes active
 - New project auto-numbering skips IDs used in both `active/` and `completed/`
 - Overpayment stays as `current-amount` on next project (no carry-over math — just shown)
+- **Fiat goal is canonical**: `goal-currency` + `goal-fiat-amount` drive completion; `target-amount` is a display fallback only. `fundraiser-api.php` and `webhook.php` both use the same live conversion so displayed target = completion threshold.
 
 ### Fundraiser page features
 - Project image (direct URL from postimages.org etc), linked back to source with attribution
@@ -83,12 +84,23 @@ _Last updated: 2026-07-28 (session 14)_
 - `roflfaucet.com/fundraisers.html` → redirects to `directsponsor.net/projects.html`
 - `roflfaucet.com/fundraiser.html` → redirects to `directsponsor.net/projects.html`
 
-### Live fundraisers (as of 2026-04-03)
-- `lightninglova/001.html` — Bitcoin4Ghana Internet Connectivity (active)
-- `evans/001.html` — Badilisha Food Forest (active; Coinos API key confirmed working 2026-04-03)
-- `andytest2/001-003.html` — completed test fundraisers
-- `andytest2/004.html` — active test fundraiser (partially funded)
+### Live fundraisers (as of 2026-08-01)
+- `kelvin/004.html` — active (Bitcoin4Ghana land purchase)
+- `evans/002.html` — Badilisha Food Forest (active)
+- `andytest2/001.html` — active test fundraiser
+- `maibelris/001.html` — **completed 2026-08-01** — Bitcoin4Ghana fund reached 12,500 GHS goal; moved to `completed/` automatically by webhook after Jenny's 111,111 sat donation. No next fundraiser queued for maibelris yet.
+- `lightninglova/001.html` — completed (earlier)
+- `kelvin/001-003.html` — completed
 - Grant & Annegret (Desert Farm): on hold — Bitcoin not viable in Namibia. Project page archived to `archive/grant-annegret-project.html`. May revisit if a third-party runner is found.
+
+### Session 15 — 2026-08-01: Fiat-canonical goal system fix
+- **Bug**: `webhook.php` was using the static `target-amount` (sats snapshot set at fundraiser creation) for goal completion, while `fundraiser-api.php` was showing the dynamically-computed fiat→sats equivalent. These diverge as BTC price moves, creating an inconsistency between what donors see and when completion actually fires.
+- **Fix applied directly to `webhook.php` on RN1** (not in local repo):
+  1. Added `FX_CACHE_FILE`/`FX_CACHE_TTL` constants + `httpGet()`/`getFxRates()`/`fiatToSats()` functions (same as fundraiser-api.php)
+  2. Goal-check now reads `goal-currency` + `goal-fiat-amount`; if set, converts fiat → sats at current live rate; falls back to `target-amount` if FX unavailable or no fiat goal
+  3. Stopped storing `current-amount` with commas (`number_format()` → plain integer)
+- **Design decision**: fiat amount is canonical. Sats are the payment rail; recipients should withdraw often and convert. `target-amount` in HTML is a display fallback only.
+- **Note**: `webhook.php` lives at `/var/www/directsponsor.net/html/webhook.php` on RN1 and is **not** in the local git repo. Always backup before editing.
 
 ---
 
@@ -457,3 +469,75 @@ Full security audit completed. All issues fixed and live-verified.
 | `site/api/jwt-verify.php` | Shared JWT HMAC-SHA256 verification (reads secret from `/etc/ds-jwt-secret`) |
 | `build.sh` | Build includes |
 | `deploy.sh` | Rsync to RN1 |
+
+---
+
+## Strategic Note: Chat — Nostr vs Custom (2026-07-30)
+
+### Current situation
+- roflfaucet.com has a custom flat-file PHP chat with bots (Anzar rainbot, ROFLBot), coin tipping (`/tip`), and rain events
+- directsponsor.net embeds this chat in an iframe on the homepage and sponsorships page
+- The custom chat has known issues: `/tip` sender deduction failing (auth server API call broken), bot messages sometimes not appearing until next send (timestamp `>` filter bug + possible Orange Pi bot version mismatch)
+
+### Nostr chat option considered
+Nostr (NIP-28 public channels) was evaluated as a replacement or complement. Key points:
+
+**Fits well:**
+- directsponsor.net already publishes posts to the strfry relay at `wss://relay.directsponsor.net` — chat is a natural extension
+- Users with existing Nostr identities (Damus, Amethyst, etc.) can participate without a new account
+- Per-user keypairs already generated on first post — bots are just another keypair
+- **Zaps (NIP-57)** provide native Lightning tipping on any message — real sats, no custom coin layer needed
+- Decentralised — messages replicate across relays
+
+**Doesn't fit well:**
+- UselessCoin mechanics (faucet earnings, rain events, gamification) don't translate to Nostr
+- Embedding a Nostr client widget in an iframe requires JS-heavy libraries (against frugal philosophy)
+- Moderation harder — permissionless by design, spam falls back on relay write policy
+
+### Decision
+- **directsponsor.net**: replace the embedded roflfaucet chat iframe with a Nostr-backed chat — see server-side proxy approach below
+- **roflfaucet.com**: keep custom chat for now — the coin mechanics (faucet, rain, UselessCoins) are the point; Nostr doesn't replace that
+- **Zaps complement rather than replace UselessCoins**: zaps = real-value serious support; UselessCoins = low-friction fun/gamification
+- **Mobile**: fitting a persistent chat widget into a 390px layout fights physics — the floating panel is already the right pattern; don't try to add more
+- **Immediate priority**: fix current roflfaucet chat bugs first (tip failure, bot display issue), then build the DS chat page
+
+### Server-side Nostr client proxy (planned for directsponsor.net)
+
+Rather than embedding a JS-heavy Nostr client or sending users to an external Nostr app, build a thin PHP chat page that acts as a Nostr client on the server:
+
+**How it works:**
+1. User visits `chat.html` (or similar) — logged in via existing JWT
+2. Server looks up their Nostr keypair from their profile file (already stored as `nostr_privkey`/`nostr_pubkey`)
+3. PHP page polls strfry on localhost for recent NIP-28 channel messages and renders them as plain HTML
+4. User types a message → PHP signs it with their keypair (using `nostr-sign.py` pattern from `save-post.php`) → publishes to strfry
+5. Bots are just Nostr keypairs that subscribe and respond
+
+**Why this works:**
+- All the hard parts already exist: keypairs in profiles, strfry relay on localhost, WebSocket signing pattern in `save-post.php`, `nostr-sign.py` for BIP340 signing
+- User sees a plain chat interface — no Nostr knowledge required
+- No external dependencies, no JS libraries, no iframes
+- Zaps still possible for users with Lightning wallets (they can use a real Nostr client if they want)
+- For users who don't want Nostr at all: a simple "Join chat →" link to `primal.net` or `snort.social` pointed at the channel works as zero-effort fallback
+
+### Write policy — relay-level allowlist
+
+**Goal**: reputation control, not secrecy. We don't care who reads the chat. The point is stopping unvetted accounts from posting into a stream associated with the org — without gatekeeping reads or touching existing public posts.
+
+**How**: set a **per-event-kind write policy** on the relay:
+- Chat message kind → only accepted from pubkeys on an allowlist
+- Post kind (and everything else) → accepted from anyone, unchanged
+- Reads remain open to everyone for all kinds
+
+Every Nostr event is signed by the author's pubkey — the relay can inspect and accept/reject based on that signature without any login/session step.
+
+Add a **rate limit** on the chat kind even for allowlisted users — cheap insurance against a compromised or spammy approved account.
+
+**What NOT to use:**
+- **NIP-42** (relay-level connection auth) — restricts who can even *connect* to the relay. Too blunt; we only want to restrict one event kind.
+- **NIP-17/NIP-44** (encrypted DMs/groups) — makes content confidential. Not needed; we don't care about read-privacy, only write-control.
+
+**Implementation**: strfry supports write-policy plugins/scripts — check what the existing relay config already has before building custom. Maintain a flat allowlist file of permitted pubkeys for the chat kind.
+
+### Open items before shipping
+- How new pubkeys get added to the chat allowlist: manual admin approval vs. auto-add for verified site accounts (i.e. anyone with a DS profile keypair)
+- Whether to run a fallback/backup relay — chat availability now depends on this relay staying up

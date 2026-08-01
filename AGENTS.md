@@ -69,7 +69,7 @@ A recipient can have multiple fundraiser files in `active/`. The **lowest-number
 
 - `active/001.html` → currently live, accepting donations
 - `active/002.html` → queued (shown as "○ Queued" on profile page, edit link visible to recipient)
-- `completed/001.html` → moved here by webhook when `current-amount >= target-amount`
+- `completed/001.html` → moved here by webhook when goal is reached (see Goal System below)
 
 **Advancement:** when the webhook confirms a payment that completes a fundraiser, it moves the completed file to `completed/` automatically. The next lowest-numbered file in `active/` then becomes the active one — no manual action needed.
 
@@ -80,6 +80,26 @@ A recipient can have multiple fundraiser files in `active/`. The **lowest-number
 - Profile page — shows all files in `active/`, labelled Active (first) or Queued (rest); completed files shown in a separate section
 - Donors *can* navigate to and donate to a queued fundraiser — this is intentional; no blocking code added (YAGNI)
 
+### Fundraiser Goal System
+
+The goal is always expressed in **local fiat currency** — that is the canonical amount the recipient needs. Sats are just the payment rail.
+
+- `goal-currency` — ISO currency code, e.g. `GHS`, `KES`, `USD`
+- `goal-fiat-amount` — the target in that currency, e.g. `12500`
+- `target-amount` — a sats snapshot set at creation time; used as a **display fallback** when no fiat goal is set. Not used for completion when fiat goal is present.
+- `current-amount` — cumulative sats received (plain integer, no commas)
+
+**Completion logic** (in `webhook.php`):
+1. If `goal-currency` and `goal-fiat-amount` are set → convert fiat target to sats at the **current live rate** using `fiatToSats()`. If the live rate is unavailable, fall back to `target-amount`.
+2. If neither is set → use `target-amount` directly (sats-only fundraisers).
+3. When `current-amount >= computed target` → move file to `completed/`, advance queue.
+
+This ensures the displayed target (also computed live in `fundraiser-api.php`) and the completion threshold are always the same number.
+
+**FX rate caching:** rates are cached in `userdata/fx-rates.json` for 1 hour (fetched from mempool.space + jsdelivr). No external call is made if the cache is fresh.
+
+**For recipients:** advise them to withdraw sats promptly and convert to local currency — BTC price changes mean a fixed fiat goal may reach its sat equivalent faster or slower over time.
+
 ### Project HTML format
 All project data is stored in HTML comment tags:
 ```html
@@ -87,7 +107,9 @@ All project data is stored in HTML comment tags:
 <!-- title -->Project Title<!-- end title -->
 <!-- short-description -->...<!-- end short-description -->
 <!-- full-description -->...<!-- end full-description -->
-<!-- target-amount -->60000<!-- end target-amount -->
+<!-- goal-currency -->GHS<!-- end goal-currency -->
+<!-- goal-fiat-amount -->12500<!-- end goal-fiat-amount -->
+<!-- target-amount -->1285281<!-- end target-amount -->
 <!-- current-amount -->0<!-- end current-amount -->
 <!-- status -->active<!-- end status -->
 <!-- location -->Ghana<!-- end location -->
@@ -97,6 +119,8 @@ All project data is stored in HTML comment tags:
 <!-- recent_donations --><!-- end recent_donations -->
 ```
 The `<!-- recent_donations -->` block is appended to by the webhook on each payment. **All new project stubs must include this block** or donations won't appear on the project page.
+
+`goal-currency` + `goal-fiat-amount` are optional but strongly recommended for all new fundraisers. If absent, `target-amount` (sats) is used as the fixed goal.
 
 ### Profile file format
 JSON stored in `{userId}-{username}.txt`:
