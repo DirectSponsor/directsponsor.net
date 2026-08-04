@@ -225,6 +225,10 @@ Key points to cover:
   - **Step 2 (optional polish):** branded composite OG image — overlay title + "X sats raised of Y" on the project photo using PHP GD. Services like opengraph.xyz do this commercially; we could replicate it. Low priority.
 - **Reconciliation script** (done — cron Sunday 3am on RN1, Telegram alert via DS_AuthBot to satoshihost-alerts group)
 - **Nostr integration** — see `nostr-integration.md` for full plan; deeper integration (cross-node identity, flagging, fraud prevention) still pending
+- **Nostr zaps on fundraisers** — Coinos has no account-level webhook (webhook is per-invoice only). Direct payments to a lightning address (e.g. via Nostr zap) go into the wallet silently. Two approaches when this becomes relevant:
+  1. **Cron polling**: `GET /api/payments?after={timestamp}` using each recipient's API key every 15 mins — match unrecognised incomings to the active fundraiser and credit them. Small PHP/Python script, no changes to main flow.
+  2. **Zap invoice**: when publishing fundraiser to Nostr, generate a long-lived invoice (with our webhook) instead of/alongside the lightning address. Zaps via that invoice are fully tracked. Spontaneous direct-address payments still not caught.
+  We have our own Nostr relay which may help with publishing/receiving zap receipts. Start with option 1 (polling) as it requires no Nostr-specific code.
 - **PHP error alerting** — use `set_error_handler()` + `error_log()` in the API files to catch unexpected errors, with a lightweight cron (or triggered script) that tails `/var/log/` and fires a Telegram alert via DSSitesCheckBot. No external dependencies; pure PHP + cron + existing bot.
 - Auth server post-verification screen: update to show all 3 sites
 - `delete-user.sh`: add clickforcharity.net cleanup step
