@@ -439,7 +439,8 @@ function renderPublicDonations(donations) {
         ul.appendChild(li);
     });
     section.appendChild(ul);
-    document.querySelector('.profile-wrap') && document.querySelector('.profile-wrap').appendChild(section);
+    var wrap = document.getElementById('profile-public');
+    if (wrap) wrap.appendChild(section);
 }
 
 function loadPublicProfile(username) {
