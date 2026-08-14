@@ -443,14 +443,20 @@ To completely delete a user from the ecosystem (for GDPR compliance or user requ
 
 ## Changelog — AI Agent Reminder
 
-After completing **significant work** on this project, update the public changelog.
+After completing **significant work** on this project, run from the repo root:
 
-- **File**: `site/changelog.html` — prepend a new `<li>` inside the `<!-- EMBED:changelog -->` block
-- **Instructions**: `CHANGELOG-INSTRUCTIONS.md` — full format, categories, and rules
-- **Format**: `<li><strong>YYYY-MM-DD</strong> · <strong>DirectSponsor</strong> — <span class="feature">Category</span> One-line plain-English summary.</li>`
-- **When**: new features, bug fixes with user impact, auth/payment changes, deployment changes
-- **Skip**: typos, refactors, style tweaks, WIP
-- **Then deploy**: `bash /home/andy/work/projects/directsponsor.net/deploy.sh --auto`
+```bash
+./add-changelog.sh "Category" "One-line description for non-technical readers."
+```
+
+Then deploy:
+```bash
+bash /home/andy/work/projects/directsponsor.net/deploy.sh --auto
+```
+
+**What counts as significant**: new features, bug fixes with user impact, auth/payment changes, deployment changes. Skip typos, refactors, style tweaks, WIP.
+
+Common categories: `Feature`, `Bug Fix`, `Security`, `UI`, `Auth`, `API`, `Deployment`
 
 ---
 

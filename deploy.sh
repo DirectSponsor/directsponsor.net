@@ -244,6 +244,14 @@ main() {
     
     # Safety verification
     verify_target
+
+    # Warn if changelog hasn't been updated since last commit
+    if git diff --quiet HEAD -- site/changelog.html 2>/dev/null; then
+        echo -e "${YELLOW}⚠️  site/changelog.html hasn't changed since the last commit.${NC}"
+        echo -e "${YELLOW}   If you made significant changes, run first: ./add-changelog.sh \"Category\" \"Description\"${NC}"
+        echo -e "${YELLOW}   (deploying anyway — this is just a reminder)${NC}"
+        echo
+    fi
     
     # Step 0: Git Operations
     git_operations
