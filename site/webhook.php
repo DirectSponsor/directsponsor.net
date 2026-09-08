@@ -9,6 +9,8 @@ define('SPONSORSHIP_GROUPS_DIR',  DS_DATA_DIR . '/sponsorship-groups');
 define('LOGS_DIR', DS_DATA_DIR . '/logs');
 define('DATA_DIR', DS_DATA_DIR . '/data');
 define('LOG_FILE', LOGS_DIR . '/webhook.log');
+define('FX_CACHE_FILE', DS_DATA_DIR . '/fx-rates.json');
+define('FX_CACHE_TTL', 3600); // seconds — refresh rates once per hour
 
 /**
  * Smart Dual-System Webhook Processor
@@ -77,6 +79,67 @@ function saveJsonData($filepath, $data) {
     fclose($handle);
     
     return rename($tempFile, $filepath);
+}
+
+
+/**
+ * FX helpers — mirrored from fundraiser-api.php to avoid include conflicts.
+ * Prefixed wh_ so they can coexist if ever included together.
+ */
+function whHttpGet($url, $timeout = 5) {
+    if (ini_get('allow_url_fopen')) {
+        $ctx = stream_context_create(['http' => ['timeout' => $timeout, 'ignore_errors' => true]]);
+        return @file_get_contents($url, false, $ctx);
+    }
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => $timeout, CURLOPT_FOLLOWLOCATION => true]);
+        $r = curl_exec($ch); curl_close($ch);
+        return $r ?: false;
+    }
+    return false;
+}
+
+function whGetFxRates() {
+    static $mem = null;
+    if ($mem !== null) return $mem;
+    $stale = null;
+    if (file_exists(FX_CACHE_FILE)) {
+        $stale = json_decode(file_get_contents(FX_CACHE_FILE), true);
+        if ($stale && isset($stale['updated']) && (time() - $stale['updated']) < FX_CACHE_TTL) {
+            $mem = $stale; return $mem;
+        }
+    }
+    $btcUsd = 0;
+    $raw = whHttpGet('https://mempool.space/api/v1/prices');
+    if ($raw) { $j = json_decode($raw, true); $btcUsd = (float)($j['USD'] ?? 0); }
+    $usdRates = [];
+    $raw2 = whHttpGet('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json');
+    if ($raw2) { $j2 = json_decode($raw2, true); $usdRates = $j2['usd'] ?? []; }
+    if ($btcUsd > 0 && !empty($usdRates)) {
+        $new = ['updated' => time(), 'btc_usd' => $btcUsd, 'usd_rates' => $usdRates];
+        $tmp = FX_CACHE_FILE . '.tmp';
+        if (@file_put_contents($tmp, json_encode($new)) !== false) @rename($tmp, FX_CACHE_FILE);
+        $mem = $new;
+    } else {
+        $mem = $stale ?: ['updated' => 0, 'btc_usd' => 0, 'usd_rates' => []];
+    }
+    return $mem;
+}
+
+/** Convert a fiat amount to sats at current rates. Returns 0 on failure. */
+function whFiatToSats($amount, $currency, $rates) {
+    $btcUsd = (float)($rates['btc_usd'] ?? 0);
+    if ($btcUsd <= 0 || $amount <= 0) return 0;
+    $cur = strtolower(trim($currency));
+    if ($cur === 'usd') {
+        $usdAmount = (float)$amount;
+    } else {
+        $rate = (float)($rates['usd_rates'][$cur] ?? 0);
+        if ($rate <= 0) return 0;
+        $usdAmount = (float)$amount / $rate;
+    }
+    return (int)round($usdAmount / $btcUsd * 100000000);
 }
 
 /**
@@ -275,6 +338,7 @@ function updateProjectHtml($htmlFile, $donation, $amountSats) {
                 $html
             );
         }
+
         
         // Add to recent donations list (keep last 10)
         $msgHtml = !empty($donation['donor_message'])
@@ -354,21 +418,48 @@ function processProjectDonation($donation, $foundIndex, $webhookData) {
         return false;
     }
 
-    // --- Goal-reached check: auto-advance queue ---
+    // --- Goal-reached check ---
+    // Fiat goal (goal-currency + goal-fiat-amount): convert to sats at live rate and compare.
+    // Legacy sats-only (target-amount): compare directly.
     $htmlContent = file_get_contents($projectInfo['file']);
-    $currentAmount = 0;
-    $targetAmount  = 0;
+    $currentAmount     = 0;
+    $targetAmount      = 0;
+    $goalCurrency_gc   = '';
+    $goalFiatAmount_gc = 0.0;
     if (preg_match('/<!-- current-amount -->([^<]+)<!-- end current-amount -->/', $htmlContent, $m)) {
         $currentAmount = intval(str_replace(',', '', trim($m[1])));
     }
     if (preg_match('/<!-- target-amount -->([^<]+)<!-- end target-amount -->/', $htmlContent, $m)) {
         $targetAmount = intval(str_replace(',', '', trim($m[1])));
     }
+    if (preg_match('/<!-- goal-currency -->([^<]+)<!-- end goal-currency -->/', $htmlContent, $m)) {
+        $goalCurrency_gc = trim($m[1]);
+    }
+    if (preg_match('/<!-- goal-fiat-amount -->([^<]+)<!-- end goal-fiat-amount -->/', $htmlContent, $m)) {
+        $goalFiatAmount_gc = (float)trim($m[1]);
+    }
 
-    if ($targetAmount > 0 && $currentAmount >= $targetAmount) {
+    $goalReached = false;
+    if ($goalCurrency_gc && $goalFiatAmount_gc > 0) {
+        // Fiat goal: convert to sats at today's live rate
+        $rates_gc    = whGetFxRates();
+        $goalSats_gc = whFiatToSats($goalFiatAmount_gc, $goalCurrency_gc, $rates_gc);
+        if ($goalSats_gc > 0) {
+            $goalReached = ($currentAmount >= $goalSats_gc);
+            logWebhook("Goal check: currentSats=$currentAmount >= goalSats=$goalSats_gc (from $goalFiatAmount_gc $goalCurrency_gc) => " . ($goalReached ? 'REACHED' : 'not yet'));
+        } else {
+            logWebhook("Goal check: FX rate unavailable, skipping completion check", 'WARNING');
+        }
+    } elseif ($targetAmount > 0) {
+        // Legacy sats-only target
+        $goalReached = ($currentAmount >= $targetAmount);
+        logWebhook("Goal check (sats): currentSats=$currentAmount >= targetSats=$targetAmount => " . ($goalReached ? 'REACHED' : 'not yet'));
+    }
+
+    if ($goalReached) {
         $username    = $projectInfo['username'];
         $completedId = $donation['project_id'];
-        logWebhook("Goal reached for project $completedId (user: $username). current=$currentAmount target=$targetAmount");
+        logWebhook("Goal reached for project $completedId (user: $username). currentSats=$currentAmount goalFiat=$goalFiatAmount_gc $goalCurrency_gc");
 
         // Move to completed/
         $completedDir = PROJECTS_DIR . '/' . $username . '/completed';
@@ -404,9 +495,8 @@ function processProjectDonation($donation, $foundIndex, $webhookData) {
         }
 
         // Log overpayment (not carried over — shown on completed project page instead)
-        $overpayment = $currentAmount - $targetAmount;
-        if ($overpayment > 0) {
-            logWebhook("Overpayment of $overpayment sats on project $completedId — shown on project page");
+        if ($targetAmount > 0 && $currentAmount > $targetAmount) {
+            logWebhook("Overpayment of " . ($currentAmount - $targetAmount) . " sats on project $completedId — shown on project page");
         }
         if ($nextProjectFile) {
             logWebhook("Next project now active: " . basename($nextProjectFile));
