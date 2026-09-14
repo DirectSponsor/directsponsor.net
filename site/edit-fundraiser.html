@@ -548,6 +548,69 @@ function insertVideo() {
     document.execCommand('insertHTML', false, '<p>' + safe + '</p>');
 }
 
+// --- Paste sanitiser: strip inline styles, classes, junk tags on paste ---
+var PASTE_ALLOWED = {
+    P:true, BR:true, B:true, I:true, STRONG:true, EM:true,
+    H2:true, H3:true, UL:true, OL:true, LI:true, A:true
+};
+
+function cleanPasteNode(node) {
+    var frag = document.createDocumentFragment();
+    node.childNodes.forEach(function(child) {
+        if (child.nodeType === 3) { // text node
+            frag.appendChild(child.cloneNode());
+        } else if (child.nodeType === 1) { // element
+            var tag = child.tagName.toUpperCase();
+            if (PASTE_ALLOWED[tag]) {
+                var el = document.createElement(child.tagName.toLowerCase());
+                if (tag === 'A') {
+                    var href = child.getAttribute('href') || '';
+                    if (href && !/^javascript:/i.test(href.trim())) {
+                        el.setAttribute('href', href);
+                        if (/^https?:\/\//i.test(href)) { el.target = '_blank'; el.rel = 'noopener'; }
+                    }
+                }
+                el.appendChild(cleanPasteNode(child));
+                frag.appendChild(el);
+            } else {
+                // Disallowed tag — keep its children as plain content
+                frag.appendChild(cleanPasteNode(child));
+            }
+        }
+    });
+    return frag;
+}
+
+function sanitisePastedHtml(html) {
+    var tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    var out = document.createElement('div');
+    out.appendChild(cleanPasteNode(tmp));
+    return out.innerHTML;
+}
+
+(function() {
+    var editor = document.getElementById('f-full-description');
+    if (!editor) return;
+    editor.addEventListener('paste', function(e) {
+        e.preventDefault();
+        var html  = e.clipboardData.getData('text/html');
+        var plain = e.clipboardData.getData('text/plain');
+        var clean;
+        if (html) {
+            clean = sanitisePastedHtml(html);
+        } else {
+            // Plain text fallback: split double-newlines into paragraphs
+            clean = plain.split(/\n\n+/).map(function(p) {
+                return '<p>' + p.replace(/[<>&"]/g, function(c) {
+                    return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];
+                }).replace(/\n/g, '<br>') + '</p>';
+            }).join('');
+        }
+        document.execCommand('insertHTML', false, clean);
+    });
+})();
+
 function insertLink() {
     var url = prompt('Enter URL:');
     if (!url) return;
