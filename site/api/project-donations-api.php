@@ -41,7 +41,7 @@ function logProjectPayment($message, $level = 'INFO') {
         "[$timestamp] [$level] $message\n", FILE_APPEND | LOCK_EX);
 }
 
-function createProjectInvoice($project_id, $amount, $donor_name = '', $message = '', $donor_username = null, $recipient_username = null) {
+function createProjectInvoice($project_id, $amount, $donor_name = '', $message = '', $donor_username = null, $recipient_username = null, $donor_user_id = null) {
     // PROJECT DONATIONS API: Only handle projects 001+, reject site income
     if ($project_id === '000' || $project_id === 'site-income') {
         return ['success' => false, 'error' => 'Site income donations must use site-income-api.php'];
@@ -160,7 +160,7 @@ function createProjectInvoice($project_id, $amount, $donor_name = '', $message =
     // Only confirmed payments are logged via webhook processing
     
     // Store pending donation for payment tracking (project system only)
-    storePendingProjectDonation($project_id, $donation_id, $amount, $donor_name, $message, $invoice["text"], $invoice["paymentHash"] ?? $invoice["hash"] ?? "", $foundUsername ?? '', $donor_username);
+    storePendingProjectDonation($project_id, $donation_id, $amount, $donor_name, $message, $invoice["text"], $invoice["paymentHash"] ?? $invoice["hash"] ?? "", $foundUsername ?? '', $donor_username, $donor_user_id);
     
     return [
         'success' => true,
@@ -307,6 +307,7 @@ try {
                 $safe_project_id      = preg_replace('/[^a-z0-9\-]/', '', strtolower($input['project_id']));
                 $safe_username        = preg_replace('/[^a-z0-9_\-]/', '', strtolower($input['username'] ?? ''));
                 $safe_donor_username  = preg_replace('/[^a-z0-9_\-]/', '', strtolower($input['donor_username'] ?? ''));
+                $safe_donor_user_id   = preg_replace('/[^a-z0-9_\-]/', '', (string)($input['donor_user_id'] ?? ''));
 
                 $result = createProjectInvoice(
                     $safe_project_id,
@@ -314,7 +315,8 @@ try {
                     $input['donor_name'] ?? '',
                     $input['message'] ?? '',
                     $safe_donor_username ?: null,
-                    $safe_username ?: null
+                    $safe_username ?: null,
+                    $safe_donor_user_id ?: null
                 );
                 echo json_encode($result);
                 break;
@@ -372,13 +374,14 @@ try {
 }
 
 // Store pending project donation (project system only - no cross-system pollution)
-function storePendingProjectDonation($project_id, $donation_id, $amount, $donor_name, $message, $invoice, $payment_hash, $username = '', $donor_username = null) {
+function storePendingProjectDonation($project_id, $donation_id, $amount, $donor_name, $message, $invoice, $payment_hash, $username = '', $donor_username = null, $donor_user_id = null) {
     // Create project-specific pending donation entry
     $donation_entry = [
         'donation_id' => $donation_id,
         'project_id' => $project_id,
         'username' => $username,
         'donor_username' => $donor_username,
+        'donor_user_id' => $donor_user_id,
         'donor_name' => $donor_name ?: ($donor_username ?: 'Anonymous'),
         'donor_message' => $message,
         'amount_sats' => $amount,

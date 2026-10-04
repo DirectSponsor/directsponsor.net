@@ -719,10 +719,12 @@ function requestInvoice() {
 
     var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
     var donorUsername = null;
+    var donorUserId = null;
     if (jwt) {
         try {
             var payload = JSON.parse(atob(jwt.split('.')[1]));
             donorUsername = payload.username || payload.sub || null;
+            donorUserId = payload.sub || null;
         } catch(e) {}
     }
     var donorNameField = document.getElementById('donor-name').value.trim();
@@ -738,6 +740,7 @@ function requestInvoice() {
             amount: amount,
             donor_name: donorName,
             donor_username: donorUsername,
+            donor_user_id: donorUserId,
             message: donorMessage
         })
     })

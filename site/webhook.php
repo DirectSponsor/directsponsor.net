@@ -143,6 +143,61 @@ function whFiatToSats($amount, $currency, $rates) {
 }
 
 /**
+ * Fetch a user's basic profile from the central auth server — same lazy-load
+ * source used by simple-profile.php's fetchProfileFromAuthServer(). Prefixed
+ * wh_ to avoid collisions if ever included together.
+ */
+function wh_fetchAuthProfile($userId) {
+    $authUrl = "https://auth.directsponsor.org/api/sync.php?action=get&user_id=" . urlencode($userId) . "&data_type=profile";
+    $ch = curl_init($authUrl);
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 5, CURLOPT_FOLLOWLOCATION => true]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($httpCode === 200 && $response) {
+        $data = json_decode($response, true);
+        if ($data && $data['success'] && isset($data['data'])) {
+            return $data['data'];
+        }
+    }
+    return null;
+}
+
+/**
+ * Find the donor's local profile file, lazily creating it (seeded from the
+ * auth server) if this is their first-ever write to directsponsor.net —
+ * donating is often a brand new user's first action here, before they've
+ * ever loaded their own profile page. Mirrors the lazy-load pattern in
+ * simple-profile.php::loadProfileData() so both paths converge on the same
+ * file. Returns the profile file path, or null if there's nothing to find
+ * and not enough info (no user_id) to create one.
+ */
+function wh_ensureDonorProfileFile($donorUserId, $donorUsername) {
+    if (!$donorUsername) return null;
+
+    $existing = glob(DS_DATA_DIR . '/profiles/*-' . $donorUsername . '.txt');
+    if ($existing) return $existing[0];
+
+    if (!$donorUserId) return null;
+
+    $profileFile = DS_DATA_DIR . '/profiles/' . $donorUserId . '-' . $donorUsername . '.txt';
+    $authProfile = wh_fetchAuthProfile($donorUserId);
+    $newProfile = [
+        'user_id'       => $donorUserId,
+        'username'      => $donorUsername,
+        'display_name'  => $authProfile['display_name'] ?? $donorUsername,
+        'picture'       => $authProfile['picture'] ?? '',
+        'bio'           => $authProfile['bio'] ?? '',
+        'roles'         => ['member'],
+        'donations_made' => [],
+        'last_profile_update' => time(),
+    ];
+    file_put_contents($profileFile, json_encode($newProfile, JSON_PRETTY_PRINT));
+    logWebhook("Created local profile for donor $donorUsername (user_id=$donorUserId) — first directsponsor.net write");
+    return $profileFile;
+}
+
+/**
  * Extract payment hash from BOLT11 invoice
  */
 function extractPaymentHash($bolt11) {
@@ -518,6 +573,7 @@ function processProjectDonation($donation, $foundIndex, $webhookData) {
         'project_id' => $donation['project_id'],
         'donation_id' => $donation['donation_id'],
         'donor_username' => $donation['donor_username'] ?? null,
+        'donor_user_id' => $donation['donor_user_id'] ?? null,
         'donor_name' => $donation['donor_name'],
         'recipient_username' => $projectInfo['username'] ?? null,
         'amount_sats' => $amountSats,
@@ -534,10 +590,11 @@ function processProjectDonation($donation, $foundIndex, $webhookData) {
 
     // Also write directly to donor's profile so profile page needs no ledger scan
     $donorUsername = $donation['donor_username'] ?? null;
+    $donorUserId   = $donation['donor_user_id'] ?? null;
     if ($donorUsername) {
-        $profileGlob = glob(DS_DATA_DIR . '/profiles/*-' . $donorUsername . '.txt');
-        if ($profileGlob) {
-            $profileData = json_decode(file_get_contents($profileGlob[0]), true) ?: [];
+        $profileFile = wh_ensureDonorProfileFile($donorUserId, $donorUsername);
+        if ($profileFile) {
+            $profileData = json_decode(file_get_contents($profileFile), true) ?: [];
             if (!isset($profileData['donations_made'])) $profileData['donations_made'] = [];
             $profileData['donations_made'][] = [
                 'timestamp'    => date('Y-m-d H:i:s'),
@@ -547,8 +604,10 @@ function processProjectDonation($donation, $foundIndex, $webhookData) {
                 'donor_name'   => $donation['donor_name'],
                 'donor_message' => $donation['donor_message'] ?? '',
             ];
-            file_put_contents($profileGlob[0], json_encode($profileData, JSON_PRETTY_PRINT));
+            file_put_contents($profileFile, json_encode($profileData, JSON_PRETTY_PRINT));
             logWebhook("Appended donation to donor profile: $donorUsername");
+        } else {
+            logWebhook("Could not append donation to donor profile for $donorUsername — no existing profile file and no donor_user_id to create one", 'WARNING');
         }
     }
 
