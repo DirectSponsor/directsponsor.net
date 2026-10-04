@@ -172,13 +172,13 @@ JSON stored in `{userId}-{username}.txt`:
 ## Donation Flow
 
 1. Donor opens modal → name field auto-filled from JWT (editable); guests can type or leave blank
-2. Picks amount → JS decodes JWT for `donor_username` + reads name field → POST to `project-donations-api.php`
+2. Picks amount → JS decodes JWT for `donor_username` + `donor_user_id` (JWT `sub` claim) + reads name field → POST to `project-donations-api.php`
 3. `project-donations-api.php` finds `{username}/{id}-config.json`, reads Coinos API key, POSTs to Coinos API
 4. Invoice + QR shown in modal; poll loop checks payment status every 3s
 5. Coinos fires webhook → `webhook.php` confirms payment
 6. `webhook.php` updates `<!-- current-amount -->` and appends `<li>` to `<!-- recent_donations -->` in project HTML
 7. If `current-amount >= target-amount`: project HTML moved to `completed/`, next queued project becomes active
-8. `webhook.php` appends entry to donor's `donations_made` array in their profile file
+8. `webhook.php` appends entry to donor's `donations_made` array in their profile file — lazily creating the profile file first (seeded from the auth server, via `wh_ensureDonorProfileFile()`) if this is the donor's first-ever write to directsponsor.net. Needs `donor_user_id` to create a new file; if missing and no profile exists yet, logs a `WARNING` rather than silently dropping the entry.
 9. `transaction-ledger.json` updated as audit trail
 
 ---
@@ -239,6 +239,7 @@ json.dump(d, open(f,'w'), indent=2)
 
 - **`.incl` files are read-only (chmod 444)** — `site/cms/includes/*.incl` are intentionally read-only. To edit one: `chmod u+w <file>` → make changes → `chmod u-w <file>` → `bash build.sh site && bash deploy.sh --auto`. The comment at the top of each `.incl` file also reminds you of this.
 - **Profile glob pattern** — profile files are `{id}-{username}.txt`; webhook glob must be `*-{username}.txt`
+- **Donor profile may not exist yet at donation time** — donating is often a user's first-ever action on directsponsor.net (no profile file created yet). `webhook.php` needs `donor_user_id` (threaded through from the JWT `sub` claim in `fundraiser.html` → `project-donations-api.php` → pending entry → ledger) to lazily create the profile via `wh_ensureDonorProfileFile()`. Without it, the entry can't be written and a `WARNING` is logged instead — check `webhook.log` for these if the weekly `reconcile.py` alert reports "Missing from donor profiles"
 - **`my_donations` API needs query params** — `getUserId()` reads GET/POST params, not Authorization header; `loadMyDonations()` must pass `user_id` and `username` as query params
 - **`recent_donations` block required** — stub in `save-fundraiser.php` includes it; old files must be patched: `sed -i 's|</body>|<!-- recent_donations --><!-- end recent_donations -->\n</body>|' <file>`
 - **Coinos API key format** — Bearer JWT. Keys can expire; if invoice creation returns `user not provided`, the key needs regenerating from Coinos account settings

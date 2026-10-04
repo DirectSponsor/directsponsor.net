@@ -1,5 +1,5 @@
 # DirectSponsor — Progress Notes
-_Last updated: 2026-08-01 (session 15)_
+_Last updated: 2026-10-04_
 
 ## What's done and live
 
@@ -27,8 +27,8 @@ _Last updated: 2026-08-01 (session 15)_
 
 ### APIs (all under `/api/`)
 - `fundraiser-api.php` — `action=list` / `action=get&id=X&username=Y` / `action=user_projects&username=Y`
-- `project-donations-api.php` — creates Coinos invoice; passes `donor_username` through to pending entry
-- `webhook.php` — payment confirmation, updates `current-amount`, auto-advances queue; writes `donations_made` to donor's profile; logs to `transaction-ledger.json`
+- `project-donations-api.php` — creates Coinos invoice; passes `donor_username` + `donor_user_id` through to pending entry
+- `webhook.php` — payment confirmation, updates `current-amount`, auto-advances queue; writes `donations_made` to donor's profile (lazily creating the profile file from the auth server if this is the donor's first write — see bug history below); logs to `transaction-ledger.json`
 - `save-fundraiser.php` — saves fundraiser HTML comment-tags + writes `{id}-config.json`; falls back to profile's Coinos API key
 - `simple-profile.php` — profile CRUD + role management; `action=my_donations` reads `donations_made` from profile file
 - `auth-proxy.php` — proxies JWT validation to auth server
@@ -38,12 +38,12 @@ _Last updated: 2026-08-01 (session 15)_
 
 ### Donation flow (fully tested with real payments)
 1. Donor opens modal → name field auto-filled from JWT (editable); guests can type a name or leave blank
-2. Picks amount → JS decodes JWT to get `donor_username` and reads name field → `project-donations-api.php` POSTs to Coinos API
+2. Picks amount → JS decodes JWT to get `donor_username` + `donor_user_id` (JWT `sub` claim) and reads name field → `project-donations-api.php` POSTs to Coinos API
 3. Invoice + QR shown in modal, with Copy Invoice button
 4. Webhook fires → `webhook.php` updates `current-amount` (plain integer, no commas) in project HTML, appends `<li>` to `<!-- recent_donations -->` block
 5. Goal check: if `goal-currency` + `goal-fiat-amount` are set, convert fiat target to sats at **current live rate** (same logic as fundraiser-api.php display); else fall back to `target-amount`. When `current-amount >= computed target`: file moved to `completed/`, next queued project becomes active.
 6. Overpayment shown on project page; no sats lost
-7. `donor_username` written to `donations_made` in donor's profile file (for profile history)
+7. `donor_username` written to `donations_made` in donor's profile file (for profile history); profile file is lazily created from the auth server first if the donor doesn't have one yet (first-ever write to directsponsor.net)
 8. `transaction-ledger.json` updated as audit trail
 9. Poll loop detects payment → "Payment received!" → reload
 
@@ -361,6 +361,7 @@ Design principles (structural, not rules):
 - **Profile `username` field blank on creation** (fixed 2026-06-07): profile files were created with the correct `{id}-{username}.txt` filename but `"username": ""` in the JSON. Cause: `site-utils.js` called `simple-profile.php?action=profile` without passing `username`, so `getUsername()` returned `""` and the new-profile path wrote a blank field. Fixed by (1) passing `username` in the profile fetch in `site-utils.js`, and (2) adding a backfill in `loadProfileData()` that patches and saves the file if `username` is blank but a hint is now available. Admin search (`searchProfiles`) matches on the JSON field, so users with blank usernames were invisible to search.
 - **`.well-known/` excluded from deploy** (fixed 2026-06-07): `deploy.sh` rsync had `--exclude='.*'` which excluded the `.well-known/` directory. Fixed by adding `--include='.well-known/'` and `--include='.well-known/**'` before the exclude rule.
 - **Ledger stored recipient as donor_username** (fixed 2026-04-08): `webhook.php` line 412 used `$donation['username']` (= recipient) instead of `$donation['donor_username']` (= actual donor) when writing the ledger entry. Fixed to `$donation['donor_username']`. Historical entries where donor==recipient in the ledger are flagged as "suspect" by the reconcile script — they are pre-fix test/self-donations lost to the glob bug, not a financial integrity issue.
+- **Donation silently missing from donor's profile when no local profile file existed yet** (fixed 2026-10-04, found via the weekly `reconcile-notify.sh` Telegram alert — "Missing from donor profiles: 3"): `webhook.php`'s profile-append step only did `glob(profiles/*-{username}.txt)` and silently did nothing if it found no match — unlike `simple-profile.php`, which lazily creates a profile from the auth server (`sync.php`) on first real use. Donating is often a user's very first action on directsponsor.net (one case was a brand-new signup who donated ~7 minutes after creating their account, before ever loading their own profile page), so no local profile file existed for the webhook to write into. The ledger and project HTML were always correct — only the profile copy (used by `my_donations` / profile page) was missing the entry, with no error logged. Fixed by adding `donor_user_id` (from the JWT `sub` claim) end-to-end — `fundraiser.html` → `project-donations-api.php` → pending entry → ledger entry — so `webhook.php` can call a new `wh_ensureDonorProfileFile()` (mirrors `simple-profile.php`'s lazy-load/create logic) before appending the donation, instead of skipping. If a profile still can't be created (no `donor_user_id`, e.g. very old pending entries), it now logs a `WARNING` instead of failing silently. Backfilled the 3 missing entries for the two affected donors (`comet`, `kirubai` — both legitimate accounts, confirmed against the auth server's `users` table).
 
 ### Session 12 — JWT signature verification (2026-07-01)
 
