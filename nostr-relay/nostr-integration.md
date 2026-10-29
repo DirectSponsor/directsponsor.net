@@ -33,18 +33,27 @@ ssh RN1 "journalctl -u strfry -f"
 ### Next steps
 - [x] Generate per-user Nostr keypairs in `save-post.php` and store in profile files
 - [x] Sign and publish events to relay when posts are saved
-- [ ] **NIP-05 + display names** — two parts done together:
-  1. Serve `/.well-known/nostr.json` mapping usernames → pubkeys (NIP-05 verification — gives `username@directsponsor.net` with green tick in clients)
-  2. Publish a **kind 0 metadata event** when keypair is first generated: `{"name":"<username>","nip05":"<username>@directsponsor.net"}` — this replaces the random generated name (e.g. "adequate vicuna") with the real DS username in all Nostr clients
-- [ ] **Video embeds in posts** — support YouTube and Odysee URLs pasted into post body; auto-convert to `<iframe>` embeds on display. Both support standard embed URLs. Keep it opt-in (only embed if URL is on its own line) so plain text links still work.
-- [ ] **Reply visibility via shared relays (outbox model)** — when DS publishes a post, also broadcast to a small hardcoded list of well-connected public relays (e.g. `relay.damus.io`, `nos.lol`, `relay.nostr.band`) as best-effort fire-and-forget. When displaying a post, query those same relays for replies/reactions by `nostr_event_id`. This means anyone replying via any Nostr client (Iris, Damus, etc.) on those shared relays will have their reply visible on the DS post page — without DS needing to be a full Nostr client.
+- [x] **NIP-05 + display names** — both parts live:
+  1. `site/.well-known/nostr.php` serves `/.well-known/nostr.json` mapping usernames → pubkeys (NIP-05 verification — gives `username@directsponsor.net` with green tick in clients)
+  2. `save-post.php` publishes a **kind 0 metadata event** on a user's first post: `{"name":"<username>","nip05":"<username>@directsponsor.net"}` — replaces the random generated name (e.g. "adequate vicuna") with the real DS username in all Nostr clients. Gated by `nostr_metadata_hash` in the profile file so it only re-fires if the content changes.
+- [x] **Reply visibility via shared relays (outbox model)** — `save-post.php` broadcasts every new post (kind 1) and the kind 0 metadata event to `relay.damus.io`, `relay.primal.net`, and `nos.lol` in addition to the local strfry relay, via `nostr_publish_ws()`. Fully automatic — no user action needed; this is how we get propagation/reach on the wider network without opening our own relay to public writes. `posts.html` queries those same three relays client-side to pull in replies by `nostr_event_id` and display them under each post.
   - **Intentional scope boundary**: DS is not a Nostr client and will not become one. We show replies *to DS posts* from the wider network — that's it. Users who want full Nostr participation (browsing feeds, following people, cross-client messaging) should use a dedicated client. This boundary keeps DS simple and avoids infinite scope creep.
-  - Implementation: `save-post.php` gets a `broadcast_to_shared_relays()` helper; post display JS gets a `fetchExternalReplies(eventId, sharedRelays)` function querying the same list.
-- [ ] Display Nostr replies on post pages (client-side JS querying public relays by `nostr_event_id`)
+  - Relay list is currently hardcoded identically in both `save-post.php` and `simple-profile.php` (`$external_relays` / `$nostr_external_relays`) — worth extracting to one shared constant if a fourth relay is ever added.
+- [ ] **Video embeds in posts** — support YouTube and Odysee URLs pasted into post body; auto-convert to `<iframe>` embeds on display. Both support standard embed URLs. Keep it opt-in (only embed if URL is on its own line) so plain text links still work.
 - [ ] Tighten write policy to allowlist DS-issued pubkeys only
 - [ ] **User-facing Nostr docs** — explain that replies from Nostr users are visible on the site, but replying *back* to a Nostr user requires a Nostr client (Iris, Damus, Amethyst etc.) using the user's own key. DS users who want to engage in those threads will need their npub exported. Keep it simple — most users won't care, but power users will want to know.
-- [ ] Future: public relay on ES6 for wider Nostr network reach
 - [ ] **LNURL-pay / NIP-57 zap support** — see `lnurl-zap-integration.md` for full spec
+
+### Scope decision: this relay stays closed; decentralization happens by cloning, not by opening up
+`relay.directsponsor.net` itself stays **write-restricted to DS-issued keys** — no public/open writes, ever. That's final.
+
+The "decentralized network" idea is not dead, but it's a different shape than the old aspirational docs below describe. Instead of *one* platform running both a private relay and a public relay that strangers write to, the actual direction is:
+- Other communities/projects **clone this exact closed-relay setup** (same strfry config, write policy, broadcast-to-public-relays pattern) and run their *own* independent, equally closed relay for their own users
+- Reach into the wider Nostr ecosystem still happens the same way DS already does it — each node's own posts get broadcast outward to the big public relays (damus, primal, nos.lol, etc.) and replies get pulled back in — not by any node accepting outside writes
+- Longer-term, "networked up" could mean these sibling closed relays becoming aware of each other (e.g. a shared allowlist/discovery doc, or cross-posting between known node operators) — not yet designed, just the direction
+- A packaged "relay-in-a-box" (install script + config) is the natural artifact for this, if/when there's appetite to publish it — see the `Community Relay Package` sketch further down, which predates this clarification but is still roughly the right shape
+
+This supersedes the old "es6 public relay" plan specifically (a single open-write relay bolted onto DS) — that one part is dropped. The broader multi-relay vision in `projects/DIRECTSPONSOR_DECENTRALIZED_NETWORK.md` and the speculative sections further down this file are being reframed around "many closed clones," not "one public relay" — treat the Phase/Scenario content below as directional inspiration, not a literal spec.
 
 ---
 
@@ -70,19 +79,14 @@ When a user registers, we plan to generate a Nostr keypair server-side and store
 
 | Server | Specs | Role |
 |--------|-------|------|
-| **RN1** (`104.168.38.197`) | 4GB RAM, 62GB disk, 3 cores | directsponsor.net + **private Nostr relay** (write-restricted to registered users) |
-| **ES6** | 3GB RAM, 100GB disk, 1 core | Future **public Nostr relay** (open writes, bridges content to wider network) |
+| **RN1** (`104.168.38.197`) | 4GB RAM, 62GB disk, 3 cores | directsponsor.net + **private Nostr relay** (write-restricted to DS-issued keys) |
 | **dr1** | 2GB RAM, 30GB disk, 1 core | Browser bookmarks sync server (separate project, `browser-sync/`) |
 
 **Rationale:**
-- Private relay on RN1 first — low risk, plenty of headroom (3.5GB RAM free, 58GB disk free), source of truth for our users' content
-- ES6 kept for public relay: larger disk (events accumulate), more bandwidth (3TB), not needed until private relay is stable
+- Private relay on RN1 — low risk, plenty of headroom (3.5GB RAM free, 58GB disk free), source of truth for our users' content
 - dr1 is overkill for bookmarks sync (tiny payloads, low frequency) but that's fine — it's cheap
-
-**Future public relay notes:**
-- When ES6 public relay is live, `save-post.php` broadcasts to both: private relay (guaranteed) + public relay (best effort, for Nostr network reach)
-- Even if the public relay prunes content, the private relay retains everything
-- Consider a second cheap VPS ($5-6/mo) if ES6 gets repurposed
+- There is no second, open-write relay planned for DirectSponsor itself (see "Scope decision" above). Outward reach to the Nostr network is handled entirely by broadcasting our own signed posts to public relays (`relay.damus.io`, `relay.primal.net`, `nos.lol`) — already implemented in `save-post.php`.
+- es6 was earlier earmarked for a public open-write relay; that plan is dropped. If a sibling closed relay is ever stood up by another community cloning this setup, it would run on its own infrastructure, not es6-as-"the" public relay.
 
 ---
 

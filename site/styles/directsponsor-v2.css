@@ -1013,7 +1013,8 @@ ul li {
 }
 .write-box-actions-left  { display: table-cell; vertical-align: middle; }
 .write-box-actions-right { display: table-cell; vertical-align: middle; text-align: right; }
-.write-box input[type="text"] {
+.write-box input[type="text"],
+.write-box input[type="url"] {
     width: 100%;
     padding: 0.5em 0.6em;
     border: 1px solid var(--border);
@@ -1025,7 +1026,8 @@ ul li {
     box-sizing: border-box;
     margin-bottom: 0.5em;
 }
-.write-box input[type="text"]:focus { outline: none; border-color: var(--link); }
+.write-box input[type="text"]:focus,
+.write-box input[type="url"]:focus { outline: none; border-color: var(--link); }
 
 .wysiwyg-toolbar {
     border: 1px solid var(--border);
@@ -1086,6 +1088,42 @@ ul li {
 }
 .article-fields { display: none; margin-top: 0.8em; }
 .article-fields.open { display: block; }
+
+.post-mode-switch { display: none; margin-bottom: 0.7em; }
+.post-mode-switch.open { display: block; }
+.post-mode-btn {
+    background: var(--bg-page);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.35em 0.8em;
+    font-family: inherit;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+.post-mode-btn.is-on {
+    background: var(--link);
+    border-color: var(--link);
+    color: #fff;
+}
+.news-fields { display: none; }
+.news-fields.open { display: block; }
+.news-fields label {
+    display: block;
+    font-size: 0.9em;
+    margin: 0.7em 0 0.25em;
+}
+.news-form-note {
+    font-size: 0.85em;
+    color: var(--text-muted);
+    margin: 0 0 0.4em;
+}
+.news-counter {
+    font-size: 0.8em;
+    text-align: right;
+    color: var(--text-muted);
+    margin-top: 0.2em;
+}
+.post-kind { color: var(--link); }
 
 .post-card {
     background: var(--bg-card);

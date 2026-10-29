@@ -12,7 +12,7 @@ _Last updated: 2026-10-04_
 - Profile files named `{userId}-{username}.txt` under `userdata/profiles/`
 - Nav: logo = home link; links are Fundraisers, Posts, About (all pages via `social-layout-start.incl`)
 - Login links force `https://` in `redirect_uri` even when page visited over HTTP
-- **Backups** (2026-04-03): `/root/backup-rn1-directsponsor.sh` runs every 6h → servarica1 + dr4; monitored by `verify-all-backups.sh` on ES3 with Telegram alerts
+- **Backups** (2026-04-03): `/root/backup-rn1-directsponsor.sh` runs every 6h → servarica1 + dr4; monitored by `verify-all-backups.sh` on es3 with Telegram alerts
 
 ### Pages (all live on directsponsor.net)
 - `index.html` — homepage
@@ -369,7 +369,7 @@ Design principles (structural, not rules):
 
 **Fix:**
 - New `site/api/jwt-verify.php`: shared `verifyJwt($jwt)` + `getCallerFromJwt($input)` — performs proper HMAC-SHA256 signature check using `hash_equals()` (timing-safe) before trusting any payload claim.
-- JWT secret (`simple_secret_2025`) stored server-only at `/etc/ds-jwt-secret` (owner: `root`, group: `www-data`, mode: `640`) — never in git.
+- JWT secret stored server-only at `/etc/ds-jwt-secret` (owner: `root`, group: `www-data`, mode: `640`) — never in git.
 - All five affected endpoints now `require_once 'jwt-verify.php'` and use `getCallerFromJwt()`.
 - `simple-profile.php` POST actions now require a verified JWT (identity from JWT, not GET/POST params); `search` (admin-only GET) also requires JWT in Authorization header.
 - Removed hardcoded `define('JWT_SECRET', ...)` from `save-fundraiser.php`.

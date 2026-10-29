@@ -143,6 +143,20 @@ JSON stored in `{userId}-{username}.txt`:
 
 ---
 
+## Community Chat
+
+DS embeds the roflfaucet community chat on every page as a floating panel (bottom-right). It is **not** a separate chat system — it's an iframe pointing at `https://roflfaucet.com/chat-widget-frame.php`.
+
+Full documentation: `/home/andy/work/projects/roflfaucet/docs/chat-system.md`
+
+Key points for DS work:
+- The floating panel HTML + JS lives in `site/cms/includes/social-layout-end.incl` (read-only, see Known Gotchas)
+- Styles are in the `.chat-float-*` block in `site/styles/directsponsor-compact.css`
+- Auth is handled by passing the DS JWT as a URL param to the iframe src; the frame page fakes `window.unifiedBalance` so the chat widget sees the user as logged in
+- The iframe `src` is set lazily by JS (deferred until the panel is opened) to avoid unnecessary network requests
+
+---
+
 ## Key Files
 
 | File | Purpose |

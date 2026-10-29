@@ -3,3 +3,7 @@ RewriteEngine On
 # Serve fundraiser.html via fundraiser.php so social crawlers get per-fundraiser OG tags
 RewriteCond %{QUERY_STRING} (?:^|&)project=
 RewriteRule ^fundraiser\.html$ /fundraiser.php [L,QSA]
+
+# Serve posts.html via post.php so social crawlers get per-post OG tags
+RewriteCond %{QUERY_STRING} (?:^|&)post_id=
+RewriteRule ^posts\.html$ /post.php [L,QSA]

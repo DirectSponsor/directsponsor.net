@@ -18,7 +18,7 @@ define('LOGS_DIR', DS_DATA_DIR . '/logs');
 // Configuration
 define('AUTH_SERVER', 'http://auth.directsponsor.org');
 define('DATA_SERVER', 'http://data.directsponsor.org'); 
-define('JWT_SECRET', 'hybrid_fresh_2025_secret_key');
+define('JWT_SECRET', trim(@file_get_contents('/etc/ds-jwt-secret') ?: ''));
 define('SITE_ID', 'directsponsor');
 
 class SessionBridge {

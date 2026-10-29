@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-define('USERDATA_DIR', '/var/www/directsponsor.net/userdata');
+define('USERDATA_DIR', getenv('DS_USERDATA') ?: '/var/www/directsponsor.net/userdata');
 
 function nostr_build_kind0_content($profile, $username) {
     $meta = ['name' => $username, 'nip05' => $username . '@directsponsor.net'];
@@ -124,6 +124,22 @@ function fetch_link_preview($url) {
     ];
 }
 
+function ds_chars($s) {
+    $n = preg_match_all('/./u', $s, $m);
+    return $n === false ? -1 : $n;
+}
+
+function ds_is_recipient($username) {
+    $safe = preg_replace('/[^a-zA-Z0-9_-]/', '', $username);
+    if ($safe === '' || strcasecmp($safe, $username) !== 0) return false;
+    foreach (glob(USERDATA_DIR . '/profiles/*-' . $safe . '.txt') ?: [] as $file) {
+        $data = json_decode(file_get_contents($file), true);
+        if (!$data || strcasecmp($data['username'] ?? '', $username) !== 0) continue;
+        return in_array('recipient', $data['roles'] ?? [], true);
+    }
+    return false;
+}
+
 $input = json_decode(file_get_contents('php://input'), true);
 if (!$input) {
     http_response_code(400);
@@ -146,10 +162,17 @@ if (!$callerUsername || !$callerId) {
 
 // Parse fields
 $intro = trim($input['intro'] ?? '');
-$title = trim($input['title'] ?? '');
+$title = trim(preg_replace('/\s+/u', ' ', strip_tags($input['title'] ?? '')));
 $body  = trim($input['body'] ?? '');
 $image_url = trim($input['image_url'] ?? '');
 $post_id = trim($input['post_id'] ?? '');
+$link = trim($input['link'] ?? '');
+
+if ($post_id !== '' && !preg_match('/^[0-9]+$/', $post_id)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Invalid post id']);
+    exit;
+}
 
 if (!$intro) {
     http_response_code(400);
@@ -159,12 +182,9 @@ if (!$intro) {
 
 // Editing existing post vs creating new
 $postsDir = USERDATA_DIR . '/posts/' . $callerUsername;
-if (!is_dir($postsDir)) {
-    mkdir($postsDir, 0755, true);
-}
 
 if ($post_id) {
-    // Edit: find the file
+    // Edit: find the file. Kind stays as it was stored.
     $existing = glob($postsDir . '/' . $post_id . '-*.json');
     if (!$existing) {
         http_response_code(404);
@@ -173,36 +193,97 @@ if ($post_id) {
     }
     $postFile = $existing[0];
     $post = json_decode(file_get_contents($postFile), true) ?: [];
+    $kind = (($post['kind'] ?? '') === 'news') ? 'news' : 'post';
+} else {
+    $kind = (($input['kind'] ?? '') === 'news') ? 'news' : 'post';
+    $post = null;
+    $postFile = null;
+}
+
+if ($kind === 'news') {
+    if (!ds_is_recipient($callerUsername)) {
+        http_response_code(403);
+        echo json_encode(['error' => 'News updates are for recipients']);
+        exit;
+    }
+    $intro = trim(preg_replace('/\s+/u', ' ', strip_tags($intro)));
+    if ($title === '') {
+        http_response_code(400);
+        echo json_encode(['error' => 'A title is required']);
+        exit;
+    }
+    if (ds_chars($title) < 0 || ds_chars($title) > 100) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Title is too long']);
+        exit;
+    }
+    if ($intro === '') {
+        http_response_code(400);
+        echo json_encode(['error' => 'A description is required']);
+        exit;
+    }
+    if (ds_chars($intro) < 0 || ds_chars($intro) > 200) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Description is too long']);
+        exit;
+    }
+    if ($link !== '' && !preg_match('#^https?://#i', $link)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Link must start with http:// or https://']);
+        exit;
+    }
+    if (strlen($link) > 500) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Link is too long']);
+        exit;
+    }
+    if ($image_url !== '' && !preg_match('#^(https?://|/)#i', $image_url)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Image URL is not valid']);
+        exit;
+    }
+    $body = '';
+}
+
+if ($post) {
     $post['title']     = $title;
     $post['intro']     = $intro;
     $post['body']      = $body;
     $post['image_url'] = $image_url;
+    $post['kind']      = $kind;
     $post['updated']   = time();
+    if ($kind === 'news') $post['link'] = $link;
 } else {
-    // New post
     $ts = time();
     $slug = $title
         ? preg_replace('/[^a-z0-9]+/', '-', strtolower($title))
         : 'post';
     $slug = trim($slug, '-');
-    $post_id = $ts;
-    $postFile = $postsDir . '/' . $ts . '-' . $slug . '.json';
+    $post_id = (string)$ts;
+    $postFile = $postsDir . '/' . $ts . '-' . ($slug !== '' ? $slug : 'post') . '.json';
     $post = [
-        'post_id'   => (string)$ts,
+        'post_id'   => $post_id,
         'username'  => $callerUsername,
         'user_id'   => $callerId,
         'title'     => $title,
         'intro'     => $intro,
         'body'      => $body,
         'image_url' => $image_url,
+        'kind'      => $kind,
         'created'   => $ts,
         'updated'   => $ts,
     ];
+    if ($kind === 'news') $post['link'] = $link;
 }
 
-$previewUrl = extract_first_url($intro . ' ' . $body);
+$previewUrl = ($kind === 'news' && $link !== '')
+    ? $link
+    : extract_first_url($intro . ' ' . $body);
 $post['link_preview'] = $previewUrl ? fetch_link_preview($previewUrl) : null;
 
+if (!is_dir($postsDir)) {
+    mkdir($postsDir, 0755, true);
+}
 file_put_contents($postFile, json_encode($post, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
 // Nostr: get or create keypair, sign event, import to relay
@@ -257,6 +338,7 @@ if ($profileGlob) {
                 : 'https://directsponsor.net' . $image_url;
             $content .= "\n\n" . $absImage;
         }
+        if (!empty($post['link'])) $content .= "\n\n" . $post['link'];
         $content .= "\n\n" . $dsPostUrl;
         $nostrEvent = json_encode([
             'kind'       => 1,

@@ -171,9 +171,27 @@ function dsLogout() {
 <!-- Write box (logged-in users only) -->
 <div id="write-box-wrap" style="display:none;">
     <div class="write-box">
-        <textarea id="post-intro" placeholder="What's on your mind? (required — shown in the feed)" rows="3"></textarea>
-        <div id="intro-counter" style="font-size:0.8em;text-align:right;color:var(--text-muted);margin-top:0.2em;">0 / 500</div>
-        <div id="intro-hint" style="display:none;font-size:0.82em;color:var(--link);margin-top:0.2em;">Got more to say? Use <button class="article-toggle" onclick="toggleArticle()" style="font-size:1em;">✏️ Write an article</button> below.</div>
+        <div id="post-mode-switch" class="post-mode-switch">
+            <button type="button" id="mode-update" class="post-mode-btn is-on" onclick="setPostMode('update')">Update</button>
+            <button type="button" id="mode-news" class="post-mode-btn" onclick="setPostMode('news')">News update</button>
+        </div>
+        <div id="update-fields">
+            <textarea id="post-intro" placeholder="What's on your mind? (required — shown in the feed)" rows="3"></textarea>
+            <div id="intro-counter" style="font-size:0.8em;text-align:right;color:var(--text-muted);margin-top:0.2em;">0 / 500</div>
+            <div id="intro-hint" style="display:none;font-size:0.82em;color:var(--link);margin-top:0.2em;">Got more to say? Use <button class="article-toggle" onclick="toggleArticle()" style="font-size:1em;">✏️ Write an article</button> below.</div>
+        </div>
+        <div id="news-fields" class="news-fields">
+            <p class="news-form-note">A news update is shared as a social card. The title and description are what people see.</p>
+            <label for="news-title">Title</label>
+            <input type="text" id="news-title" maxlength="100" placeholder="A clear headline, e.g. First maize harvest at Badilisha">
+            <div id="news-title-counter" class="news-counter">0 / 100</div>
+            <label for="news-description">Description</label>
+            <textarea id="news-description" maxlength="200" rows="3" placeholder="One or two sentences. This is the text on the social card."></textarea>
+            <div id="news-desc-counter" class="news-counter">0 / 200</div>
+            <label for="news-link">Link (optional)</label>
+            <input type="url" id="news-link" placeholder="https:// — a fundraiser, project page, or article">
+            <p class="news-form-note">Image is optional. If you leave it out, the linked page's image is used.</p>
+        </div>
         <div id="image-row" style="margin-top:0.4em;">
             <input type="file" id="post-image-file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" style="display:none;">
             <input type="hidden" id="post-image-url">
@@ -250,6 +268,7 @@ function dsLogout() {
 var _jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
 var _username = null, _userId = null;
 var _editingPostId = null;
+var _postMode = 'update';
 
 if (_jwt) {
     try {
@@ -259,6 +278,15 @@ if (_jwt) {
     } catch(e) {}
     if (_username) {
         document.getElementById('write-box-wrap').style.display = '';
+        fetch('/api/simple-profile.php?action=public_profile&username=' + encodeURIComponent(_username))
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                var roles = (d.profile && d.profile.roles) || [];
+                if (roles.indexOf('recipient') !== -1) {
+                    document.getElementById('post-mode-switch').classList.add('open');
+                }
+            })
+            .catch(function() {});
     }
 }
 
@@ -295,6 +323,38 @@ if (_viewUser && _viewPostId) {
         hint.style.display = len > 350 ? '' : 'none';
     });
 })();
+
+function bindCounter(inputId, counterId, max) {
+    var input = document.getElementById(inputId);
+    var counter = document.getElementById(counterId);
+    function update() {
+        counter.textContent = input.value.length + ' / ' + max;
+    }
+    input.addEventListener('input', update);
+    update();
+}
+bindCounter('news-title', 'news-title-counter', 100);
+bindCounter('news-description', 'news-desc-counter', 200);
+
+function setPostMode(mode) {
+    var next = mode === 'news' ? 'news' : 'update';
+    if (_editingPostId && next !== _postMode) return;
+    _postMode = next;
+    var news = _postMode === 'news';
+    document.getElementById('update-fields').style.display = news ? 'none' : '';
+    document.getElementById('news-fields').classList.toggle('open', news);
+    document.getElementById('article-toggle-btn').style.display = news ? 'none' : '';
+    var article = document.getElementById('article-fields');
+    if (news) article.style.display = 'none';
+    else article.style.display = '';
+    document.getElementById('mode-update').className = 'post-mode-btn' + (news ? '' : ' is-on');
+    document.getElementById('mode-news').className = 'post-mode-btn' + (news ? ' is-on' : '');
+    if (!_editingPostId) {
+        var articleOpen = article.classList.contains('open');
+        document.getElementById('post-submit-btn').textContent = news ? 'Share news' : (articleOpen ? 'Publish' : 'Post');
+        syncBtn2();
+    }
+}
 
 // Image upload
 document.getElementById('post-image-file').addEventListener('change', function() {
@@ -404,19 +464,38 @@ function syncBtn2() {
 }
 
 function submitPost() {
-    var intro = document.getElementById('post-intro').value.trim();
-    if (!intro) { setStatus('Please add a summary in the text box above — it\'s required and shown in the feed.', true); document.getElementById('post-intro').focus(); return; }
+    var news = _postMode === 'news';
+    var intro, title, body, link, kind;
+    if (news) {
+        title = document.getElementById('news-title').value.trim();
+        intro = document.getElementById('news-description').value.trim();
+        link = document.getElementById('news-link').value.trim();
+        body = '';
+        kind = 'news';
+        if (!title) { setStatus('Add a title. It is the headline on the social card.', true); document.getElementById('news-title').focus(); return; }
+        if (!intro) { setStatus('Add a description. It is the text on the social card.', true); document.getElementById('news-description').focus(); return; }
+        if (link && !/^https?:\/\//i.test(link)) { setStatus('The link needs to start with http:// or https://', true); document.getElementById('news-link').focus(); return; }
+    } else {
+        intro = document.getElementById('post-intro').value.trim();
+        if (!intro) { setStatus('Please add a summary in the text box above — it\'s required and shown in the feed.', true); document.getElementById('post-intro').focus(); return; }
+        title = document.getElementById('post-title').value.trim();
+        body = (function(){ var h = document.getElementById('post-body').innerHTML.trim(); return h === '' ? '' : h.replace(/<div>/gi,'<p>').replace(/<\/div>/gi,'</p>'); })();
+        link = '';
+        kind = 'post';
+    }
     var btn = document.getElementById('post-submit-btn');
     btn.disabled = true;
     syncBtn2();
-    setStatus(_editingPostId ? 'Updating...' : 'Posting...');
+    setStatus(_editingPostId ? 'Updating...' : (news ? 'Sharing...' : 'Posting...'));
     fetch('/api/save-post.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _jwt },
         body: JSON.stringify({
             intro:     intro,
-            title:     document.getElementById('post-title').value.trim(),
-            body:      (function(){ var h = document.getElementById('post-body').innerHTML.trim(); return h === '' ? '' : h.replace(/<div>/gi,'<p>').replace(/<\/div>/gi,'</p>'); })(),
+            title:     title,
+            body:      body,
+            link:      link,
+            kind:      kind,
             image_url: document.getElementById('post-image-url').value,
             post_id:   _editingPostId || '',
             jwt:       _jwt,
@@ -427,16 +506,7 @@ function submitPost() {
     .then(function(d) {
         btn.disabled = false;
         if (d.success) {
-            document.getElementById('post-intro').value = '';
-            document.getElementById('post-title').value = '';
-            document.getElementById('post-body').innerHTML = '';
-            clearImage();
-            if (document.getElementById('article-fields').classList.contains('open')) toggleArticle();
-            setStatus('');
-            _editingPostId = null;
-            document.getElementById('post-submit-btn').textContent = 'Post';
-            document.getElementById('cancel-edit-btn').style.display = 'none';
-            syncBtn2();
+            resetComposer();
             loadFeed(false);
         } else {
             btn.disabled = false;
@@ -454,11 +524,34 @@ function editPost(postId, username) {
             if (!d.success || !d.post) { alert('Could not load post for editing.'); return; }
             var p = d.post;
             document.getElementById('write-box-wrap').style.display = '';
-            document.getElementById('post-intro').value = p.intro || '';
-            document.getElementById('post-title').value = p.title || '';
-            document.getElementById('post-body').innerHTML = p.body || '';
-            if ((p.title || p.body) && !document.getElementById('article-fields').classList.contains('open')) {
-                toggleArticle();
+            _editingPostId = null;
+            if (p.kind === 'news') {
+                document.getElementById('post-intro').value = '';
+                document.getElementById('post-title').value = '';
+                document.getElementById('post-body').innerHTML = '';
+                if (document.getElementById('article-fields').classList.contains('open')) toggleArticle();
+                setPostMode('news');
+                document.getElementById('news-title').value = p.title || '';
+                document.getElementById('news-description').value = p.intro || '';
+                document.getElementById('news-link').value = p.link || '';
+                document.getElementById('news-title').dispatchEvent(new Event('input'));
+                document.getElementById('news-description').dispatchEvent(new Event('input'));
+            } else {
+                setPostMode('update');
+                document.getElementById('post-intro').value = p.intro || '';
+                document.getElementById('post-title').value = p.title || '';
+                document.getElementById('post-body').innerHTML = p.body || '';
+                document.getElementById('post-intro').dispatchEvent(new Event('input'));
+                if ((p.title || p.body) && !document.getElementById('article-fields').classList.contains('open')) {
+                    toggleArticle();
+                }
+            }
+            if (p.image_url) {
+                document.getElementById('post-image-url').value = p.image_url;
+                document.getElementById('image-preview-thumb').src = p.image_url;
+                document.getElementById('image-preview-wrap').style.display = '';
+            } else {
+                clearImage();
             }
             _editingPostId = postId;
             document.getElementById('post-submit-btn').textContent = 'Update';
@@ -471,17 +564,28 @@ function editPost(postId, username) {
         .catch(function() { alert('Network error. Could not load post.'); });
 }
 
-function cancelEdit() {
+function resetComposer() {
     _editingPostId = null;
     document.getElementById('post-intro').value = '';
     document.getElementById('post-title').value = '';
     document.getElementById('post-body').innerHTML = '';
+    document.getElementById('news-title').value = '';
+    document.getElementById('news-description').value = '';
+    document.getElementById('news-link').value = '';
+    document.getElementById('post-intro').dispatchEvent(new Event('input'));
+    document.getElementById('news-title').dispatchEvent(new Event('input'));
+    document.getElementById('news-description').dispatchEvent(new Event('input'));
     clearImage();
     if (document.getElementById('article-fields').classList.contains('open')) toggleArticle();
+    setPostMode('update');
     document.getElementById('post-submit-btn').textContent = 'Post';
     document.getElementById('cancel-edit-btn').style.display = 'none';
     syncBtn2();
     setStatus('');
+}
+
+function cancelEdit() {
+    resetComposer();
 }
 
 var _feedOffset = 0;
@@ -517,11 +621,13 @@ function buildCard(p) {
     var div = document.createElement('div');
     div.className = 'post-card';
     var date = new Date(p.created * 1000).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'});
-    var html = '<div class="post-card-meta">By <a href="profile.html?user=' + esc(p.username) + '">' + esc(p.username) + '</a> &middot; ' + date + '</div>';
+    var kindLabel = p.kind === 'news' ? '<span class="post-kind">News</span> · ' : '';
+    var html = '<div class="post-card-meta">' + kindLabel + 'By <a href="profile.html?user=' + esc(p.username) + '">' + esc(p.username) + '</a> &middot; ' + date + '</div>';
     if (p.title) html += '<h2><a href="posts.html?user=' + esc(p.username) + '&post_id=' + esc(p.post_id) + '">' + esc(p.title) + '</a></h2>';
     if (p.image_url) html += '<div class="post-image"><img src="' + esc(p.image_url) + '" alt="" loading="lazy"></div>';
     html += '<p class="post-intro">' + linkify(p.intro) + '</p>';
     if (p.link_preview) html += buildLinkPreview(p.link_preview);
+    else if (p.link) html += '<p class="post-intro"><a href="' + esc(p.link) + '" target="_blank" rel="noopener">' + esc(p.link) + '</a></p>';
     if (p.has_body) html += '<div class="read-more"><a href="posts.html?user=' + esc(p.username) + '&post_id=' + esc(p.post_id) + '">Read more →</a></div>'; 
     var cCount = p.comment_count || 0;
     var cLabel = cCount > 0 ? '💬 ' + cCount + ' ' + (cCount === 1 ? 'comment' : 'comments') : '💬 Comment';
@@ -551,10 +657,12 @@ function loadSinglePost(username, postId) {
             var html = '<a href="posts.html" class="back-link color-muted">← All posts</a>';
             html += '<div class="post-full">';
             if (p.title) html += '<h1>' + esc(p.title) + '</h1>';
-            html += '<div class="post-card-meta">By <a href="profile.html?user=' + esc(p.username) + '">' + esc(p.username) + '</a> &middot; ' + date + '</div>';
+            var kindLabel = p.kind === 'news' ? '<span class="post-kind">News</span> · ' : '';
+            html += '<div class="post-card-meta">' + kindLabel + 'By <a href="profile.html?user=' + esc(p.username) + '">' + esc(p.username) + '</a> &middot; ' + date + '</div>';
             if (p.image_url) html += '<div class="post-image" style="margin:0.6em 0;"><img src="' + esc(p.image_url) + '" alt="" style="max-width:100%;border-radius:0.3em;"></div>';
             html += '<p class="post-intro">' + linkify(p.intro) + '</p>';
             if (p.link_preview) html += buildLinkPreview(p.link_preview);
+            else if (p.link) html += '<p class="post-intro"><a href="' + esc(p.link) + '" target="_blank" rel="noopener">' + esc(p.link) + '</a></p>';
             if (p.body) html += '<div class="post-body">' + p.body + '</div>';
             if (_username && p.username === _username) {
                 html += '<div style="margin-top:0.8em;"><button onclick="editPost(\'' + esc(p.post_id) + '\',\'' + esc(p.username) + '\')" style="background:none;border:none;color:var(--link);cursor:pointer;font-size:0.9em;padding:0;text-decoration:underline;">✏️ Edit this post</button></div>';
