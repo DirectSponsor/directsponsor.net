@@ -1146,6 +1146,32 @@ ul li {
 .post-card .post-image { margin-bottom: 0.6em; }
 .post-card .post-image img { max-width: 36em; max-height: 28em; width: auto; border-radius: 0.3em; display: block; object-fit: contain; }
 .post-card .read-more { font-size: 0.9em; }
+.post-actions { margin-top: 0.4em; font-size: 0.85em; }
+.post-actions a { color: var(--text-muted); text-decoration: none; }
+.post-actions a:hover { text-decoration: underline; }
+.post-share-btn {
+    background: none;
+    border: none;
+    color: var(--link);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1em;
+    padding: 0;
+}
+.post-share-btn.is-copied { color: var(--text-muted); }
+.post-share-url {
+    display: block;
+    width: 100%;
+    margin-top: 0.4em;
+    padding: 0.3em 0.4em;
+    border: 1px solid var(--border);
+    border-radius: 0.3em;
+    background: var(--bg-page);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.95em;
+    box-sizing: border-box;
+}
 .feed-loading { text-align: center; padding: 2em; color: var(--text-muted); }
 .btn-post {
     padding: 0.45em 1.1em;

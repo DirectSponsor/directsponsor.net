@@ -617,6 +617,66 @@ function loadFeed(append) {
         .catch(function() { document.getElementById('feed-loading').style.display = 'none'; });
 }
 
+function postShareControl(username, postId) {
+    return '<span class="post-share" data-user="' + esc(username) + '" data-post="' + esc(String(postId)) + '">' +
+        '<button type="button" class="post-share-btn">Share</button>' +
+        '</span>';
+}
+
+function postShareUrl(username, postId) {
+    return 'https://directsponsor.net/posts.html?user=' + encodeURIComponent(username) + '&post_id=' + encodeURIComponent(postId);
+}
+
+document.addEventListener('click', function(e) {
+    var shareBtn = e.target.closest ? e.target.closest('.post-share-btn') : null;
+    if (shareBtn) copyPostLink(shareBtn);
+});
+
+function copyPostLink(btn) {
+    var root = btn.closest('.post-share');
+    var url = postShareUrl(root.getAttribute('data-user'), root.getAttribute('data-post'));
+    function copied() {
+        btn.textContent = 'Link copied';
+        btn.classList.add('is-copied');
+        window.setTimeout(function() {
+            btn.textContent = 'Share';
+            btn.classList.remove('is-copied');
+        }, 2000);
+    }
+    function showUrl() {
+        var field = root.querySelector('.post-share-url');
+        if (!field) {
+            field = document.createElement('input');
+            field.type = 'text';
+            field.className = 'post-share-url';
+            field.readOnly = true;
+            root.appendChild(field);
+        }
+        field.value = url;
+        field.focus();
+        field.select();
+    }
+    function fallback() {
+        var ta = document.createElement('textarea');
+        ta.value = url;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+        document.body.removeChild(ta);
+        if (ok) copied();
+        else showUrl();
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(copied).catch(fallback);
+    } else {
+        fallback();
+    }
+}
+
 function buildCard(p) {
     var div = document.createElement('div');
     div.className = 'post-card';
@@ -631,7 +691,7 @@ function buildCard(p) {
     if (p.has_body) html += '<div class="read-more"><a href="posts.html?user=' + esc(p.username) + '&post_id=' + esc(p.post_id) + '">Read more →</a></div>'; 
     var cCount = p.comment_count || 0;
     var cLabel = cCount > 0 ? '💬 ' + cCount + ' ' + (cCount === 1 ? 'comment' : 'comments') : '💬 Comment';
-    html += '<div style="margin-top:0.4em;font-size:0.85em;"><a href="posts.html?user=' + esc(p.username) + '&post_id=' + esc(p.post_id) + '" style="color:var(--text-muted);text-decoration:none;">' + cLabel + '</a></div>';
+    html += '<div class="post-actions"><a href="posts.html?user=' + esc(p.username) + '&post_id=' + esc(p.post_id) + '">' + cLabel + '</a> · ' + postShareControl(p.username, p.post_id) + '</div>';
     div.innerHTML = html;
     if (_username && p.username === _username) {
         var editBtn = document.createElement('button');
@@ -664,6 +724,7 @@ function loadSinglePost(username, postId) {
             if (p.link_preview) html += buildLinkPreview(p.link_preview);
             else if (p.link) html += '<p class="post-intro"><a href="' + esc(p.link) + '" target="_blank" rel="noopener">' + esc(p.link) + '</a></p>';
             if (p.body) html += '<div class="post-body">' + p.body + '</div>';
+            html += '<div class="post-actions">' + postShareControl(p.username, p.post_id) + '</div>';
             if (_username && p.username === _username) {
                 html += '<div style="margin-top:0.8em;"><button onclick="editPost(\'' + esc(p.post_id) + '\',\'' + esc(p.username) + '\')" style="background:none;border:none;color:var(--link);cursor:pointer;font-size:0.9em;padding:0;text-decoration:underline;">✏️ Edit this post</button></div>';
             }

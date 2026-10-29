@@ -1,61 +1,78 @@
-# Handoff: per-post social previews + agent feed (2026-10-29)
+# Handoff: news posts, social cards, Share (2026-10-29 evening)
 
-Status: investigation done, plan approved in principle, **nothing changed yet** (no code edits, nothing deployed).
-Read `AGENTS.md` first. Ask Andy before deploying to RN1, pushing, or deleting anything.
+Read `AGENTS.md` first. This work is live on RN1 except the Share button, which was added after the last deploy.
 
-## Background
+## What is done
 
-Hermes Agent on the Orange Pi (`ssh orangepi5` from hp3) runs cron job `ds-social-drafts`
-(id `a50dea6217a3`, every 3 h). Gate script `~/.hermes/scripts/ds-recipient-posts.py` reads
-`api/posts-api.php?action=feed`, keeps new posts by users with role `recipient`
-(via `simple-profile.php?action=public_profile`), and Hermes writes X drafts to
-`~/work/hermes-agent/workspace/social-drafts/`. Prompt: `~/.hermes/ds-social/prompt.txt`.
-State: `~/.hermes/ds-social/seen.json`. Drafts only; auto-posting via the `xurl` skill comes later.
-Pi checked 2026-10-29: hermes.service + both dashboards running, cron last run OK.
-Setup notes: `~/work/hermes-agent/HERMES_INSTALL_PLAN.md`.
+Social cards for posts work the same way as fundraisers. Apache rewrites `posts.html?post_id=` to `site/post.php`, which swaps title, description, og tags, and twitter:image in the built `posts.html`. Existing URLs did not change.
 
-## Findings
+A recipient can choose **News update**. That form is title (100), description (200), optional link, optional image. Those fields *are* the card. Ordinary posts stay the write box. `save-post.php` only accepts `kind: "news"` if the profile roles include `recipient`. Kind cannot change on edit.
 
-1. **Every post link shows the same generic card.** `curl -A Twitterbot "https://directsponsor.net/posts.html?user=kelvin&post_id=1784829365"`
-   returns title "Posts - DirectSponsor", stock `og-posts.png`, and `og:url` = `https://directsponsor.net` (homepage).
-   Posts are rendered by JavaScript, crawlers don't run JS.
-2. **The fix pattern already exists** for fundraisers: `site/fundraiser.php` reads the fundraiser file and
-   `str_replace`s the og/twitter/title tags in `fundraiser.html`; `site/.htaccess` rewrites
-   `fundraiser.html?project=` to it (`RewriteCond %{QUERY_STRING} (?:^|&)project=`).
-3. **Post storage:** `userdata/posts/{username}/{post_id}-{slug}.json` with fields
-   `post_id, username, user_id, title, intro, body (HTML), image_url, link_preview{url,title,description,image,domain,blocked}, created, updated, nostr_*`.
-   Titles are often empty.
-4. **Current API** (`site/api/posts-api.php`): `feed` (all users, 20 max, intro only, `has_body` flag),
-   `post` (full JSON), `user_posts`. No role filter, so the Pi does 1 feed call + 1 profile call per user + 1 post call per post with a body.
-5. **Profile** (`simple-profile.php?action=public_profile`) gives `display_name` (kelvin = "Bitcoin4Ghana"),
-   `bio`, `website`, `location`, `picture`, `roles`.
-6. **Draft quality:** the only draft so far is from Kelvin's test post "the links preview also works fine",
-   a trivial message that shouldn't really be a tweet.
-7. Most recent feed posts are from `andytest2` testing link previews; publish0x links come back
-   `blocked`/"Just a moment..." (Cloudflare blocks our preview fetcher). Not part of this task.
+Hermes on the Orange Pi (`ssh orangepi5-ts`) now reads only news posts:
 
-## Recommended plan
+- Cron: `ds-social-drafts` id `a50dea6217a3`, every 3 h
+- Gate: `~/.hermes/scripts/ds-recipient-posts.py` → `api/posts-api.php?action=news_feed`
+- Prompt: `~/.hermes/ds-social/prompt.txt`
+- Seen ids: `~/.hermes/ds-social/seen.json` (20 ids kept; empty news_feed so first news post will draft)
+- Drafts: `~/work/hermes-agent/workspace/social-drafts/`
+- Hermes binary: `/home/andy/.local/bin/hermes`
+- One test run after the switch: succeeded, no new draft (correct — no news posts yet)
 
-1. **`site/post.php`** (copy the fundraiser.php approach, ~60 lines):
-   - `.htaccess`: `RewriteCond %{QUERY_STRING} (?:^|&)post_id=` + `RewriteRule ^posts\.html$ /post.php [L,QSA]`
-   - Sanitize `user` / `post_id` like posts-api.php, glob `userdata/posts/{user}/{post_id}-*.json`.
-   - og:title = post title, else "{display_name} – update" (display_name from the profile file, else username).
-   - og:description = intro stripped of tags, max ~200 chars.
-   - og:image / twitter:image = post `image_url` → `link_preview.image` → stock `og-posts.png`. Make relative URLs absolute.
-   - og:url = canonical `https://directsponsor.net/posts.html?user=X&post_id=Y`; og:type `article`.
-   - Replace the exact tag strings in the **built** `site/posts.html` (check them after `build.sh`).
-   - Existing links (including the ones in drafts) start working with no URL change.
-   - Test locally (php -S with a temp USERDATA copy, or make the path overridable), then verify with
-     `curl -A Twitterbot` after deploy and the X/Facebook card validators.
-2. **`action=recipient_feed` in posts-api.php**: only posts from users whose profile roles include `recipient`;
-   each item has plain-text full body (strip tags), title, display_name, project website + bio, image,
-   share URL, created; optional `since=<unix ts>`. Keep it JSON (RSS can come later). One call per run for the Pi.
-3. **Pi**: switch the gate script to `recipient_feed` (keep the seen.json logic and first-run behaviour), and
-   tighten the prompt; then run `hermes cron run a50dea6217a3` and check the drafts folder.
-4. Deploy: `bash build.sh site` then `bash deploy.sh --auto` (RN1), **only with Andy's OK**.
+**How sharing works:** post the canonical URL. X/Facebook fetch it and draw the card. Extra tweet text is optional. The optional `link` on a news post is the story they are pointing at, not the card URL.
 
-## Open question for Andy
+Nostr is unchanged: `save-post.php` still publishes a kind 1 with the post URL at the end. Nostr does not use these og tags.
 
-- Should trivial/off-topic recipient posts (e.g. under ~15 words, or not about the project) be skipped,
-  or drafted anyway for Andy to discard? Skipping can be done in the gate script (word count) and/or the
-  prompt ("if the post isn't a real project update, write no draft").
+## Key files
+
+| File | Role |
+|------|------|
+| `site/post.php` | Per-post OG. `DS_USERDATA` override for local php -S |
+| `site/.htaccess` | `post_id=` → `/post.php` |
+| `site/posts.html` | News form, Share, feed labels |
+| `site/api/save-post.php` | `kind`, `link`, recipient check |
+| `site/api/posts-api.php` | `action=news_feed`; feed/user_posts now include `kind` and `link` |
+| `site/styles/directsponsor-v2.css` | News form + Share |
+
+## Share (in tree, not on the last deploy)
+
+Feed cards and the single-post view have a **Share** button. One click copies `https://directsponsor.net/posts.html?user=X&post_id=Y`. If clipboard is blocked, a readonly URL field appears.
+
+`site/posts.html` and `site/styles/directsponsor-v2.css` are dirty relative to `00b536d`. Next session: `bash build.sh site` then `bash deploy.sh --auto` (Andy OK). Changelog entry for Share is not added yet.
+
+Local check: php -S with `DS_USERDATA=/tmp/...`, then click Share on a feed card and on a single post. Live check after deploy: `curl -A Twitterbot "https://directsponsor.net/posts.html?user=kelvin&post_id=1784829365"` — already returns that post's title/description (no image, so `og-posts.png`).
+
+## Card field map
+
+- title → `<title>`, `og:title` (`Title - DirectSponsor`; empty title → `{display_name} - update - DirectSponsor`)
+- intro/description → `og:description`, `meta description` (max ~200)
+- image_url, else `link_preview.image`, else `og-posts.png`
+- canonical URL → `og:url`; `og:type` = `article`
+- twitter:image is a separate tag — both image tags must be replaced (they are)
+
+Missing/wrong-owner post_id still serves the generic posts page.
+
+## news_feed item
+
+`post_id, username, display_name, bio, website, title, description, body, link, link_title, image, share_url, created`
+
+Only `kind=news` from a recipient profile. Optional `since=` is there; the Pi still uses `seen.json` as the watermark.
+
+## What next session should do
+
+1. Deploy the Share button (`build.sh site` + `deploy.sh --auto`).
+2. Have a recipient (Kelvin or Evans) publish a real **News update**, then `curl -A Twitterbot` that URL and check the X/Facebook card validators.
+3. On the Pi: `/home/andy/.local/bin/hermes cron run a50dea6217a3` and look in `social-drafts/`. Expect one file named `YYYY-MM-DD-username-post_id.md`.
+4. Auto-posting via the `xurl` skill is still later. Drafts only.
+5. `deploy.sh --auto` on 2026-10-29 also committed leftover notes that were already dirty: `HANDOFF-…`, `chat-private-messaging-outline.md`, `sponsor-group-chat-plan.md`, `to-dos-to-check`, nostr-relay docs. Commit `00b536d`. Do not redo that.
+
+## Pi prompt (current)
+
+Draft from title + description. End with `share_url`. May mention `link` in the sentence, must not replace `share_url` with it. Max 270 chars including the link. Do not invent facts.
+
+## Do not
+
+- Do not treat ordinary posts as news.
+- Do not skip by word count.
+- Do not move `seen.json` with `since=` on a failed draft run.
+- Do not edit `.incl` files without chmod u+w / u-w.
+- Do not deploy without Andy saying so.
