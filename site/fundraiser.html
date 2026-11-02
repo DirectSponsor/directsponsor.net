@@ -349,6 +349,7 @@ if (window.location.protocol === 'http:' && window.location.hostname !== 'localh
                 <a href="#" id="nav-username-btn" onclick="toggleUserMenu(event)">👤 <span id="nav-username-label">Account</span> ▾</a>
                 <div id="nav-user-dropdown" style="display:none;position:absolute;right:0;top:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:0.3em;min-width:130px;box-shadow:0 2px 8px rgba(0,0,0,0.12);z-index:999;">
                     <a href="profile.html" id="nav-profile-link" style="display:block;padding:0.5em 1em;color:var(--text);text-decoration:none;font-size:0.9em;border-bottom:1px solid var(--border);">Profile</a>
+                    <a href="#" onclick="window.location.href='https://auth.directsponsor.org/delete-account.php?return_url='+encodeURIComponent(window.location.href); return false;" style="display:block;padding:0.5em 1em;color:var(--text);text-decoration:none;font-size:0.9em;border-bottom:1px solid var(--border);">Delete account</a>
                     <a href="#" onclick="dsLogout(); return false;" class="nav-logout" style="display:block;padding:0.5em 1em;text-decoration:none;font-size:0.9em;">Log out</a>
                 </div>
             </div>

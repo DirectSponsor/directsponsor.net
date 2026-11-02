@@ -316,7 +316,7 @@ All scripts live on RN1 at `/root/scripts/`. Logs go to `/var/log/`.
 | Bot | Username | Credentials on RN1 | Purpose |
 |-----|----------|--------------------|---------|
 | DS_AuthBot | `@DS_AuthBot` | token in `reconcile-notify.sh` | Weekly reconciliation reports (Sun 3am) |
-| SitesCheckBot | `@DSSitesCheckBot` | `/root/.telegram-sites-check` | Site alerts: new posts, page down, broken links, etc. |
+| SitesCheckBot | `@DSSitesCheckBot` | `/root/.telegram-sites-check` | New posts on directsponsor.net (hourly). Nothing else. |
 
 A third bot (backup alerts) posts from es3-auth via `/root/.telegram-backup-alerts` on that server.
 
@@ -330,6 +330,17 @@ A third bot (backup alerts) posts from es3-auth via `/root/.telegram-backup-aler
 - **Cooldown**: 10-min per-user cooldown in state file (prevents double-notify if cron fires twice)
 - **Top-level only**: every `.json` in `posts/` dirs is a top-level post — replies live in `comments/` and are excluded automatically
 - **No external deps**: uses Python stdlib only (`urllib`, `json`, `glob`)
+
+### Social drafts — Hermes on the Orange Pi
+
+Drafts only. Nothing is posted to X or anywhere else.
+
+- **Host**: `ssh orangepi5-ts`
+- **Cron**: `ds-social-drafts` (id `a50dea6217a3`), every 3 hours
+- **Reads**: recipient **News update** posts only, via `api/posts-api.php?action=news_feed`
+- **Writes**: one markdown file per new post in `~/work/hermes-agent/workspace/social-drafts/` (`YYYY-MM-DD-username-post_id.md`)
+- **Seen ids**: `~/.hermes/ds-social/seen.json`
+- Ordinary posts are ignored. Fuller notes: `HANDOFF-social-previews-and-agent-feed.md`
 
 ---
 
