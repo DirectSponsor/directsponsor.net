@@ -88,7 +88,6 @@ if (window.location.protocol === 'http:' && window.location.hostname !== 'localh
                 <a href="#" id="nav-username-btn" onclick="toggleUserMenu(event)">👤 <span id="nav-username-label">Account</span> ▾</a>
                 <div id="nav-user-dropdown" style="display:none;position:absolute;right:0;top:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:0.3em;min-width:130px;box-shadow:0 2px 8px rgba(0,0,0,0.12);z-index:999;">
                     <a href="profile.html" id="nav-profile-link" style="display:block;padding:0.5em 1em;color:var(--text);text-decoration:none;font-size:0.9em;border-bottom:1px solid var(--border);">Profile</a>
-                    <a href="#" onclick="window.location.href='https://auth.directsponsor.org/delete-account.php?return_url='+encodeURIComponent(window.location.href); return false;" style="display:block;padding:0.5em 1em;color:var(--text);text-decoration:none;font-size:0.9em;border-bottom:1px solid var(--border);">Delete account</a>
                     <a href="#" onclick="dsLogout(); return false;" class="nav-logout" style="display:block;padding:0.5em 1em;text-decoration:none;font-size:0.9em;">Log out</a>
                 </div>
             </div>
@@ -356,6 +355,12 @@ function dsLogout() {
         <p id="my-donations-none" class="color-muted text-small" style="display:none;">No donations recorded yet.</p>
     </div>
 
+    <div class="project-card profile-section" id="delete-account-section">
+        <h2>🗑️ Delete Account</h2>
+        <p class="hint-text">Schedule your account data for deletion. Nothing is deleted straight away — you'll get an email and have 7 days to cancel.</p>
+        <button type="button" class="btn-ghost" onclick="confirmAccountDeletion()">Delete my account…</button>
+    </div>
+
 </div>
 
 <div id="sp-pay-modal" role="dialog" aria-modal="true" aria-label="Pay sponsorship" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);z-index:1000;overflow-y:auto;">
@@ -382,6 +387,12 @@ function dsLogout() {
 </div>
 
 <script>
+function confirmAccountDeletion() {
+    if (confirm('Schedule your account for deletion?\n\nNothing is deleted immediately — you have 7 days to cancel on the next page if you change your mind.')) {
+        window.location.href = 'https://auth.directsponsor.org/delete-account.php?return_url=' + encodeURIComponent(window.location.href);
+    }
+}
+
 var _profile = null;
 var _userId = null;
 var _username = '';
