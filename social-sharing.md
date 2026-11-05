@@ -18,4 +18,5 @@ The same link becomes a task on ClickForCharity, so other people post it to the 
 
 - No X developer account, and no paid API posting.
 - Hermes does not log in to those sites. A browser on the Pi is the easy case for them to block, and a lockout of a real account is a bad trade.
-- The Hermes draft cron can keep writing a suggested sentence. It is optional. The text that matters is the title, the description, and the share URL.
+- No Hermes drafts. The `ds-social-drafts` job was paused 2026-11-05 as no longer needed, and the ClickForCharity task replaces it. The text that matters is the title, the description, and the share URL.
+- No marketing posts on our own channels. Mainstream social media is only for drawing people to our sites or to Nostr. Real users sharing on their own accounts is more distributed than one brand account.

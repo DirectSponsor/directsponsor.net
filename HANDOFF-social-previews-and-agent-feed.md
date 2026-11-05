@@ -1,5 +1,7 @@
 # Handoff: news posts, social cards, Share (2026-10-29 evening)
 
+**2026-11-05: the Hermes social-drafts part is retired.** The `ds-social-drafts` job is paused and no longer needed. Mainstream social media is only for drawing people to the site or to Nostr, and bot posting needs paid API tiers, which Andy won't pay for on principle. See AGENTS.md, "Mainstream social media". Social cards and Share stay. Its replacement is a ClickForCharity share task (`social-sharing.md`).
+
 Read `AGENTS.md` first. This work is live on RN1 except the Share button, which was added after the last deploy.
 
 ## What is done
@@ -61,8 +63,8 @@ Only `kind=news` from a recipient profile. Optional `since=` is there; the Pi st
 
 1. Deploy the Share button (`build.sh site` + `deploy.sh --auto`).
 2. Have a recipient (Kelvin or Evans) publish a real **News update**, then `curl -A Twitterbot` that URL and check the X/Facebook card validators.
-3. On the Pi: `/home/andy/.local/bin/hermes cron run a50dea6217a3` and look in `social-drafts/`. Expect one file named `YYYY-MM-DD-username-post_id.md`.
-4. Auto-posting via the `xurl` skill is still later. Drafts only.
+3. ~~Run the Pi drafts job~~: retired 2026-11-05, job paused.
+4. ~~Auto-posting via `xurl`~~: dropped. Paid platform APIs, ruled out on principle.
 5. `deploy.sh --auto` on 2026-10-29 also committed leftover notes that were already dirty: `HANDOFF-…`, `chat-private-messaging-outline.md`, `sponsor-group-chat-plan.md`, `to-dos-to-check`, nostr-relay docs. Commit `00b536d`. Do not redo that.
 
 ## Pi prompt (current)

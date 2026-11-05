@@ -331,16 +331,22 @@ A third bot (backup alerts) posts from es3-auth via `/root/.telegram-backup-aler
 - **Top-level only**: every `.json` in `posts/` dirs is a top-level post — replies live in `comments/` and are excluded automatically
 - **No external deps**: uses Python stdlib only (`urllib`, `json`, `glob`)
 
-### Social drafts — Hermes on the Orange Pi
+### Mainstream social media — not supported, Nostr instead
 
-Drafts only. Nothing is posted to X or anywhere else.
+Mainstream social media (X, Facebook, …) is only used to draw people from there to
+directsponsor.net or to Nostr. We do not support or build on those platforms. Bot posting
+needs paid API tiers, and Andy refuses to pay on principle: the platforms charge real
+users while bot spam goes unchecked. Nostr is where DirectSponsor is heading.
 
-- **Host**: `ssh orangepi5-ts`
-- **Cron**: `ds-social-drafts` (id `a50dea6217a3`), every 3 hours
-- **Reads**: recipient **News update** posts only, via `api/posts-api.php?action=news_feed`
-- **Writes**: one markdown file per new post in `~/work/hermes-agent/workspace/social-drafts/` (`YYYY-MM-DD-username-post_id.md`)
-- **Seen ids**: `~/.hermes/ds-social/seen.json`
-- Ordinary posts are ignored. Fuller notes: `HANDOFF-social-previews-and-agent-feed.md`
+What stays: social cards (og tags) and the Share button, so a link pasted anywhere
+brings people back here. A recipient's news post becomes a ClickForCharity task that asks
+users to share it on their own accounts. See `social-sharing.md` and
+`../clickforcharity.net/share-news-posts.md`.
+
+The Hermes `ds-social-drafts` job on the Orange Pi (id `a50dea6217a3`) was **paused
+2026-11-05** and is no longer needed. Its leftovers (`~/.hermes/scripts/ds-recipient-posts.py`,
+`~/.hermes/ds-social/`, `~/work/hermes-agent/workspace/social-drafts/`) are kept until
+Andy decides to remove them.
 
 ---
 
