@@ -492,6 +492,16 @@ Full security audit completed. All issues fixed and live-verified.
 
 ## Strategic Note: Chat — Nostr vs Custom (2026-07-30)
 
+> **Partly superseded (2026-11-08).** The "replace the embedded roflfaucet
+> chat" decision below is reversed. The roflfaucet public chat **stays
+> as-is** (bots, rain, tips) and **stays embedded** on directsponsor.net;
+> the Nostr chat is a **separate layer** for sponsor groups and opted-in
+> fundraiser donors, not a replacement. See `sponsor-group-chat-plan.md`
+> and the roflfaucet project's `docs/chat-system.md` (the "two chats"
+> split). The rest of this section — NIP-28 vs custom, the server-side
+> proxy mechanics, and the write-policy notes — is still useful
+> background.
+
 ### Current situation
 - roflfaucet.com has a custom flat-file PHP chat with bots (Anzar rainbot, ROFLBot), coin tipping (`/tip`), and rain events
 - directsponsor.net embeds this chat in an iframe on the homepage and sponsorships page
@@ -513,7 +523,7 @@ Nostr (NIP-28 public channels) was evaluated as a replacement or complement. Key
 - Moderation harder — permissionless by design, spam falls back on relay write policy
 
 ### Decision
-- **directsponsor.net**: replace the embedded roflfaucet chat iframe with a Nostr-backed chat — see server-side proxy approach below
+- **directsponsor.net**: **superseded 2026-11-08** — the embedded roflfaucet chat **stays**; the Nostr chat is a *separate* layer for sponsor groups + opted-in donors, not a replacement. (The original 2026-07-30 decision was to replace the embedded chat with a Nostr-backed chat — see server-side proxy approach below. That is no longer the plan.)
 - **roflfaucet.com**: keep custom chat for now — the coin mechanics (faucet, rain, UselessCoins) are the point; Nostr doesn't replace that
 - **Zaps complement rather than replace UselessCoins**: zaps = real-value serious support; UselessCoins = low-friction fun/gamification
 - **Mobile**: fitting a persistent chat widget into a 390px layout fights physics — the floating panel is already the right pattern; don't try to add more

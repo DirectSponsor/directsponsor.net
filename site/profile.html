@@ -775,12 +775,22 @@ function saveProfile() {
     status.textContent = '';
     status.className = 'status-msg';
 
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    if (!jwt) {
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+        status.textContent = 'Not logged in — please log in again.';
+        status.className = 'status-msg error';
+        return;
+    }
+
     var rawBio = document.getElementById('bio').innerHTML.trim();
     var normBio = rawBio === '' ? '' : rawBio
         .replace(/<div>/gi, '<p>').replace(/<\/div>/gi, '</p>');
 
     var update = {
         user_id:          _userId,
+        jwt:              jwt,
         picture:          document.getElementById('picture').value.trim(),
         display_name:     document.getElementById('display-name').value.trim(),
         bio:              normBio,
@@ -794,7 +804,7 @@ function saveProfile() {
 
     fetch('/api/simple-profile.php?action=update_profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
         body: JSON.stringify(update)
     })
     .then(function(r) { return r.json(); })

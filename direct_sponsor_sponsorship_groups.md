@@ -126,6 +126,8 @@ The principle is layered discovery rather than either information overload or op
 
 - Reminder and response-window system
 
+- Fundraiser-donor access to a recipient\'s group chat --- donors who opt in when contributing to a fundraiser can join that recipient\'s Nostr group chat (see `sponsor-group-chat-plan.md`, "Fundraiser donors")
+
 - Deeper Nostr integration --- cross-node identity, flagging, fraud prevention
 
 - Node infrastructure --- independent installations linked via Nostr

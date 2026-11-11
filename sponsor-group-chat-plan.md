@@ -4,9 +4,23 @@
 sponsorship-group flow (join/leave/slots/payments) is proven live —
 per Andy, 2026-10-20.
 
+**Expect this to evolve.** No one has built exactly this before — there is
+little to copy. Treat this as a living plan: details will be added,
+changed, or dropped as we come to them.
+
 **Supersedes:** the "small private groups" part of
 `chat-private-messaging-outline.md`. The rest of that doc (1:1 DMs) is
 dormant, not cancelled — see "Later / optional" below.
+
+**Audience:** sponsor-group members first. A second, planned audience is
+**fundraiser donors** who opt in to the group of a recipient they
+supported — see "Fundraiser donors" below. Both post into the same
+channel, which is keyed by the recipient username.
+
+**Scope vs the other chat:** this is the Nostr layer. The roflfaucet
+public chat (bots, rain, tips, embedded on directsponsor.net) stays
+non-Nostr and unchanged — see `docs/chat-system.md` in the roflfaucet
+project for the two-chat split.
 
 ---
 
@@ -58,7 +72,9 @@ reference implementation if we ever want the private version (see below).
 `POST {recipient, text}`:
 
 1. Verify JWT via `jwt-verify.php` → caller username.
-2. Load `sponsorship-groups/{recipient}.json`; caller must be in `members[]`.
+2. Load `sponsorship-groups/{recipient}.json`; caller must be in
+   `members[]` — or an opted-in fundraiser donor of that recipient (see
+   "Fundraiser donors").
 3. Sanitize: plain text only, cap ~1000 chars; rate-limit 10 msgs/60s per
    user (same pattern as roflfaucet chat).
 4. Ensure `nostr_privkey` exists in caller's profile (genkey on first use —
@@ -103,6 +119,39 @@ tightening, with group chat as its first consumer:
 - Recipient delete-as-admin: optional later, same kind-5 mechanism signed
   with the recipient's key.
 
+## Fundraiser donors (planned — not v1)
+
+Sponsorship groups are the primary audience. But not everyone can commit
+to a regular monthly sponsorship — that is exactly why fundraisers exist.
+So it seems fair that a donor who contributes to a recipient's fundraiser
+can also join **that recipient's** group chat if they want to stay in
+touch. Access is per-recipient: you are only ever in the channels of
+recipients you actually supported.
+
+**Mechanism (to build):**
+- Add an opt-in checkbox to the fundraiser donate flow
+  (`fundraiser.html` donate modal): e.g. *"Join [recipient]'s group
+  chat"*.
+- On payment confirmation (`webhook.php`, where the donation is already
+  recorded), if the box was ticked, record the donor as a chat member of
+  that recipient — by their existing DS Nostr pubkey (genkey on first
+  use, same lazy pattern as `save-post.php`).
+- Membership therefore lives alongside the existing
+  `sponsorship-groups/{recipient}.json` model, but needs to admit donors
+  too — not just `members[]`. The write endpoint and (later) relay write
+  policy must accept donors in the channel of a recipient they supported.
+
+**Decided (per Andy, 2026-11-08):**
+- **Post rights:** an opted-in donor **can post** — they supported the
+  recipient, so they are a full participant, not read-only.
+- **Duration:** access **persists** and does **not** expire on its own.
+  The donor can **leave at any time** of their own accord.
+
+**Still open:**
+- **Same opt-in on the sponsorship 'pay' flow?** Probably yes, for
+  consistency — a sponsor paying for a month is already a member, so this
+  is about the initial join, not each payment.
+
 ## Cross-site
 
 Not needed for v1 — group pages only exist on directsponsor.net. But if a
@@ -134,8 +183,14 @@ iframe-JWT-in-URL-param hack with plain websocket).
 
 ## Related
 
+- **Reference / ideas:** https://paff.club/community/ — an existing chat
+  that uses Nostr under the hood with a plain web interface. Not our
+  stack; worth a look for UI/UX ideas when we build this.
 - `nostr-relay/README.md` + `nostr-relay/nostr-integration.md` — relay
   status, write-policy direction
+- `docs/chat-system.md` (roflfaucet project) — the *other* chat: the
+  public, non-Nostr roflfaucet chat embedded on directsponsor.net. That
+  doc also documents the "two chats" split.
 - `chat-private-messaging-outline.md` — older draft; group part now
   superseded by this doc
 - `direct_sponsor_sponsorship_groups.md` — group structure

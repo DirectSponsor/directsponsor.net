@@ -253,8 +253,11 @@ function searchUsers() {
     status.textContent = 'Searching…';
     results.innerHTML = '';
 
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
     fetch('/api/simple-profile.php?action=search&query=' + encodeURIComponent(q)
-          + '&user_id=' + encodeURIComponent(_adminUserId))
+          + '&user_id=' + encodeURIComponent(_adminUserId), {
+        headers: { 'Authorization': 'Bearer ' + jwt }
+    })
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (!data.success) {
@@ -320,11 +323,13 @@ function manageRole(userId, operation, role) {
     msgEl.textContent = 'Saving…';
     msgEl.className = 'msg';
 
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
     fetch('/api/simple-profile.php?action=manage_roles', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt},
         body: JSON.stringify({
             user_id:        _adminUserId,
+            jwt:            jwt,
             target_user_id: userId,
             operation:      operation,
             role:           role
