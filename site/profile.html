@@ -355,6 +355,12 @@ function dsLogout() {
         <p id="my-donations-none" class="color-muted text-small" style="display:none;">No donations recorded yet.</p>
     </div>
 
+    <div class="project-card profile-section" id="security-section">
+        <h2>Security</h2>
+        <p class="hint-text">Change your password for all DirectSponsor network sites.</p>
+        <a href="#" id="change-password-link" class="btn-ghost">Change password</a>
+    </div>
+
     <div class="project-card profile-section" id="delete-account-section">
         <h2>🗑️ Delete Account</h2>
         <p class="hint-text">Schedule your account data for deletion. Nothing is deleted straight away — you'll get an email and have 7 days to cancel.</p>
@@ -387,6 +393,17 @@ function dsLogout() {
 </div>
 
 <script>
+// Set change-password link with current JWT token
+(function() {
+    var jwt = sessionStorage.getItem('jwt') || localStorage.getItem('jwt');
+    var link = document.getElementById('change-password-link');
+    if (link) {
+        var base = 'https://auth.directsponsor.org/change-password.php';
+        var redirect = '&redirect_uri=' + encodeURIComponent('https://directsponsor.net/profile.html');
+        link.href = jwt ? base + '?token=' + encodeURIComponent(jwt) + redirect : base + '?' + redirect.slice(1);
+    }
+})();
+
 function confirmAccountDeletion() {
     if (confirm('Schedule your account for deletion?\n\nNothing is deleted immediately — you have 7 days to cancel on the next page if you change your mind.')) {
         window.location.href = 'https://auth.directsponsor.org/delete-account.php?return_url=' + encodeURIComponent(window.location.href);
