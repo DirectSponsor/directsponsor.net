@@ -38,13 +38,12 @@
     <!-- Optional: Add analytics, fonts, or other scripts here -->
     <script>
     (function() {
-        var params = new URLSearchParams(window.location.search);
-        var jwt = params.get('jwt');
+        var hashParams = new URLSearchParams(window.location.hash.slice(1));
+        var jwt = hashParams.get('jwt');
         if (jwt) {
             sessionStorage.setItem('jwt', jwt);
-            params.delete('jwt');
-            var newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
-            window.history.replaceState({}, '', newUrl);
+            // Strip the #jwt= fragment from the URL bar so it doesn't stay in history
+            window.history.replaceState({}, '', window.location.pathname + window.location.search);
         }
         // Purge any stored JWT that has expired so pages show "login required"
         // rather than silently failing on server-side verification.

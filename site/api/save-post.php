@@ -288,11 +288,7 @@ file_put_contents($postFile, json_encode($post, JSON_PRETTY_PRINT | JSON_UNESCAP
 
 // Nostr: get or create keypair, sign event, import to relay
 $nostrPubkey = null;
-$external_relays = [
-    ['host' => 'relay.damus.io',   'port' => 443, 'ssl' => true],
-    ['host' => 'relay.primal.net', 'port' => 443, 'ssl' => true],
-    ['host' => 'nos.lol',          'port' => 443, 'ssl' => true],
-];
+$external_relays = require_once __DIR__ . '/nostr-relays.php';
 $profileGlob = glob(USERDATA_DIR . '/profiles/*-' . $callerUsername . '.txt');
 if ($profileGlob) {
     $profileFile = $profileGlob[0];

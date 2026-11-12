@@ -43,11 +43,7 @@ function nostr_publish_ws($event_json, $host, $port, $ssl = false) {
     return true;
 }
 
-$nostr_external_relays = [
-    ['host' => 'relay.damus.io',   'port' => 443, 'ssl' => true],
-    ['host' => 'relay.primal.net', 'port' => 443, 'ssl' => true],
-    ['host' => 'nos.lol',          'port' => 443, 'ssl' => true],
-];
+$nostr_external_relays = require_once __DIR__ . '/nostr-relays.php';
 
 /**
  * DirectSponsor Simple Profile API
