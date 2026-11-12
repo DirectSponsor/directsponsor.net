@@ -373,8 +373,8 @@ function updateMobileNavigation(isLoggedIn, username) {
 
 // One-time JWT processing - extract username then discard token
 function processJwtFromUrl() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const jwtParam = urlParams.get('jwt');
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    const jwtParam = hashParams.get('jwt');
     
     if (jwtParam) {
         console.log('🔑 Processing login token...');
@@ -418,8 +418,8 @@ function processJwtFromUrl() {
             
             // User files are handled server-side when needed
             
-            // Clean up the URL by removing JWT parameters
-            const cleanUrl = window.location.pathname + window.location.hash;
+            // Clean up URL — strip the #jwt= fragment so it doesn't stay in history
+            const cleanUrl = window.location.pathname + window.location.search;
             window.history.replaceState({}, document.title, cleanUrl);
             
             // Update UI to show logged in state
