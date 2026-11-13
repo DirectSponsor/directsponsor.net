@@ -291,7 +291,8 @@ json.dump(d, open(f,'w'), indent=2)
 - **Signing helper**: `/opt/strfry/nostr-sign.py` — pure Python BIP340 Schnorr; used by `save-post.php`
 - **Per-user keypairs**: generated on first post, stored as `nostr_privkey` / `nostr_pubkey` in profile `.txt` file
 - **External relay broadcasting**: new posts sent to `relay.damus.io`, `relay.primal.net`, `nos.lol` (SSL WebSocket) in addition to local relay
-- **Kind 0 metadata**: published on a user's first-ever post; sets `name` + `nip05` so username shows in Nostr clients instead of hex pubkey. Controlled by `nostr_metadata_published` flag in profile file.
+- **Kind 0 metadata**: published on a user's first-ever post; sets `name` + `nip05` so username shows in Nostr clients instead of hex pubkey. Controlled by `nostr_metadata_hash` in the profile file.
+- **NIP-65 relay list (kind 10002)**: `site/api/nostr-nip65.php`. Published from the user's key on the next post and on profile save, when `nostr_relay_list_hash` changes. Advertises `relay.directsponsor.net` as write, the three public relays as both, and `purplepag.es` as read. Backfill on RN1: `php /var/www/directsponsor.net/html/api/publish-relay-lists.php`
 - **NIP-05**: `/.well-known/nostr.json` served by `site/.well-known/nostr.php` (Apache rewrite in SSL vhost); lists all users with a `nostr_pubkey` in their profile
 - **Apache vhost**: `/etc/apache2/sites-available/relay.directsponsor.net.conf` — HTTP/2 disabled for WS compatibility
 - **SSL**: Let's Encrypt via acme.sh, covers `directsponsor.net`, `www.directsponsor.net`, `relay.directsponsor.net`

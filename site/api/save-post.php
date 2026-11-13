@@ -289,6 +289,7 @@ file_put_contents($postFile, json_encode($post, JSON_PRETTY_PRINT | JSON_UNESCAP
 // Nostr: get or create keypair, sign event, import to relay
 $nostrPubkey = null;
 $external_relays = require_once __DIR__ . '/nostr-relays.php';
+require_once __DIR__ . '/nostr-nip65.php';
 $profileGlob = glob(USERDATA_DIR . '/profiles/*-' . $callerUsername . '.txt');
 if ($profileGlob) {
     $profileFile = $profileGlob[0];
@@ -324,6 +325,9 @@ if ($profileGlob) {
                 $profile['nostr_metadata_hash'] = $kind0Hash;
                 file_put_contents($profileFile, json_encode($profile, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             }
+        }
+        if (nostr_publish_relay_list($profile['nostr_privkey'], $profile, $external_relays)) {
+            file_put_contents($profileFile, json_encode($profile, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         }
         $dsPostUrl = 'https://directsponsor.net/posts.html?user=' . $callerUsername . '&post_id=' . $post['post_id'];
         $content = $title ? $title . "\n\n" . $intro : $intro;

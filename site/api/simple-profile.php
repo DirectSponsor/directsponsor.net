@@ -44,6 +44,7 @@ function nostr_publish_ws($event_json, $host, $port, $ssl = false) {
 }
 
 $nostr_external_relays = require_once __DIR__ . '/nostr-relays.php';
+require_once __DIR__ . '/nostr-nip65.php';
 
 /**
  * DirectSponsor Simple Profile API
@@ -560,6 +561,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'profile') {
                 foreach ($nostr_external_relays as $r) {
                     nostr_publish_ws(trim($kind0Signed), $r['host'], $r['port'], $r['ssl']);
                 }
+            }
+            if (nostr_publish_relay_list($data['nostr_privkey'], $data, $nostr_external_relays)) {
+                saveProfileData($profileFile, $data);
             }
         }
         echo json_encode([
